@@ -1,0 +1,66 @@
+######################
+# .NET build files
+######################
+.vs/
+
+bin/
+obj/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+######################
+# VSCode / Rider / VS
+######################
+.vscode/
+.idea/
+*.code-workspace
+
+######################
+# Logs & temp
+######################
+*.log
+logs/
+temp/
+tmp/
+
+######################
+# .env + docker secrets
+######################
+.env
+.env.*
+docker-compose.override.yml
+
+######################
+# Docker containers / volumes
+######################
+**/docker-compose.yml
+**/Dockerfile
+docker-data/
+docker-db/
+
+######################
+# EF Migrations (optional)
+######################
+**/Migrations/
+*.db
+
+######################
+# OS files
+######################
+.DS_Store
+Thumbs.db
+
+######################
+# Swagger auto-generated
+######################
+*.swagger
+*.http
+
+######################
+# Secrets / Tokens (optional)
+######################
+secrets.json
+token.json
