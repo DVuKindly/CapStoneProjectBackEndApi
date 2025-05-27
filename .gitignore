@@ -1,0 +1,98 @@
+########################################
+# 🔹 OS SYSTEM FILES
+########################################
+.DS_Store
+Thumbs.db
+
+########################################
+# 🔹 VISUAL STUDIO / IDE
+########################################
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+########################################
+# 🔹 BUILD OUTPUT
+########################################
+bin/
+obj/
+*.dll
+*.pdb
+*.exe
+*.cache
+*.log
+
+########################################
+# 🔹 DOTNET TOOLS / SDK
+########################################
+*.nupkg
+*.snupkg
+*.nuspec
+*.psmdcp
+*.vspx
+*.vsix
+_ReSharper*/
+*.DotSettings.user
+
+########################################
+# 🔹 GIT METADATA / LOCKS
+########################################
+*.orig
+*.lock.json
+
+########################################
+# 🔹 DOCKER
+########################################
+docker-compose.override.yml
+**/docker-compose*.yml
+**/Dockerfile
+docker-data/
+docker-db/
+*.tar
+
+########################################
+# 🔹 ENVIRONMENT FILES
+########################################
+.env
+.env.*
+secrets.json
+
+########################################
+# 🔹 EF MIGRATIONS (tuỳ chọn nếu dùng Code First)
+########################################
+**/Migrations/
+*.db
+
+########################################
+# 🔹 TEST / COVERAGE
+########################################
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.testlog
+
+########################################
+# 🔹 NODE / FRONTEND (nếu có frontend folder)
+########################################
+node_modules/
+dist/
+npm-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+
+########################################
+# 🔹 CUSTOM FOLDERS
+########################################
+*.vsidx
+.vscode/
+.idea/
+logs/
+temp/
+tmp/
+*.tgz
+*.gz
+*.zip
+*.rar
