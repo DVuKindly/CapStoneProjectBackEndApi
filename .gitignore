@@ -8,10 +8,15 @@ Thumbs.db
 # 🔹 VISUAL STUDIO / IDE
 ########################################
 .vs/
+.vscode/
+.idea/
 *.user
 *.suo
+*.rsuser
 *.userosscache
 *.sln.docstates
+*.DotSettings.user
+*.code-workspace
 
 ########################################
 # 🔹 BUILD OUTPUT
@@ -34,7 +39,6 @@ obj/
 *.vspx
 *.vsix
 _ReSharper*/
-*.DotSettings.user
 
 ########################################
 # 🔹 GIT METADATA / LOCKS
@@ -58,6 +62,7 @@ docker-db/
 .env
 .env.*
 secrets.json
+token.json
 
 ########################################
 # 🔹 EF MIGRATIONS (tuỳ chọn nếu dùng Code First)
@@ -87,8 +92,6 @@ pnpm-lock.yaml
 # 🔹 CUSTOM FOLDERS
 ########################################
 *.vsidx
-.vscode/
-.idea/
 logs/
 temp/
 tmp/
@@ -96,3 +99,9 @@ tmp/
 *.gz
 *.zip
 *.rar
+
+########################################
+# 🔹 SWAGGER / API TEST
+########################################
+*.swagger
+*.http
