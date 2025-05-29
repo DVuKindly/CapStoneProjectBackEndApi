@@ -25,6 +25,17 @@ namespace AuthService.API.Data
             modelBuilder.Entity<UserRole>().ToTable("UserRoles");
             modelBuilder.Entity<UserPermission>().ToTable("UserPermissions");
             modelBuilder.Entity<RolePermission>().ToTable("RolePermissions");
+            modelBuilder.Entity<Role>().HasData(
+    new Role { RoleId = SystemRoles.Guest, RoleKey = "guest", RoleName = "Khách chưa đăng ký", Description = "Khách chưa đăng ký gói, chỉ mới login" },
+    new Role { RoleId = SystemRoles.Member, RoleKey = "member", RoleName = "Thành viên" },
+    new Role { RoleId = SystemRoles.StaffService, RoleKey = "staff_service", RoleName = "Nhân viên vận hành dịch vụ" },
+    new Role { RoleId = SystemRoles.StaffOnboarding, RoleKey = "staff_onboarding", RoleName = "Nhân viên duyệt hồ sơ" },
+    new Role { RoleId = SystemRoles.Manager, RoleKey = "manager", RoleName = "Quản lý hệ thống" },
+    new Role { RoleId = SystemRoles.Admin, RoleKey = "admin", RoleName = "Quản trị hệ thống" },
+    new Role { RoleId = SystemRoles.Coaching, RoleKey = "coaching", RoleName = "Hướng dẫn viên" },
+    new Role { RoleId = SystemRoles.Partner, RoleKey = "partner", RoleName = "Đối tác nội dung" }
+);
+
 
             modelBuilder.Entity<UserRole>()
                 .HasKey(ur => new { ur.UserId, ur.RoleId });
@@ -80,6 +91,7 @@ namespace AuthService.API.Data
             modelBuilder.Entity<UserAuth>()
                 .Property(u => u.IsLocked)
                 .HasDefaultValue(false);
+
         }
     }
 }
