@@ -1,4 +1,4 @@
-Back end lấy project về lưu ý 
-1. tạo ra 2 file .env và docker-compose.yml
-
-2. Liên hệ Leader để lấy code và past vào key tránh lộ key ra ngoài 
+1 Clone code từ GitHub về
+2. Tạo sẵn file .env và docker-compose.yml nếu chưa có
+3. Liên hệ Leader để lấy code example env và docker ( Nếu có sẵn nhưng rỗng thì chỉ cần lấy code past vào )
+4. Ở mỗi project cần làm tạo 1 DockerFile 
