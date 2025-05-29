@@ -25,6 +25,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BffService.API", "BffServic
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedKernel", "Shared\SharedKernel\SharedKernel.csproj", "{B1F31BD8-6440-4230-8460-B931233BA427}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C97C9403-4FA7-4835-96F3-C48112F9A2F7}"
+	ProjectSection(SolutionItems) = preProject
+		.env = .env
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MembershipService.API", "MicroServices\MembershipService.API\MembershipService.API\MembershipService.API.csproj", "{7C9A14E8-9AF4-4709-A7B0-F9AC14579E4B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +75,10 @@ Global
 		{B1F31BD8-6440-4230-8460-B931233BA427}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1F31BD8-6440-4230-8460-B931233BA427}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1F31BD8-6440-4230-8460-B931233BA427}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C9A14E8-9AF4-4709-A7B0-F9AC14579E4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C9A14E8-9AF4-4709-A7B0-F9AC14579E4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C9A14E8-9AF4-4709-A7B0-F9AC14579E4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C9A14E8-9AF4-4709-A7B0-F9AC14579E4B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,6 +92,7 @@ Global
 		{7EDC951E-F032-487D-90BA-11772C5389D9} = {335E1B4C-3E61-430E-8565-04D20907897C}
 		{DC283463-5417-4AB5-8159-6C379571229E} = {335E1B4C-3E61-430E-8565-04D20907897C}
 		{B1F31BD8-6440-4230-8460-B931233BA427} = {0E18E356-0AF1-4616-B5DB-9DFF3FEF553C}
+		{7C9A14E8-9AF4-4709-A7B0-F9AC14579E4B} = {335E1B4C-3E61-430E-8565-04D20907897C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {388960DE-06F6-4DF5-89DE-1284EE76BB14}
