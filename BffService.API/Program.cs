@@ -44,14 +44,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<AuthProxyService>();
-
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -61,6 +53,14 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 
 
 app.UseCors(); 
