@@ -49,7 +49,7 @@ namespace AuthService.API.Services
             };
 
            
-            var guestRole = await _userRepository.GetRoleByKeyAsync("guest");
+            var guestRole = await _userRepository.GetRoleByKeyAsync("User");
             user.UserRoles = new List<UserRole>
     {
         new UserRole
