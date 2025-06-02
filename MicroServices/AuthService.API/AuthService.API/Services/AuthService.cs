@@ -26,13 +26,21 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Mật khẩu không được để trống."
+                };
+            }
+
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
-                return new AuthResponse { Success = false, Message = "Email already registered." };
+                return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
             }
 
-            // 1. Khởi tạo user mới
             var user = new UserAuth
             {
                 UserId = Guid.NewGuid(),
@@ -45,10 +53,8 @@ namespace AuthService.API.Services
                 UpdatedAt = DateTime.UtcNow,
                 EmailVerified = false,
                 IsLocked = false,
-
             };
 
-           
             var guestRole = await _userRepository.GetRoleByKeyAsync("User");
             user.UserRoles = new List<UserRole>
     {
@@ -61,8 +67,6 @@ namespace AuthService.API.Services
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
-
-         
             await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken!);
 
             return new AuthResponse
@@ -75,6 +79,7 @@ namespace AuthService.API.Services
                 RefreshToken = string.Empty
             };
         }
+
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
@@ -100,7 +105,6 @@ namespace AuthService.API.Services
                 return new AuthResponse { Success = false, Message = "Sai mật khẩu." };
             }
 
-            // ✅ Sinh access token
             var accessToken = _tokenService.GenerateAccessToken(user);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
@@ -245,6 +249,7 @@ namespace AuthService.API.Services
                     UserName = request.FullName,
                     Provider = "Google",
                     ProviderId = request.ProviderId,
+                    PasswordHash = null, 
                     EmailVerified = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -270,5 +275,6 @@ namespace AuthService.API.Services
                 FullName = user.UserName
             };
         }
+
     }
 }

@@ -36,12 +36,15 @@ namespace BffService.API.Controllers.Auth
             return result?.Success == true ? Ok(result) : Unauthorized(result);
         }
 
-        [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+        [HttpGet("/api/auth/verify-email")]
+        public async Task<IActionResult> RedirectVerifyEmail([FromQuery] string token)
         {
-            var result = await _authService.VerifyEmailAsync(request);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
+            var result = await _authService.VerifyEmailAsync(new VerifyEmailRequest { Token = token });
+            if (result?.Success == true)
+                return Ok("✅ Email verified successfully!");
+            return BadRequest("❌ Verification failed or token expired.");
         }
+
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)

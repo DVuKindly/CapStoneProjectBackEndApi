@@ -14,7 +14,7 @@ namespace AuthService.API.Entities
         public string Email { get; set; }
 
         [Required]
-        public string PasswordHash { get; set; }
+        public string? PasswordHash { get; set; }
 
         public bool EmailVerified { get; set; } = false;
 

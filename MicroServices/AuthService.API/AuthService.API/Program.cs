@@ -1,5 +1,6 @@
 ﻿using AuthService.API.Data;
 using AuthService.API.Entities;
+using AuthService.API.Helpers;
 using AuthService.API.Repositories;
 using AuthService.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using AuthService.API.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,18 @@ builder.Services.AddControllers();
  https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+builder.Services.Configure<EmailSettings>(options =>
+{
+    options.Host = Environment.GetEnvironmentVariable("EMAIL_HOST")!;
+    options.Port = int.Parse(Environment.GetEnvironmentVariable("EMAIL_PORT")!);
+    options.Username = Environment.GetEnvironmentVariable("EMAIL_USERNAME")!;
+    options.Password = Environment.GetEnvironmentVariable("EMAIL_PASSWORD")!;
+    options.FromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? "NextU";
+});
+
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 
 DotNetEnv.Env.Load(Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.Parent!.Parent!.FullName, ".env"));
