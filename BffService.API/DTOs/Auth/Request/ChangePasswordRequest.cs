@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AuthService.API.DTOs.Request
+namespace BffService.API.DTOs.Auth.Request
 {
     public class ChangePasswordRequest
     {
-   [Required]
+
+
+        [Required]
         public string OldPassword { get; set; }
 
         [Required]

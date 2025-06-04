@@ -7,13 +7,13 @@ namespace AuthService.API.Services
     {
         Task<AuthResponse> RegisterAsync(RegisterRequest request);
         Task<AuthResponse> LoginAsync(LoginRequest request);
-        Task LogoutAsync(string userId);
         Task<AuthResponse> RefreshTokenAsync(string token);
-        Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);
-        Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
-        Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
+        Task<AuthResponse> ChangePasswordAsync(ChangePasswordRequest request, string token);
+        Task<AuthResponse> ForgotPasswordAsync(ForgotPasswordRequest request);
+        Task<AuthResponse> ResetPasswordAsync(ResetPasswordRequest request);
+        Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request);
+        Task<AuthResponse> LogoutAsync(string token);
         Task<bool> VerifyEmailAsync(string token);
         Task<AuthStatusResponse> GetStatusAsync(string userId);
-        Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request);
     }
 }

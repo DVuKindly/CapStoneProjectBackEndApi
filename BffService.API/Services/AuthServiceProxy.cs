@@ -2,6 +2,8 @@
 using System.Net.Http.Headers;
 using BffService.API.DTOs.Auth.Request;
 using BffService.API.DTOs.Auth.Response;
+using System.Text.Json.Serialization;
+using System.Text;
 
 namespace BffService.API.Services
 {
@@ -67,7 +69,6 @@ namespace BffService.API.Services
             return await response.Content.ReadFromJsonAsync<AuthResponse>();
         }
 
-
         public async Task<AuthStatusResponse?> GetStatusAsync(string userId, string token)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, $"/api/auth/status/{userId}");
@@ -75,5 +76,72 @@ namespace BffService.API.Services
             var response = await _httpClient.SendAsync(request);
             return await response.Content.ReadFromJsonAsync<AuthStatusResponse>();
         }
+
+        public async Task<AuthResponse?> LogoutAsync(string token)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);  
+
+                var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = $"AuthService error: {response.StatusCode} - {errorContent}"
+                    };
+                }
+                return await response.Content.ReadFromJsonAsync<AuthResponse>();
+            }
+            catch (Exception ex)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = $"Exception occurred: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<AuthResponse?> ChangePasswordAsync(ChangePasswordRequest request, string token)
+        {
+            try
+            {
+                var requestMessage = new HttpRequestMessage(HttpMethod.Post, "/api/auth/change-password");
+                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                // Dùng JsonContent.Create thay vì StringContent
+                requestMessage.Content = JsonContent.Create(request);
+
+                var response = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseContentRead);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = $"AuthService error: {response.StatusCode} - {errorContent}"
+                    };
+                }
+
+                return await response.Content.ReadFromJsonAsync<AuthResponse>();
+            }
+            catch (Exception ex)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = $"Exception occurred: {ex.Message}"
+                };
+            }
+        }
+
+
+
+
     }
 }

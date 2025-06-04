@@ -1,5 +1,7 @@
 ﻿using BffService.API.DTOs.Auth.Request;
+using BffService.API.DTOs.Auth.Response;
 using BffService.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BffService.API.Controllers.Auth
@@ -36,7 +38,7 @@ namespace BffService.API.Controllers.Auth
             return result?.Success == true ? Ok(result) : Unauthorized(result);
         }
 
-        [HttpGet("/api/auth/verify-email")]
+        [HttpGet("verify-email")]
         public async Task<IActionResult> RedirectVerifyEmail([FromQuery] string token)
         {
             var result = await _authService.VerifyEmailAsync(new VerifyEmailRequest { Token = token });
@@ -44,7 +46,6 @@ namespace BffService.API.Controllers.Auth
                 return Ok("✅ Email verified successfully!");
             return BadRequest("❌ Verification failed or token expired.");
         }
-
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
@@ -60,6 +61,25 @@ namespace BffService.API.Controllers.Auth
             return result?.Success == true ? Ok(result) : BadRequest(result);
         }
 
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+          
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new BaseResponse { Success = false, Message = "Token is missing or invalid." });
+            }
+
+            var result = await _authService.ChangePasswordAsync(request, token);
+            return result?.Success == true ? Ok(result) : BadRequest(result);
+        }
+
+
+
+
         [HttpPost("google-login")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
         {
@@ -68,11 +88,24 @@ namespace BffService.API.Controllers.Auth
         }
 
         [HttpGet("status/{userId}")]
+        [Authorize]
         public async Task<IActionResult> GetStatus([FromRoute] string userId)
         {
             var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
             var result = await _authService.GetStatusAsync(userId, token);
             return Ok(result);
         }
+
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var result = await _authService.LogoutAsync(token);
+            return result?.Success == true ? Ok(result) : Unauthorized(result);
+        }
+
+
+
     }
 }

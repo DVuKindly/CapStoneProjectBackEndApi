@@ -1,9 +1,16 @@
-﻿namespace BffService.API.DTOs.Auth.Request
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BffService.API.DTOs.Auth.Request
 {
     public class RegisterRequest
     {
-        public string UserName { get; set; } = null!;
-        public string Email { get; set; } = null!;
-        public string Password { get; set; } = null!;
+        [Required]
+        public string UserName { get; set; }
+
+        [Required, EmailAddress]
+        public string Email { get; set; }
+
+        [Required, MinLength(6)]
+        public string Password { get; set; }
     }
 }

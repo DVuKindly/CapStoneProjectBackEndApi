@@ -1,7 +1,10 @@
-﻿namespace BffService.API.DTOs.Auth.Request
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BffService.API.DTOs.Auth.Request
 {
     public class RefreshTokenRequest
     {
-        public string RefreshToken { get; set; } = null!;
+        [Required]
+        public string RefreshToken { get; set; }
     }
 }

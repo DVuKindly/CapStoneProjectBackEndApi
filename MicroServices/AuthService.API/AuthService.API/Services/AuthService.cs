@@ -3,6 +3,7 @@ using AuthService.API.DTOs.Responses;
 using AuthService.API.Entities;
 using AuthService.API.Repositories;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 namespace AuthService.API.Services
 {
@@ -57,13 +58,13 @@ namespace AuthService.API.Services
 
             var guestRole = await _userRepository.GetRoleByKeyAsync("User");
             user.UserRoles = new List<UserRole>
-    {
-        new UserRole
-        {
-            UserId = user.UserId,
-            RoleId = guestRole.RoleId
-        }
-    };
+            {
+                new UserRole
+                {
+                    UserId = user.UserId,
+                    RoleId = guestRole.RoleId
+                }
+            };
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
@@ -79,7 +80,6 @@ namespace AuthService.API.Services
                 RefreshToken = string.Empty
             };
         }
-
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
@@ -122,7 +122,6 @@ namespace AuthService.API.Services
                 };
             }
 
-
             return new AuthResponse
             {
                 Success = true,
@@ -131,16 +130,6 @@ namespace AuthService.API.Services
                 AccessToken = accessToken,
                 RefreshToken = refreshToken
             };
-        }
-
-        public async Task LogoutAsync(string userId)
-        {
-            var user = await _userRepository.GetByIdAsync(Guid.Parse(userId));
-            if (user == null) return;
-
-            user.RefreshToken = null;
-            user.RefreshTokenExpiry = null;
-            await _userRepository.SaveChangesAsync();
         }
 
         public async Task<AuthResponse> RefreshTokenAsync(string token)
@@ -166,10 +155,60 @@ namespace AuthService.API.Services
             };
         }
 
-        public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request)
+        public async Task<AuthResponse> ChangePasswordAsync(ChangePasswordRequest request, string token)
+        {
+            try
+            {
+                // Lấy thông tin user từ token
+                var userPrincipal = _tokenService.GetPrincipalFromExpiredToken(token);
+                if (userPrincipal == null)
+                {
+                    return new AuthResponse { Success = false, Message = "Invalid or expired token." };
+                }
+
+                var userIdClaim = userPrincipal.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return new AuthResponse { Success = false, Message = "User ID not found in token." };
+                }
+
+                var user = await _userRepository.GetByIdAsync(Guid.Parse(userIdClaim.Value));
+                if (user == null)
+                {
+                    return new AuthResponse { Success = false, Message = "User not found." };
+                }
+
+                var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.OldPassword);
+                if (result == PasswordVerificationResult.Failed)
+                {
+                    return new AuthResponse { Success = false, Message = "Invalid old password." };
+                }
+
+                user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _userRepository.SaveChangesAsync();
+
+                return new AuthResponse { Success = true, Message = "Password changed successfully." };
+            }
+            catch (Exception ex)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = $"An error occurred: {ex.Message}"
+                };
+            }
+        }
+
+
+        public async Task<AuthResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
-            if (user == null) return false;
+            if (user == null)
+            {
+                return new AuthResponse { Success = false, Message = "Email không tồn tại." };
+            }
 
             user.ResetPasswordToken = Guid.NewGuid().ToString();
             user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(2);
@@ -177,13 +216,17 @@ namespace AuthService.API.Services
             await _userRepository.SaveChangesAsync();
             await _emailService.SendResetPasswordEmailAsync(user.Email, user.ResetPasswordToken!);
 
-            return true;
+            return new AuthResponse { Success = true, Message = "Đã gửi email để reset mật khẩu." };
         }
 
-        public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
+
+        public async Task<AuthResponse> ResetPasswordAsync(ResetPasswordRequest request)
         {
             var user = await _userRepository.GetByResetPasswordTokenAsync(request.Token);
-            if (user == null || user.ResetPasswordTokenExpiry < DateTime.UtcNow) return false;
+            if (user == null || user.ResetPasswordTokenExpiry < DateTime.UtcNow)
+            {
+                return new AuthResponse { Success = false, Message = "Token không hợp lệ hoặc đã hết hạn." };
+            }
 
             user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
             user.ResetPasswordToken = null;
@@ -191,23 +234,10 @@ namespace AuthService.API.Services
             user.UpdatedAt = DateTime.UtcNow;
 
             await _userRepository.SaveChangesAsync();
-            return true;
+
+            return new AuthResponse { Success = true, Message = "Mật khẩu đã được thay đổi thành công." };
         }
 
-        public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
-        {
-            var user = await _userRepository.GetByIdAsync(Guid.Parse(request.UserId));
-            if (user == null) return false;
-
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.OldPassword);
-            if (result == PasswordVerificationResult.Failed) return false;
-
-            user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
-            user.UpdatedAt = DateTime.UtcNow;
-
-            await _userRepository.SaveChangesAsync();
-            return true;
-        }
 
         public async Task<bool> VerifyEmailAsync(string token)
         {
@@ -249,7 +279,7 @@ namespace AuthService.API.Services
                     UserName = request.FullName,
                     Provider = "Google",
                     ProviderId = request.ProviderId,
-                    PasswordHash = null, 
+                    PasswordHash = null,
                     EmailVerified = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -276,5 +306,34 @@ namespace AuthService.API.Services
             };
         }
 
+
+        public async Task<AuthResponse> LogoutAsync(string token)
+        {
+           
+            var userPrincipal = _tokenService.GetPrincipalFromExpiredToken(token);
+            if (userPrincipal == null)
+            {
+                return new AuthResponse { Success = false, Message = "Invalid token." };
+            }
+
+            var userIdClaim = userPrincipal.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return new AuthResponse { Success = false, Message = "User not found." };
+            }
+
+            var user = await _userRepository.GetByIdAsync(Guid.Parse(userIdClaim.Value));
+            if (user == null)
+            {
+                return new AuthResponse { Success = false, Message = "User not found." };
+            }
+
+           
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            await _userRepository.SaveChangesAsync();
+
+            return new AuthResponse { Success = true, Message = "Logged out successfully." };
+        }
     }
 }

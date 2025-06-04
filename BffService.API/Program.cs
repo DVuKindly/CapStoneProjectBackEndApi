@@ -1,12 +1,13 @@
 ﻿using BffService.API.Services;
-using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env
+
 var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
 if (!File.Exists(envPath))
 {
@@ -15,13 +16,21 @@ if (!File.Exists(envPath))
 }
 DotNetEnv.Env.Load(envPath);
 
-// Load JWT từ .env
+
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
                ?? throw new InvalidOperationException("Missing JWT_SECRET_KEY in .env");
 
 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
-// Setup JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -41,28 +50,44 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-
-builder.Services.AddHttpClient<AuthProxyService>((sp, client) =>
+builder.Services.AddHttpClient<AuthProxyService>(client =>
 {
-    var config = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = config["Services:AuthService"];
-    if (string.IsNullOrEmpty(baseUrl))
-        throw new InvalidOperationException("AuthService URL missing in appsettings.json");
-
-    client.BaseAddress = new Uri(baseUrl);
+    client.BaseAddress = new Uri("http://localhost:5001"); 
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
-builder.Services.AddCors(options =>
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(c =>
 {
-    options.AddDefaultPolicy(policy =>
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "BffService.API", Version = "v1" });
+
+   
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        Description = "Enter 'Bearer' [space] and then your token",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 
@@ -71,11 +96,17 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "BffService API v1");
+        c.RoutePrefix = "swagger";  
+    });
 }
 
-app.UseCors();
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseCors();  
+app.UseAuthentication();  
+app.UseAuthorization();  
+
 app.MapControllers();
+
 app.Run();

@@ -1,7 +1,10 @@
-﻿namespace BffService.API.DTOs.Auth.Request
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BffService.API.DTOs.Auth.Request
 {
     public class VerifyEmailRequest
     {
-        public string Token { get; set; } = string.Empty;
+        [Required]
+        public string Token { get; set; }
     }
 }
