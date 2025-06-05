@@ -103,7 +103,8 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseCors();  
+app.UseCors("AllowAllOrigins"); // Không được thiếu dấu, sai hoa thường
+
 app.UseAuthentication();  
 app.UseAuthorization();  
 
