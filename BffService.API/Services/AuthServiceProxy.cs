@@ -113,7 +113,7 @@ namespace BffService.API.Services
                 var requestMessage = new HttpRequestMessage(HttpMethod.Post, "/api/auth/change-password");
                 requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                // Dùng JsonContent.Create thay vì StringContent
+               
                 requestMessage.Content = JsonContent.Create(request);
 
                 var response = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseContentRead);

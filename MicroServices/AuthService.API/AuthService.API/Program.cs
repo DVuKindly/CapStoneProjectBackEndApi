@@ -17,11 +17,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Load .env
 DotNetEnv.Env.Load(Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.Parent!.Parent!.FullName, ".env"));
 
-// Thêm các dịch vụ cần thiết
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Cấu hình JWT Authentication
+
 var jwt = new JwtSettings
 {
     SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")!,
@@ -31,7 +31,7 @@ var jwt = new JwtSettings
     RefreshTokenDays = int.Parse(Environment.GetEnvironmentVariable("JWT_REFRESH_TOKEN_DAYS") ?? "7")
 };
 
-// Đăng ký JWT Settings
+
 builder.Services.Configure<JwtSettings>(opts =>
 {
     opts.SecretKey = jwt.SecretKey;
@@ -41,7 +41,6 @@ builder.Services.Configure<JwtSettings>(opts =>
     opts.RefreshTokenDays = jwt.RefreshTokenDays;
 });
 
-// Cấu hình JWT Authentication
 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SecretKey));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -63,7 +62,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             };
         });
 
-// Cấu hình Swagger với Bearer token
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthService.API", Version = "v1" });
@@ -91,7 +89,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Cấu hình DbContext cho AuthService
+
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("Default"),

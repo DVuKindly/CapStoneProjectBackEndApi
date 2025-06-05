@@ -31,12 +31,16 @@ namespace AuthService.API.Services
 
         public async Task SendResetPasswordEmailAsync(string email, string resetToken)
         {
-            var link = $"{_baseUrl}/api/auth/reset-password?token={resetToken}";
+           
+            var resetBaseUrl = "http://localhost:3000";
+
+            var link = $"{resetBaseUrl}/reset-password?token={resetToken}";
             var subject = "Khôi phục mật khẩu NextU";
             var body = $"<p>Nhấn vào liên kết sau để đặt lại mật khẩu:</p><p><a href='{link}'>{link}</a></p>";
 
             await SendEmailAsync(email, subject, body);
         }
+
 
         private async Task SendEmailAsync(string toEmail, string subject, string htmlContent)
         {

@@ -214,6 +214,7 @@ namespace AuthService.API.Services
             user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(2);
 
             await _userRepository.SaveChangesAsync();
+            var resetPasswordUrl = $"http://localhost:3000/reset-password?token={user.ResetPasswordToken}";
             await _emailService.SendResetPasswordEmailAsync(user.Email, user.ResetPasswordToken!);
 
             return new AuthResponse { Success = true, Message = "Đã gửi email để reset mật khẩu." };
