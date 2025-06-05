@@ -62,6 +62,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             };
         });
 
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthService.API", Version = "v1" });
@@ -89,7 +90,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("Default"),
@@ -102,8 +102,8 @@ builder.Services.AddScoped<IAuthService, AuthService.API.Services.AuthService>()
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordHasher<UserAuth>, PasswordHasher<UserAuth>>();
+builder.Services.AddScoped<IUserServiceClient, UserServiceClient>();
 
-// Cấu hình các tham số Email từ .env
 builder.Services.Configure<EmailSettings>(options =>
 {
     options.Host = Environment.GetEnvironmentVariable("EMAIL_HOST")!;
@@ -113,10 +113,15 @@ builder.Services.Configure<EmailSettings>(options =>
     options.FromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? "NextU";
 });
 
-// Xây dựng ứng dụng
+builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5005");
+});
+
+
 var app = builder.Build();
 
-// Cấu hình cho môi trường phát triển
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
