@@ -23,11 +23,13 @@ var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins", builder =>
+    options.AddPolicy("AllowFrontend3000", builder =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
+        builder
+            .WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); 
     });
 });
 
@@ -103,7 +105,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseCors("AllowAllOrigins"); // Không được thiếu dấu, sai hoa thường
+app.UseCors("AllowFrontend3000");
 
 app.UseAuthentication();  
 app.UseAuthorization();  
