@@ -8,18 +8,19 @@ namespace AuthService.API.Entities
         public Guid UserId { get; set; }
 
         [Required, MaxLength(100)]
-        public string UserName { get; set; }
+        public string UserName { get; set; } = null!; // ✅ khởi tạo để tránh CS8618
 
         [Required, EmailAddress]
-        public string Email { get; set; }
+        public string Email { get; set; } = null!; // ✅ khởi tạo để tránh CS8618
 
         [Required]
-        public string? PasswordHash { get; set; }
+        public string? PasswordHash { get; set; } // nullable là đúng nếu hỗ trợ Google login
 
         public bool EmailVerified { get; set; } = false;
 
         public string? EmailVerificationToken { get; set; }
         public DateTime? EmailVerificationExpiry { get; set; }
+
         public string? ResetPasswordToken { get; set; }
         public DateTime? ResetPasswordTokenExpiry { get; set; }
 
@@ -29,14 +30,14 @@ namespace AuthService.API.Entities
         public int LoginAttempt { get; set; } = 0;
         public bool IsLocked { get; set; } = false;
 
-        public string? Provider { get; set; } 
+        public string? Provider { get; set; }
         public string? ProviderId { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-      
-        public ICollection<UserRole> UserRoles { get; set; }
-        public ICollection<UserPermission> UserPermissions { get; set; }
+     
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        public ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
     }
 }

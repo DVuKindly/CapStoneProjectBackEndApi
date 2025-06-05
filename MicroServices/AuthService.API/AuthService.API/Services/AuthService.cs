@@ -13,16 +13,19 @@ namespace AuthService.API.Services
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
         private readonly IPasswordHasher<UserAuth> _passwordHasher;
+        private readonly IUserServiceClient _userServiceClient;
 
         public AuthService(
             IUserRepository userRepository,
             ITokenService tokenService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IUserServiceClient userServiceClient)
         {
             _userRepository = userRepository;
             _tokenService = tokenService;
             _emailService = emailService;
             _passwordHasher = new PasswordHasher<UserAuth>();
+            _userServiceClient = userServiceClient;
         }
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -68,6 +71,12 @@ namespace AuthService.API.Services
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+            await _userServiceClient.CreateUserProfileAsync(
+        user.UserId, 
+        user.UserName,
+        user.Email
+    );
+
             await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken!);
 
             return new AuthResponse
@@ -159,7 +168,7 @@ namespace AuthService.API.Services
         {
             try
             {
-                // Lấy thông tin user từ token
+             
                 var userPrincipal = _tokenService.GetPrincipalFromExpiredToken(token);
                 if (userPrincipal == null)
                 {
