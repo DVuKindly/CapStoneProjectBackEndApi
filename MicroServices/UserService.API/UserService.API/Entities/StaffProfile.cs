@@ -8,7 +8,7 @@ namespace UserService.API.Entities
         public Guid Id { get; set; }
 
         [Required]
-        public Guid AccountId { get; set; } // ✅ Đã đổi sang Guid
+        public Guid AccountId { get; set; }
 
         [ForeignKey(nameof(AccountId))]
         public UserProfile? UserProfile { get; set; }

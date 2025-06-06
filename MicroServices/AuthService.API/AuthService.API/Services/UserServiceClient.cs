@@ -1,7 +1,6 @@
 ﻿using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using AuthService.API.Services;
@@ -65,43 +64,31 @@ public class UserServiceClient : IUserServiceClient
                 profilePayload.ManagerId = extra.ManagerId;
             }
 
-            var basicJson = JsonSerializer.Serialize(profilePayload);
-            var basicContent = new StringContent(basicJson, Encoding.UTF8, "application/json");
-            var preResponse = await _httpClient.PostAsync("/api/userprofiles", basicContent);
-
-            if (!preResponse.IsSuccessStatusCode)
-            {
-                var err = await preResponse.Content.ReadAsStringAsync();
-                _logger.LogWarning("⚠️ Could not pre-create user profile: {StatusCode} - {Error}", preResponse.StatusCode, err);
-            }
-
+            // Gọi đúng endpoint theo role
             var endpoint = roleType switch
             {
                 "partner" => "/api/userprofiles/create-partner",
                 "coaching" => "/api/userprofiles/create-coach",
                 "staff_service" or "staff_onboarding" => "/api/userprofiles/create-staff",
-                _ => null
+                _ => "/api/userprofiles" // Default cho user/admin
             };
 
-            if (endpoint != null)
+            var jsonPayload = JsonSerializer.Serialize(profilePayload);
+            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+            _logger.LogInformation("📤 Sending CreateUserProfile ({Role}) → {Endpoint}", roleType, endpoint);
+            _logger.LogDebug("Payload: {Json}", jsonPayload);
+
+            var response = await _httpClient.PostAsync(endpoint, content);
+
+            if (!response.IsSuccessStatusCode)
             {
-                var jsonPayload = JsonSerializer.Serialize(profilePayload);
-                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-
-                _logger.LogInformation("📤 Sending CreateUserProfile ({Role}) → {Endpoint}", roleType, endpoint);
-                _logger.LogDebug("Payload: {Json}", jsonPayload);
-
-                var response = await _httpClient.PostAsync(endpoint, content);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("❌ Failed to create role profile → {StatusCode}: {Error}", response.StatusCode, error);
-                }
-                else
-                {
-                    _logger.LogInformation("✅ Role profile created successfully for {Email}", email);
-                }
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogError("❌ Failed to create profile → {StatusCode}: {Error}", response.StatusCode, error);
+            }
+            else
+            {
+                _logger.LogInformation("✅ Profile created successfully for {Email}", email);
             }
         }
         catch (Exception ex)

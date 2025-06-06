@@ -124,6 +124,7 @@ namespace UserService.API.Data
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.AccountId).IsRequired();
+                entity.Property(e => e.PackageId).IsRequired(); // ✅ Thêm dòng này
                 entity.Property(e => e.RequestedPackageName).HasMaxLength(255);
                 entity.Property(e => e.Location).HasMaxLength(100);
                 entity.Property(e => e.Status).HasMaxLength(50);
@@ -138,6 +139,7 @@ namespace UserService.API.Data
                       .HasPrincipalKey(u => u.AccountId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
         }
     }
 }

@@ -1,0 +1,17 @@
+﻿namespace UserService.API.DTOs.Responses
+{
+    public class StaffProfileResponse
+    {
+        public Guid Id { get; set; }
+        public Guid AccountId { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
+        public string? Department { get; set; }
+        public string? Level { get; set; }
+        public string? Address { get; set; }
+        public string? Note { get; set; }
+        public Guid? ManagerId { get; set; }
+        public DateTime? JoinedDate { get; set; }
+        public bool IsActive { get; set; }
+    }
+}

@@ -2,7 +2,7 @@
 {
     public class CreateUserProfileRequest
     {
-        public string AccountId { get; set; } = null!;
+        public Guid AccountId { get; set; }
         public string FullName { get; set; } = null!;
         public string Email { get; set; } = null!;
     }

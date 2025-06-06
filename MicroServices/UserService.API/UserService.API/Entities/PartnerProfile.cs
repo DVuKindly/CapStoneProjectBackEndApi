@@ -28,7 +28,6 @@ namespace UserService.API.Entities
         public bool IsActivated { get; set; }
         public DateTime? ActivatedAt { get; set; }
 
-        // ✅ sửa lại thành Guid
         public Guid? CreatedByAdminId { get; set; }
 
         [MaxLength(255)]
