@@ -26,11 +26,13 @@ namespace AuthService.API.Services
             var roles = user.UserRoles?.Select(r => r.Role.RoleKey).ToList() ?? new();
 
             var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-                new Claim("roles", JsonConvert.SerializeObject(roles))
-            };
+{
+    new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? "")
+};
+
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

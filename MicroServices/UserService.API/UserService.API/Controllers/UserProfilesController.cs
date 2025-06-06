@@ -2,6 +2,7 @@
 using UserService.API.Constants;
 using UserService.API.Data;
 using UserService.API.DTOs.Requests;
+using UserService.API.DTOs.Requests.UserService.API.DTOs.Requests;
 using UserService.API.Entities;
 
 namespace UserService.API.Controllers
@@ -18,20 +19,31 @@ namespace UserService.API.Controllers
         }
 
         [HttpPost]
-     
         public async Task<IActionResult> Create([FromBody] CreateUserProfileRequest request)
         {
+            var role = string.IsNullOrEmpty(request.RoleType) ? "User" : request.RoleType;
+
+            DateTime? dob = null;
+            if (!string.IsNullOrEmpty(request.DOB) && DateTime.TryParse(request.DOB, out var parsedDob))
+            {
+                dob = parsedDob;
+            }
+
             var profile = new UserProfile
             {
                 Id = Guid.NewGuid(),
                 AccountId = request.AccountId.ToString(),
                 FullName = request.FullName,
-                RoleType = "User",
+                RoleType = role,
+                Phone = request.Phone,
+                Gender = request.Gender,
+                DOB = dob,
+                Location = request.Location,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 IsCompleted = false,
                 IsVerifiedByAdmin = false,
-                OnboardingStatus = OnboardingStatuses.PendingPackageSelection 
+                OnboardingStatus = OnboardingStatuses.PendingPackageSelection
             };
 
             await _context.UserProfiles.AddAsync(profile);
@@ -40,4 +52,7 @@ namespace UserService.API.Controllers
             return Ok();
         }
     }
+
+
 }
+

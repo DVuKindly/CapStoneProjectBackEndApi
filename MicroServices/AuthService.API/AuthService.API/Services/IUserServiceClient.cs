@@ -1,8 +1,15 @@
-﻿namespace AuthService.API.Services
+﻿using AuthService.API.DTOs.Request;
+
+namespace AuthService.API.Services
 {
     public interface IUserServiceClient
     {
-        Task<bool> CreateUserProfileAsync(Guid accountId, string fullName, string email);
+        Task CreateUserProfileAsync(
+            Guid userId,
+            string userName,
+            string email,
+            string roleType = "User",
+            ProfileInfoRequest? profileInfo = null
+        );
     }
-
 }

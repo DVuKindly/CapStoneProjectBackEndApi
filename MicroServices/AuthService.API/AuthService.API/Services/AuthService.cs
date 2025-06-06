@@ -4,6 +4,8 @@ using AuthService.API.Entities;
 using AuthService.API.Repositories;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AuthService.API.Services
 {
@@ -14,31 +16,32 @@ namespace AuthService.API.Services
         private readonly IEmailService _emailService;
         private readonly IPasswordHasher<UserAuth> _passwordHasher;
         private readonly IUserServiceClient _userServiceClient;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public AuthService(
             IUserRepository userRepository,
             ITokenService tokenService,
             IEmailService emailService,
-            IUserServiceClient userServiceClient)
+            IUserServiceClient userServiceClient,
+            IHttpContextAccessor httpContextAccessor)
         {
             _userRepository = userRepository;
             _tokenService = tokenService;
             _emailService = emailService;
+            _httpContextAccessor = httpContextAccessor;
             _passwordHasher = new PasswordHasher<UserAuth>();
             _userServiceClient = userServiceClient;
         }
 
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.Password))
-            {
-                return new AuthResponse
-                {
-                    Success = false,
-                    Message = "Mật khẩu không được để trống."
-                };
-            }
 
+
+
+
+
+
+
+        public async Task<AuthResponse> RegisterAdminAsync(AdminRegisterRequest request)
+        {
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
@@ -51,44 +54,97 @@ namespace AuthService.API.Services
                 UserName = request.UserName,
                 Email = request.Email,
                 PasswordHash = _passwordHasher.HashPassword(null!, request.Password),
-                EmailVerificationToken = Guid.NewGuid().ToString(),
-                EmailVerificationExpiry = DateTime.UtcNow.AddHours(24),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                EmailVerified = false,
                 IsLocked = false,
+                EmailVerified = request.SkipEmailVerification,
+                EmailVerificationToken = request.SkipEmailVerification ? null : Guid.NewGuid().ToString(),
+                EmailVerificationExpiry = request.SkipEmailVerification ? null : DateTime.UtcNow.AddHours(24)
             };
 
-            var guestRole = await _userRepository.GetRoleByKeyAsync("User");
-            user.UserRoles = new List<UserRole>
+            var role = await _userRepository.GetRoleByKeyAsync(request.RoleKey);
+            if (role == null)
             {
-                new UserRole
-                {
-                    UserId = user.UserId,
-                    RoleId = guestRole.RoleId
-                }
-            };
+                return new AuthResponse { Success = false, Message = "Vai trò không hợp lệ." };
+            }
+
+            user.UserRoles = new List<UserRole>
+    {
+        new UserRole
+        {
+            UserId = user.UserId,
+            RoleId = role.RoleId
+        }
+    };
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
-            await _userServiceClient.CreateUserProfileAsync(
-        user.UserId, 
-        user.UserName,
-        user.Email
-    );
 
-            await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken!);
+            // Serialize ProfileInfoRequest thành Dictionary<string, string>
+            var profileDict = new Dictionary<string, string>();
+            if (request.ProfileInfo != null)
+            {
+                var json = JsonSerializer.Serialize(request.ProfileInfo, new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                });
+
+                profileDict = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+            }
+
+            await _userServiceClient.CreateUserProfileAsync(
+                user.UserId,
+                user.UserName,
+                user.Email,
+                request.RoleKey,
+                request.ProfileInfo 
+            );
+
+
+            if (!request.SkipEmailVerification && user.EmailVerificationToken != null)
+            {
+                await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
+            }
 
             return new AuthResponse
             {
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
-                Message = "Đăng ký thành công. Vui lòng xác minh email để tiếp tục.",
+                Message = request.SkipEmailVerification
+                    ? "Tài khoản đã được tạo và xác minh bởi admin."
+                    : "Tài khoản đã được tạo. Vui lòng xác minh email.",
                 AccessToken = string.Empty,
                 RefreshToken = string.Empty
             };
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
@@ -345,5 +401,69 @@ namespace AuthService.API.Services
 
             return new AuthResponse { Success = true, Message = "Logged out successfully." };
         }
+
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+        {
+            var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+            if (existingUser != null)
+            {
+                return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
+            }
+
+            var user = new UserAuth
+            {
+                UserId = Guid.NewGuid(),
+                UserName = request.UserName,
+                Email = request.Email,
+                PasswordHash = _passwordHasher.HashPassword(null!, request.Password),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                IsLocked = false,
+                EmailVerified = false,
+                EmailVerificationToken = Guid.NewGuid().ToString(),
+                EmailVerificationExpiry = DateTime.UtcNow.AddHours(24)
+            };
+
+            var role = await _userRepository.GetRoleByKeyAsync("User");
+            if (role == null)
+            {
+                return new AuthResponse { Success = false, Message = "Không tìm thấy role mặc định." };
+            }
+
+            user.UserRoles = new List<UserRole>
+    {
+        new UserRole
+        {
+            UserId = user.UserId,
+            RoleId = role.RoleId
+        }
+    };
+
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            await _userServiceClient.CreateUserProfileAsync(
+                user.UserId,
+                user.UserName,
+                user.Email,
+                null
+            );
+
+            if (!string.IsNullOrEmpty(user.EmailVerificationToken))
+            {
+                await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
+            }
+
+            return new AuthResponse
+            {
+                Success = true,
+                Email = user.Email,
+                FullName = user.UserName,
+                Message = "Đăng ký thành công. Vui lòng xác minh email để tiếp tục.",
+                AccessToken = string.Empty,
+                RefreshToken = string.Empty
+            };
+        }
+
     }
 }

@@ -1,32 +1,79 @@
-﻿using AuthService.API.Services;
+﻿using AuthService.API.DTOs.Request;
+using AuthService.API.Services;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Net.Http;
+using Microsoft.Extensions.Logging;
+using System.Text.Json.Serialization;
 
 public class UserServiceClient : IUserServiceClient
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<UserServiceClient> _logger;
 
-    public UserServiceClient(HttpClient httpClient)
+    public UserServiceClient(HttpClient httpClient, ILogger<UserServiceClient> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
-    public async Task<bool> CreateUserProfileAsync(Guid accountId, string fullName, string email)
+    public async Task CreateUserProfileAsync(
+        Guid userId,
+        string userName,
+        string email,
+        string roleType = "User",
+        ProfileInfoRequest? profileInfo = null)
     {
-        var payload = new
+        // Convert ProfileInfoRequest thành Dictionary<string, string>
+        Dictionary<string, string> profileDict = new();
+        if (profileInfo != null)
         {
-            AccountId = accountId,
-            FullName = fullName,
-            Email = email
+            var json = JsonSerializer.Serialize(profileInfo, new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            });
+
+            profileDict = JsonSerializer.Deserialize<Dictionary<string, string>>(json)
+                          ?? new Dictionary<string, string>();
+        }
+
+        // Gộp toàn bộ thông tin thành payload động
+        var payload = new Dictionary<string, object>
+        {
+            ["AccountId"] = userId,
+            ["FullName"] = userName,
+            ["Email"] = email,
+            ["RoleType"] = roleType
         };
 
-        var json = JsonSerializer.Serialize(payload);
+        // Merge thêm profileDict vào payload
+        foreach (var kv in profileDict)
+        {
+            payload[kv.Key] = kv.Value;
+        }
 
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var jsonPayload = JsonSerializer.Serialize(payload);
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync("/api/userprofiles", content);
+        try
+        {
+            _logger.LogInformation("📤 Sending CreateUserProfile request: {Json}", jsonPayload);
 
-        return response.IsSuccessStatusCode;
+            var response = await _httpClient.PostAsync("/api/userprofiles", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogError("❌ Failed to create user profile: {StatusCode} - {Error}", response.StatusCode, error);
+            }
+            else
+            {
+                _logger.LogInformation("✅ Successfully created user profile for {Email}", email);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Exception when calling UserService to create profile");
+        }
     }
 }

@@ -89,6 +89,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlServer(
@@ -115,11 +116,19 @@ builder.Services.Configure<EmailSettings>(options =>
 
 builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5005");
+    client.BaseAddress = new Uri("http://localhost:5005"); // user 
 });
 
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AuthDbContext>();
+    var hasher = services.GetRequiredService<IPasswordHasher<UserAuth>>();
+    var userServiceClient = services.GetRequiredService<IUserServiceClient>();
+    await DbInitializer.SeedAsync(context, hasher, userServiceClient);
+}
 
 
 if (app.Environment.IsDevelopment())

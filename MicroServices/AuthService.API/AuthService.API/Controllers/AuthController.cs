@@ -140,5 +140,41 @@ namespace AuthService.API.Controllers
             var result = await _authService.GoogleLoginAsync(request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
+        [Authorize(Roles = "admin")]
+        [HttpPost("register-staff-onboarding")]
+        public async Task<IActionResult> RegisterStaffOnboarding([FromBody] AdminRegisterRequest request)
+        {
+            request.RoleKey = "staff_onboarding";
+            var result = await _authService.RegisterAdminAsync(request);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("register-staff-service")]
+        public async Task<IActionResult> RegisterStaffService([FromBody] AdminRegisterRequest request)
+        {
+            request.RoleKey = "staff_service";
+            var result = await _authService.RegisterAdminAsync(request);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("register-partner")]
+        public async Task<IActionResult> RegisterPartner([FromBody] AdminRegisterRequest request)
+        {
+            request.RoleKey = "partner";
+            var result = await _authService.RegisterAdminAsync(request);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("register-coaching")]
+        public async Task<IActionResult> RegisterCoaching([FromBody] AdminRegisterRequest request)
+        {
+            request.RoleKey = "coaching";
+            var result = await _authService.RegisterAdminAsync(request);
+            return Ok(result);
+        }
+
     }
 }

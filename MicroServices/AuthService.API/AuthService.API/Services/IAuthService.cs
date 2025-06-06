@@ -6,6 +6,7 @@ namespace AuthService.API.Services
     public interface IAuthService
     {
         Task<AuthResponse> RegisterAsync(RegisterRequest request);
+        Task<AuthResponse> RegisterAdminAsync(AdminRegisterRequest request);
         Task<AuthResponse> LoginAsync(LoginRequest request);
         Task<AuthResponse> RefreshTokenAsync(string token);
         Task<AuthResponse> ChangePasswordAsync(ChangePasswordRequest request, string token);
