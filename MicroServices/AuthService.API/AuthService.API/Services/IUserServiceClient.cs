@@ -1,4 +1,5 @@
-﻿using AuthService.API.DTOs.Request;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace AuthService.API.Services
 {
@@ -9,7 +10,7 @@ namespace AuthService.API.Services
             string userName,
             string email,
             string roleType = "User",
-            ProfileInfoRequest? profileInfo = null
+            object? profileInfo = null
         );
     }
 }

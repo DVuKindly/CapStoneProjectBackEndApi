@@ -1,19 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace UserService.API.Entities
+namespace BffService.API.DTOs.Auth.RequestProfileUser
 {
-    public class PartnerProfile
+    public class PartnerProfileInfoRequest
     {
-        public Guid Id { get; set; }
-
-        [Required]
-        public Guid AccountId { get; set; }
-
-        [ForeignKey(nameof(AccountId))]
-        public UserProfile? UserProfile { get; set; }
-
-        [MaxLength(255)]
+        [Required, MaxLength(255)]
         public string? OrganizationName { get; set; }
 
         [MaxLength(100)]
@@ -21,15 +12,6 @@ namespace UserService.API.Entities
 
         [MaxLength(100)]
         public string? Location { get; set; }
-
-        [MaxLength(500)]
-        public string? ContractUrl { get; set; }
-
-        public bool IsActivated { get; set; }
-        public DateTime? ActivatedAt { get; set; }
-
-        // ✅ sửa lại thành Guid
-        public Guid? CreatedByAdminId { get; set; }
 
         [MaxLength(255)]
         public string? RepresentativeName { get; set; }
@@ -48,7 +30,5 @@ namespace UserService.API.Entities
 
         [MaxLength(255)]
         public string? Industry { get; set; }
-
-        public DateTime? JoinedAt { get; set; }
     }
 }

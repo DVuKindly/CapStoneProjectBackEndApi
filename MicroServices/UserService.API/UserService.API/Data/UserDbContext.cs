@@ -24,7 +24,7 @@ namespace UserService.API.Data
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.AccountId).IsUnique();
 
-                entity.Property(e => e.AccountId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.AccountId).IsRequired();
                 entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Phone).HasMaxLength(20);
                 entity.Property(e => e.Gender).HasMaxLength(10);
@@ -46,11 +46,15 @@ namespace UserService.API.Data
                 entity.ToTable("CoachProfiles");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.AccountId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.AccountId).IsRequired();
                 entity.Property(e => e.CoachType).HasMaxLength(100);
                 entity.Property(e => e.Specialty).HasMaxLength(255);
                 entity.Property(e => e.ModuleInCharge).HasMaxLength(255);
                 entity.Property(e => e.Region).HasMaxLength(100);
+                entity.Property(e => e.ExperienceYears);
+                entity.Property(e => e.Bio).HasMaxLength(1000);
+                entity.Property(e => e.Certifications).HasMaxLength(500);
+                entity.Property(e => e.LinkedInUrl).HasMaxLength(255);
 
                 entity.HasOne(e => e.UserProfile)
                       .WithMany(u => u.CoachProfiles)
@@ -65,8 +69,17 @@ namespace UserService.API.Data
                 entity.ToTable("StaffProfiles");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.AccountId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.AccountId).IsRequired();
                 entity.Property(e => e.StaffGroup).HasMaxLength(100);
+                entity.Property(e => e.Department).HasMaxLength(100);
+                entity.Property(e => e.Level).HasMaxLength(50);
+                entity.Property(e => e.Phone).HasMaxLength(100);
+                entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.Address).HasMaxLength(255);
+                entity.Property(e => e.ManagerId);
+                entity.Property(e => e.Note).HasMaxLength(255);
+                entity.Property(e => e.JoinedDate);
+                entity.Property(e => e.IsActive).IsRequired();
 
                 entity.HasOne(e => e.UserProfile)
                       .WithMany(u => u.StaffProfiles)
@@ -81,14 +94,21 @@ namespace UserService.API.Data
                 entity.ToTable("PartnerProfiles");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.AccountId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.AccountId).IsRequired();
                 entity.Property(e => e.OrganizationName).HasMaxLength(255);
                 entity.Property(e => e.PartnerType).HasMaxLength(100);
                 entity.Property(e => e.Location).HasMaxLength(100);
                 entity.Property(e => e.ContractUrl).HasMaxLength(500);
                 entity.Property(e => e.IsActivated).IsRequired();
                 entity.Property(e => e.ActivatedAt);
-                entity.Property(e => e.CreatedByAdminId).HasMaxLength(100);
+                entity.Property(e => e.CreatedByAdminId);
+                entity.Property(e => e.RepresentativeName).HasMaxLength(255);
+                entity.Property(e => e.RepresentativePhone).HasMaxLength(100);
+                entity.Property(e => e.RepresentativeEmail).HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.WebsiteUrl).HasMaxLength(255);
+                entity.Property(e => e.Industry).HasMaxLength(255);
+                entity.Property(e => e.JoinedAt);
 
                 entity.HasOne(e => e.UserProfile)
                       .WithMany(u => u.PartnerProfiles)
@@ -97,18 +117,18 @@ namespace UserService.API.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // PENDING MEMBERSHIP REQUEST
+            // PENDING MEMBERSHIP
             modelBuilder.Entity<PendingMembershipRequest>(entity =>
             {
                 entity.ToTable("PendingMembershipRequests");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.AccountId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.AccountId).IsRequired();
                 entity.Property(e => e.RequestedPackageName).HasMaxLength(255);
                 entity.Property(e => e.Location).HasMaxLength(100);
                 entity.Property(e => e.Status).HasMaxLength(50);
                 entity.Property(e => e.StaffNote).HasMaxLength(1000);
-                entity.Property(e => e.ApprovedBy).HasMaxLength(100);
+                entity.Property(e => e.ApprovedBy);
                 entity.Property(e => e.ApprovedAt);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
 

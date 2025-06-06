@@ -1,19 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace UserService.API.Entities
+namespace UserService.API.DTOs.Requests
 {
-    public class CoachProfile
+    public class CreateCoachProfileRequest
     {
-        public Guid Id { get; set; }
-
         [Required]
         public Guid AccountId { get; set; }
 
-        [ForeignKey(nameof(AccountId))]
-        public UserProfile? UserProfile { get; set; }
-
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         public string? CoachType { get; set; }
 
         [MaxLength(255)]

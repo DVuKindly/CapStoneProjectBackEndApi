@@ -1,15 +1,12 @@
-﻿using AuthService.API.Data;
+﻿// Program.cs
+using AuthService.API.Data;
 using AuthService.API.Entities;
+using AuthService.API.Extensions;
 using AuthService.API.Helpers;
 using AuthService.API.Repositories;
 using AuthService.API.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using System.Security.Claims;
-using System.Text;
 using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,93 +14,28 @@ var builder = WebApplication.CreateBuilder(args);
 // Load .env
 DotNetEnv.Env.Load(Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.Parent!.Parent!.FullName, ".env"));
 
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// Setup JWT + Swagger
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddSwaggerWithBearer();
 
-var jwt = new JwtSettings
-{
-    SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")!,
-    Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "AuthService",
-    Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "AllMicroservices",
-    AccessTokenMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_MINUTES") ?? "30"),
-    RefreshTokenDays = int.Parse(Environment.GetEnvironmentVariable("JWT_REFRESH_TOKEN_DAYS") ?? "7")
-};
-
-
-builder.Services.Configure<JwtSettings>(opts =>
-{
-    opts.SecretKey = jwt.SecretKey;
-    opts.Issuer = jwt.Issuer;
-    opts.Audience = jwt.Audience;
-    opts.AccessTokenMinutes = jwt.AccessTokenMinutes;
-    opts.RefreshTokenDays = jwt.RefreshTokenDays;
-});
-
-var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SecretKey));
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = false;
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = jwt.Issuer,
-                ValidateAudience = true,
-                ValidAudience = jwt.Audience,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = key,
-                ClockSkew = TimeSpan.Zero,
-                NameClaimType = ClaimTypes.NameIdentifier,
-                RoleClaimType = ClaimTypes.Role
-            };
-        });
-
-
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthService.API", Version = "v1" });
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "Enter 'Bearer {token}'",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
-builder.Services.AddHttpContextAccessor();
-
+// Auth DB
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("Default"),
         sql => sql.EnableRetryOnFailure()
     ));
 
-// Cấu hình các dịch vụ
+// Dependency Injection
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService.API.Services.AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordHasher<UserAuth>, PasswordHasher<UserAuth>>();
 builder.Services.AddScoped<IUserServiceClient, UserServiceClient>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<EmailSettings>(options =>
 {
@@ -116,11 +48,12 @@ builder.Services.Configure<EmailSettings>(options =>
 
 builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5005"); // user 
+    client.BaseAddress = new Uri("http://localhost:5005");
 });
 
-
 var app = builder.Build();
+
+// Seed admin user
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -129,7 +62,6 @@ using (var scope = app.Services.CreateScope())
     var userServiceClient = services.GetRequiredService<IUserServiceClient>();
     await DbInitializer.SeedAsync(context, hasher, userServiceClient);
 }
-
 
 if (app.Environment.IsDevelopment())
 {

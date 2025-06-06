@@ -4,6 +4,7 @@ using BffService.API.DTOs.Auth.Request;
 using BffService.API.DTOs.Auth.Response;
 using System.Text.Json.Serialization;
 using System.Text;
+using BffService.API.DTOs.Auth.RequestProfileUser;
 
 namespace BffService.API.Services
 {
@@ -139,6 +140,47 @@ namespace BffService.API.Services
                 };
             }
         }
+        public async Task<AuthResponse?> RegisterStaffOnboardingAsync(AdminRegisterRequest request, string token)
+        {
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Auth/register-staff-onboarding");
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            httpRequest.Content = JsonContent.Create(request);
+
+            var response = await _httpClient.SendAsync(httpRequest);
+            return await response.Content.ReadFromJsonAsync<AuthResponse>();
+        }
+
+        public async Task<AuthResponse?> RegisterStaffServiceAsync(AdminRegisterRequest request, string token)
+        {
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Auth/register-staff-service");
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            httpRequest.Content = JsonContent.Create(request);
+
+            var response = await _httpClient.SendAsync(httpRequest);
+            return await response.Content.ReadFromJsonAsync<AuthResponse>();
+        }
+
+        public async Task<AuthResponse?> RegisterPartnerAsync(AdminRegisterRequest request, string token)
+        {
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Auth/register-partner");
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            httpRequest.Content = JsonContent.Create(request);
+
+            var response = await _httpClient.SendAsync(httpRequest);
+            return await response.Content.ReadFromJsonAsync<AuthResponse>();
+        }
+
+        public async Task<AuthResponse?> RegisterCoachingAsync(AdminRegisterRequest request, string token)
+        {
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Auth/register-coaching");
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            httpRequest.Content = JsonContent.Create(request);
+
+            var response = await _httpClient.SendAsync(httpRequest);
+            return await response.Content.ReadFromJsonAsync<AuthResponse>();
+        }
+
+
 
 
 

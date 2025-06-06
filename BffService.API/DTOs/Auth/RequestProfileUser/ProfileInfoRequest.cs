@@ -1,7 +1,8 @@
-﻿namespace AuthService.API.DTOs.Request
+﻿namespace BffService.API.DTOs.Auth.RequestProfileUser
 {
     public class ProfileInfoRequest
     {
+        // Common
         public string? Phone { get; set; }
         public string? Gender { get; set; }
         public string? DOB { get; set; }
@@ -31,5 +32,4 @@
         public string? WebsiteUrl { get; set; }
         public string? Industry { get; set; }
     }
-
 }

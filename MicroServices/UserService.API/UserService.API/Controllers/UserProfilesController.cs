@@ -32,7 +32,7 @@ namespace UserService.API.Controllers
             var profile = new UserProfile
             {
                 Id = Guid.NewGuid(),
-                AccountId = request.AccountId.ToString(),
+                AccountId = request.AccountId,
                 FullName = request.FullName,
                 RoleType = role,
                 Phone = request.Phone,
@@ -43,16 +43,21 @@ namespace UserService.API.Controllers
                 UpdatedAt = DateTime.UtcNow,
                 IsCompleted = false,
                 IsVerifiedByAdmin = false,
-                OnboardingStatus = OnboardingStatuses.PendingPackageSelection
+                OnboardingStatus = role == "admin"
+    ? "AdminSystem"
+    : (!string.IsNullOrWhiteSpace(request.OnboardingStatus)
+        ? request.OnboardingStatus
+        : OnboardingStatuses.PendingPackageSelection)
+
+
+
             };
 
             await _context.UserProfiles.AddAsync(profile);
             await _context.SaveChangesAsync();
 
-            return Ok();
+            return Ok(new { success = true, message = "User profile created successfully" });
         }
+
     }
-
-
 }
-

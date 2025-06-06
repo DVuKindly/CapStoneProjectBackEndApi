@@ -7,5 +7,9 @@
         public const string ApprovedAwaitingPayment = "ApprovedAwaitingPayment";
         public const string PaymentConfirmed = "PaymentConfirmed";
         public const string Activated = "Activated";
+
+        
+        public const string System = "AdminSystem"; 
     }
+
 }

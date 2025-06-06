@@ -7,8 +7,8 @@ namespace UserService.API.Entities
     {
         public Guid Id { get; set; }
 
-        [Required, MaxLength(100)]
-        public string AccountId { get; set; } = null!;
+        [Required]
+        public Guid AccountId { get; set; } 
 
         [ForeignKey(nameof(AccountId))]
         public UserProfile? UserProfile { get; set; }
@@ -25,10 +25,10 @@ namespace UserService.API.Entities
         [MaxLength(1000)]
         public string? StaffNote { get; set; }
 
-        [MaxLength(100)]
-        public string? ApprovedBy { get; set; }
+        public Guid? ApprovedBy { get; set; } 
 
         public DateTime? ApprovedAt { get; set; }
+
         public DateTime CreatedAt { get; set; }
     }
 }

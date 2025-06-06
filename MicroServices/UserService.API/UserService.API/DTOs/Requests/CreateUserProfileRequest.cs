@@ -18,6 +18,7 @@
             public string? Gender { get; set; }
             public string? DOB { get; set; }
             public string? Note { get; set; }
+            public string? OnboardingStatus { get; set; }
         }
     }
 

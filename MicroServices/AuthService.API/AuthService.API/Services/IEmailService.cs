@@ -12,12 +12,14 @@ namespace AuthService.API.Services
         private readonly ILogger<EmailService> _logger;
         private readonly EmailSettings _emailSettings;
         private readonly string _baseUrl;
+        private readonly string _resetUrl;
 
         public EmailService(ILogger<EmailService> logger, IOptions<EmailSettings> options)
         {
             _logger = logger;
             _emailSettings = options.Value;
             _baseUrl = Environment.GetEnvironmentVariable("BASE_CLIENT_URL") ?? "http://localhost:5000";
+            _resetUrl = Environment.GetEnvironmentVariable("RESET_PASSWORD_URL_BASE") ?? "http://localhost:3000";
         }
 
         public async Task SendVerificationEmailAsync(string email, string verificationToken)

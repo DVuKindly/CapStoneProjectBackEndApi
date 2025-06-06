@@ -6,8 +6,8 @@ namespace UserService.API.Entities
     {
         public Guid Id { get; set; }
 
-        [Required, MaxLength(100)]
-        public string AccountId { get; set; } = null!;
+        [Required]
+        public Guid AccountId { get; set; }
 
         [Required, MaxLength(255)]
         public string FullName { get; set; } = null!;
@@ -41,11 +41,9 @@ namespace UserService.API.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-
         public ICollection<PartnerProfile>? PartnerProfiles { get; set; }
         public ICollection<CoachProfile>? CoachProfiles { get; set; }
         public ICollection<StaffProfile>? StaffProfiles { get; set; }
         public ICollection<PendingMembershipRequest>? PendingMembershipRequests { get; set; }
-
     }
 }

@@ -1,4 +1,5 @@
 ﻿using BffService.API.DTOs.Auth.Request;
+using BffService.API.DTOs.Auth.RequestProfileUser;
 using BffService.API.DTOs.Auth.Response;
 using BffService.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -104,6 +105,43 @@ namespace BffService.API.Controllers.Auth
             var result = await _authService.LogoutAsync(token);
             return result?.Success == true ? Ok(result) : Unauthorized(result);
         }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("register-staff-onboarding")]
+        public async Task<IActionResult> RegisterStaffOnboarding([FromBody] AdminRegisterRequest request)
+        {
+            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
+            var result = await _authService.RegisterStaffOnboardingAsync(request, token);
+            return result?.Success == true ? Ok(result) : BadRequest(result);
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("register-staff-service")]
+        public async Task<IActionResult> RegisterStaffService([FromBody] AdminRegisterRequest request)
+        {
+            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
+            var result = await _authService.RegisterStaffServiceAsync(request, token);
+            return result?.Success == true ? Ok(result) : BadRequest(result);
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("register-partner")]
+        public async Task<IActionResult> RegisterPartner([FromBody] AdminRegisterRequest request)
+        {
+            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
+            var result = await _authService.RegisterPartnerAsync(request, token);
+            return result?.Success == true ? Ok(result) : BadRequest(result);
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("register-coaching")]
+        public async Task<IActionResult> RegisterCoaching([FromBody] AdminRegisterRequest request)
+        {
+            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
+            var result = await _authService.RegisterCoachingAsync(request, token);
+            return result?.Success == true ? Ok(result) : BadRequest(result);
+        }
+
 
 
 

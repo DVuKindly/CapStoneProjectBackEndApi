@@ -1,4 +1,4 @@
-﻿using AuthService.API.DTOs.Request;
+﻿using AuthService.API.DTOs.Request; // 🟢 Import đúng DTO mới
 using AuthService.API.Entities;
 using AuthService.API.Services;
 using Microsoft.AspNetCore.Identity;
@@ -49,18 +49,24 @@ namespace AuthService.API.Data
 
             await context.SaveChangesAsync();
 
-            // Tạo user profile thông qua UserServiceClient
-            var profileInfo = new ProfileInfoRequest
+            // ✅ Tạo user profile payload đầy đủ
+            var profilePayload = new UserProfilePayload
             {
-                Note = "SeededBySystem"
+                AccountId = admin.UserId,
+                FullName = admin.UserName,
+                Email = admin.Email,
+                RoleType = "admin",
+                Note = "SeededBySystem",
+                OnboardingStatus = "AdminSystem"
             };
 
+            // Gửi sang UserService
             await userServiceClient.CreateUserProfileAsync(
                 admin.UserId,
                 admin.UserName,
                 admin.Email,
                 "admin",
-                profileInfo
+                profilePayload
             );
 
             Console.WriteLine("✅ Admin user and profile seeded successfully.");

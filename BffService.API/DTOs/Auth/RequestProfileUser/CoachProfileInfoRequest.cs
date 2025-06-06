@@ -1,19 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace UserService.API.Entities
+namespace BffService.API.DTOs.Auth.RequestProfileUser
 {
-    public class CoachProfile
+    public class CoachProfileInfoRequest
     {
-        public Guid Id { get; set; }
-
-        [Required]
-        public Guid AccountId { get; set; }
-
-        [ForeignKey(nameof(AccountId))]
-        public UserProfile? UserProfile { get; set; }
-
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         public string? CoachType { get; set; }
 
         [MaxLength(255)]
