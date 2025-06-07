@@ -1,17 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BffService.API.DTOs.Interfaces;
+using System.ComponentModel.DataAnnotations;
 
-namespace BffService.API.DTOs.Auth.RequestProfileUser
+namespace BffService.API.DTOs.PARTNER
 {
-    public class PartnerProfileInfoRequest
+    public class PartnerProfileInfoRequest : IProfileInfoRequest
     {
         [Required, MaxLength(255)]
-        public string? OrganizationName { get; set; }
+        public string OrganizationName { get; set; } = null!;
 
         [MaxLength(100)]
         public string? PartnerType { get; set; }
 
-        [MaxLength(100)]
-        public string? Location { get; set; }
+        [Required, MaxLength(100)]
+        public string Location { get; set; } = null!;
 
         [MaxLength(255)]
         public string? RepresentativeName { get; set; }
@@ -30,5 +31,6 @@ namespace BffService.API.DTOs.Auth.RequestProfileUser
 
         [MaxLength(255)]
         public string? Industry { get; set; }
+        public string Note {  get; set; }
     }
 }

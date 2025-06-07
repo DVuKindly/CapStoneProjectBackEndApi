@@ -1,11 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using AuthService.API.DTOs.Interfaces;
+using System.ComponentModel.DataAnnotations;
 
 namespace AuthService.API.DTOs.COACH
 {
-    public class CoachProfileInfoRequest
+    public class CoachProfileInfoRequest : IProfileInfoRequest
     {
         [Required, MaxLength(100)]
-        public string? CoachType { get; set; }
+        public string CoachType { get; set; } = null!;
 
         [MaxLength(255)]
         public string? Specialty { get; set; }
@@ -13,8 +14,8 @@ namespace AuthService.API.DTOs.COACH
         [MaxLength(255)]
         public string? ModuleInCharge { get; set; }
 
-        [MaxLength(100)]
-        public string? Region { get; set; }
+        [Required, MaxLength(100)]
+        public string Region { get; set; } = null!;
 
         [Range(0, 100)]
         public int? ExperienceYears { get; set; }
@@ -28,5 +29,4 @@ namespace AuthService.API.DTOs.COACH
         [MaxLength(255)]
         public string? LinkedInUrl { get; set; }
     }
-
 }

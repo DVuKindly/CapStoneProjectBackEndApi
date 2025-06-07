@@ -1,149 +1,152 @@
-﻿using BffService.API.DTOs.Auth.Request;
-using BffService.API.DTOs.Auth.RequestProfileUser;
-using BffService.API.DTOs.Auth.Response;
+﻿using BffService.API.DTOs.AdminCreate;
+using BffService.API.DTOs.Request;
+using BffService.API.DTOs.Responses;
 using BffService.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
-namespace BffService.API.Controllers.Auth
+namespace BffService.API.Controllers
 {
     [Route("api/bff/auth")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthProxyController : ControllerBase
     {
-        private readonly AuthProxyService _authService;
+        private readonly IAuthProxyService _authService;
 
-        public AuthController(AuthProxyService authService)
+        public AuthProxyController(IAuthProxyService authService)
         {
             _authService = authService;
         }
 
+        // 🔐 Auth - Register/Login/Token
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
-        {
-            var result = await _authService.RegisterAsync(request);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
-        }
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request) =>
+            await HandleResult(() => _authService.RegisterAsync(request));
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
-        {
-            var result = await _authService.LoginAsync(request);
-            return result?.Success == true ? Ok(result) : Unauthorized(result);
-        }
+        public async Task<IActionResult> Login([FromBody] LoginRequest request) =>
+            await HandleResult(() => _authService.LoginAsync(request));
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
-        {
-            var result = await _authService.RefreshTokenAsync(request);
-            return result?.Success == true ? Ok(result) : Unauthorized(result);
-        }
-
-        [HttpGet("verify-email")]
-        public async Task<IActionResult> RedirectVerifyEmail([FromQuery] string token)
-        {
-            var result = await _authService.VerifyEmailAsync(new VerifyEmailRequest { Token = token });
-            if (result?.Success == true)
-                return Ok("✅ Email verified successfully!");
-            return BadRequest("❌ Verification failed or token expired.");
-        }
-
-        [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
-        {
-            var result = await _authService.ForgotPasswordAsync(request);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
-        }
-
-        [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
-        {
-            var result = await _authService.ResetPasswordAsync(request);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
-        }
-
-        [HttpPost("change-password")]
-        [Authorize]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-          
-            if (string.IsNullOrEmpty(token))
-            {
-                return Unauthorized(new BaseResponse { Success = false, Message = "Token is missing or invalid." });
-            }
-
-            var result = await _authService.ChangePasswordAsync(request, token);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
-        }
-
-
-
-
-        [HttpPost("google-login")]
-        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
-        {
-            var result = await _authService.GoogleLoginAsync(request);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
-        }
-
-        [HttpGet("status/{userId}")]
-        [Authorize]
-        public async Task<IActionResult> GetStatus([FromRoute] string userId)
-        {
-            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
-            var result = await _authService.GetStatusAsync(userId, token);
-            return Ok(result);
-        }
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request) =>
+            await HandleResult(() => _authService.RefreshTokenAsync(request));
 
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            var result = await _authService.LogoutAsync(token);
-            return result?.Success == true ? Ok(result) : Unauthorized(result);
+            var token = GetAccessToken();
+            return await HandleResult(() => _authService.LogoutAsync(token));
         }
 
-        [Authorize(Roles = "admin")]
-        [HttpPost("register-staff-onboarding")]
-        public async Task<IActionResult> RegisterStaffOnboarding([FromBody] AdminRegisterRequest request)
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request) =>
+            await HandleResult(() => _authService.GoogleLoginAsync(request));
+
+        // 📧 Email Verification & Password
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request) =>
+            await HandleResult(() => _authService.VerifyEmailAsync(request));
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request) =>
+            await HandleResult(() => _authService.ForgotPasswordAsync(request));
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request) =>
+            await HandleResult(() => _authService.ResetPasswordAsync(request));
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
-            var result = await _authService.RegisterStaffOnboardingAsync(request, token);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
+            var token = GetAccessToken();
+            return await HandleResult(() => _authService.ChangePasswordAsync(request, token));
         }
 
-        [Authorize(Roles = "admin")]
-        [HttpPost("register-staff-service")]
-        public async Task<IActionResult> RegisterStaffService([FromBody] AdminRegisterRequest request)
+        // 📊 Status
+        [HttpGet("status/{userId}")]
+        [Authorize]
+        public async Task<IActionResult> GetStatus(string userId)
         {
-            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
-            var result = await _authService.RegisterStaffServiceAsync(request, token);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
+            var token = GetAccessToken();
+            return await HandleResult(() => _authService.GetStatusAsync(userId, token));
         }
 
+        // 🧑‍💼 System Account Creation (SuperAdmin/Admin)
+        [HttpPost("superadmin-register/admin")]
+        [Authorize(Roles = "super_admin")]
+        public async Task<IActionResult> RegisterAdmin([FromBody] RegisterBySuperAdminRequest request) =>
+            await HandleResult(() => _authService.RegisterAdminAsync(request, GetAccessToken()));
+
+        [HttpPost("admin-register/manager")]
         [Authorize(Roles = "admin")]
-        [HttpPost("register-partner")]
-        public async Task<IActionResult> RegisterPartner([FromBody] AdminRegisterRequest request)
-        {
-            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
-            var result = await _authService.RegisterPartnerAsync(request, token);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
-        }
+        public async Task<IActionResult> RegisterManager([FromBody] RegisterStaffRequest request) =>
+            await HandleResult(() => _authService.RegisterManagerAsync(request, GetAccessToken()));
 
+        [HttpPost("admin-register/staff-onboarding")]
         [Authorize(Roles = "admin")]
-        [HttpPost("register-coaching")]
-        public async Task<IActionResult> RegisterCoaching([FromBody] AdminRegisterRequest request)
+        public async Task<IActionResult> RegisterStaffOnboarding([FromBody] RegisterStaffRequest request)
         {
-            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
-            var result = await _authService.RegisterCoachingAsync(request, token);
-            return result?.Success == true ? Ok(result) : BadRequest(result);
+            request.RoleKey = "staff_onboarding";
+            return await HandleResult(() => _authService.RegisterStaffAsync(request, GetAccessToken()));
         }
 
+        [HttpPost("admin-register/staff-service")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> RegisterStaffService([FromBody] RegisterStaffRequest request)
+        {
+            request.RoleKey = "staff_service";
+            return await HandleResult(() => _authService.RegisterStaffAsync(request, GetAccessToken()));
+        }
 
+        [HttpPost("admin-register/staff-content")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> RegisterStaffContent([FromBody] RegisterStaffRequest request)
+        {
+            request.RoleKey = "staff_content";
+            return await HandleResult(() => _authService.RegisterStaffAsync(request, GetAccessToken()));
+        }
 
+        [HttpPost("admin-register/coach")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> RegisterCoach([FromBody] RegisterCoachRequest request) =>
+            await HandleResult(() => _authService.RegisterCoachAsync(request, GetAccessToken()));
+
+        [HttpPost("admin-register/partner")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> RegisterPartner([FromBody] RegisterPartnerRequest request) =>
+            await HandleResult(() => _authService.RegisterPartnerAsync(request, GetAccessToken()));
+
+        [HttpPost("admin-register/supplier")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> RegisterSupplier([FromBody] RegisterSupplierRequest request) =>
+            await HandleResult(() => _authService.RegisterSupplierAsync(request, GetAccessToken()));
+
+        [HttpPost("set-passwordthirtytoken")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SetPassword([FromBody] SetPasswordThirtyRequest request) =>
+            await HandleResult(() => _authService.SetPasswordAsync(request));
+
+        // 📦 Helpers
+        private string GetAccessToken()
+        {
+            return Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+        }
+
+        private async Task<IActionResult> HandleResult<T>(Func<Task<T?>> func)
+        {
+            var result = await func();
+
+            if (result is null)
+                return StatusCode(500, new { Success = false, Message = "Null response from AuthService." });
+
+            if (result is BaseResponse baseResult)
+                return baseResult.Success ? Ok(baseResult) : BadRequest(baseResult);
+
+            return Ok(result);
+        }
 
     }
 }

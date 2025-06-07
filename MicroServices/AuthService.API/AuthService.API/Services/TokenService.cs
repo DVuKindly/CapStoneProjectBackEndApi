@@ -28,11 +28,14 @@ namespace AuthService.API.Services
             var claims = new List<Claim>
 {
     new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
-    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? "")
+    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+    new Claim("location", user.Location ?? "") 
+
 };
 
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
+           
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

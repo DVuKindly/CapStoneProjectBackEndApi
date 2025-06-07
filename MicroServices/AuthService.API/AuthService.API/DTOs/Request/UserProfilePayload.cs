@@ -14,6 +14,7 @@
         public string? Location { get; set; }
         public string? OnboardingStatus { get; set; }
         public string? Note { get; set; }
+    
 
         // Staff
         public string? Level { get; set; }
@@ -25,6 +26,8 @@
         public string? CoachType { get; set; }
         public string? Module { get; set; }
         public string? Specialty { get; set; }
+        public string? Certifications { get; set; }
+        public string? LinkedInUrl { get; set; }
 
         // Partner
         public string? OrganizationName { get; set; }
@@ -37,5 +40,8 @@
         public string? WebsiteUrl { get; set; }
         public string? Industry { get; set; }
         public Guid? CreatedByAdminId { get; set; }
+
+       
+
     }
 }

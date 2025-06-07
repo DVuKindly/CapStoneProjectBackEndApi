@@ -53,7 +53,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 
-builder.Services.AddHttpClient<AuthProxyService>(client =>
+builder.Services.AddHttpClient<IAuthProxyService, AuthProxyService>(client =>
 {
     client.BaseAddress = new Uri("http://localhost:5001"); 
     client.DefaultRequestHeaders.Add("Accept", "application/json");

@@ -36,9 +36,11 @@ namespace AuthService.API.Data
             admin.PasswordHash = hasher.HashPassword(admin, adminPassword);
 
             // Gán role admin
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleKey == "admin");
+            // Gán role super_admin
+            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleKey == "super_admin");
             if (adminRole == null)
-                throw new InvalidOperationException("⚠️ Role 'admin' not found. Please seed roles first.");
+                throw new InvalidOperationException("⚠️ Role 'super_admin' not found. Please seed roles first.");
+
 
             await context.AuthUsers.AddAsync(admin);
             await context.UserRoles.AddAsync(new UserRole
@@ -49,23 +51,23 @@ namespace AuthService.API.Data
 
             await context.SaveChangesAsync();
 
-            // ✅ Tạo user profile payload đầy đủ
+           
             var profilePayload = new UserProfilePayload
             {
                 AccountId = admin.UserId,
                 FullName = admin.UserName,
                 Email = admin.Email,
-                RoleType = "admin",
+                RoleType = "super_admin",
                 Note = "SeededBySystem",
                 OnboardingStatus = "AdminSystem"
             };
 
-            // Gửi sang UserService
+          
             await userServiceClient.CreateUserProfileAsync(
                 admin.UserId,
                 admin.UserName,
                 admin.Email,
-                "admin",
+                "super_admin",
                 profilePayload
             );
 

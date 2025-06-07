@@ -1,19 +1,20 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BffService.API.DTOs.Interfaces;
+using System.ComponentModel.DataAnnotations;
 
-namespace BffService.API.DTOs.Auth.RequestProfileUser
+namespace BffService.API.DTOs.STAFF
 {
-    public class StaffProfileInfoRequest
+    public class StaffProfileInfoRequest : IProfileInfoRequest
     {
         [Required, MaxLength(100)]
-        public string? Phone { get; set; }
+        public string Phone { get; set; } = null!;
 
         [MaxLength(10)]
         public string? Gender { get; set; }
 
         public DateTime? DOB { get; set; }
 
-        [MaxLength(100)]
-        public string? Location { get; set; }
+        [Required, MaxLength(100)]
+        public string Location { get; set; } = null!;
 
         [MaxLength(255)]
         public string? Note { get; set; }

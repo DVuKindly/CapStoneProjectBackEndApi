@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BffService.API.DTOs.Auth.Request
+namespace BffService.API.DTOs.Request
 {
     public class GoogleLoginRequest
     {
@@ -11,6 +11,6 @@ namespace BffService.API.DTOs.Auth.Request
         public string FullName { get; set; }
 
         [Required]
-        public string ProviderId { get; set; } 
+        public string ProviderId { get; set; } // Google UID
     }
 }

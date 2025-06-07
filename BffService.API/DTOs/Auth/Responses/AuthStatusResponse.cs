@@ -1,10 +1,10 @@
-﻿namespace BffService.API.DTOs.Auth.Response
+﻿namespace BffService.API.DTOs.Responses
 {
     public class AuthStatusResponse
     {
         public bool Exists { get; set; }
         public bool EmailVerified { get; set; }
         public bool IsLocked { get; set; }
-        public string FullName { get; set; } = string.Empty;
+        public string? FullName { get; set; }
     }
 }

@@ -1,9 +1,12 @@
-﻿using AuthService.API.DTOs.COACH;
+﻿using AuthService.API.DTOs.AdminCreate;
+
+using AuthService.API.DTOs.COACH;
 using AuthService.API.DTOs.PARTNER;
 using AuthService.API.DTOs.Request;
 using AuthService.API.DTOs.Responses;
 using AuthService.API.DTOs.STAFF;
 using AuthService.API.Entities;
+using AuthService.API.Helpers;
 using AuthService.API.Repositories;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
@@ -35,45 +38,6 @@ namespace AuthService.API.Services
             _passwordHasher = new PasswordHasher<UserAuth>();
             _userServiceClient = userServiceClient;
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
@@ -394,13 +358,17 @@ namespace AuthService.API.Services
             };
         }
 
-        public async Task<AuthResponse> RegisterAdminAsync(AdminRegisterRequest request)
+
+
+
+        public async Task<AuthResponse> RegisterAdminAsync(RegisterBySuperAdminRequest request)
         {
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
-            {
                 return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
-            }
+
+            // ✅ Normalize location
+            var normalizedLocation = TextNormalizer.Normalize(request.Location);
 
             var user = new UserAuth
             {
@@ -413,85 +381,293 @@ namespace AuthService.API.Services
                 IsLocked = false,
                 EmailVerified = request.SkipEmailVerification,
                 EmailVerificationToken = request.SkipEmailVerification ? null : Guid.NewGuid().ToString(),
-                EmailVerificationExpiry = request.SkipEmailVerification ? null : DateTime.UtcNow.AddHours(24)
+                EmailVerificationExpiry = request.SkipEmailVerification ? null : DateTime.UtcNow.AddHours(24),
+                Location = normalizedLocation // ✅ Gán location đã chuẩn hóa
             };
 
-            var role = await _userRepository.GetRoleByKeyAsync(request.RoleKey);
+            var role = await _userRepository.GetRoleByKeyAsync("admin");
             if (role == null)
-            {
                 return new AuthResponse { Success = false, Message = "Vai trò không hợp lệ." };
-            }
 
-            user.UserRoles = new List<UserRole>
-    {
-        new UserRole
-        {
-            UserId = user.UserId,
-            RoleId = role.RoleId
-        }
-    };
+            user.UserRoles = new List<UserRole> { new UserRole { UserId = user.UserId, RoleId = role.RoleId } };
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+
+            var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsed) ? parsed : null;
 
             var profile = new UserProfilePayload
             {
                 AccountId = user.UserId,
                 FullName = user.UserName,
                 Email = user.Email,
-                RoleType = request.RoleKey,
-                OnboardingStatus = request.RoleKey == "admin" ? "AdminSystem" : request.ProfileInfo?.OnboardingStatus,
-                Location = request.ProfileInfo?.Location,
-                Note = request.RoleKey == "admin" ? "CreatedByAdmin" : request.ProfileInfo?.Note,
-                Phone = request.ProfileInfo?.Phone,
-                Gender = request.ProfileInfo?.Gender,
-                DOB = request.ProfileInfo?.DOB,
-                // Coach
-                CoachType = request.ProfileInfo?.CoachType,
-                Module = request.ProfileInfo?.Module,
-                Specialty = request.ProfileInfo?.Specialty,
-                // Staff
-                Department = request.ProfileInfo?.Department,
-                Level = request.ProfileInfo?.Level,
-                Address = request.ProfileInfo?.Address,
-                ManagerId = request.ProfileInfo?.ManagerId,
-                // Partner
-                OrganizationName = request.ProfileInfo?.OrganizationName,
-                PartnerType = request.ProfileInfo?.PartnerType,
-                ContractUrl = request.ProfileInfo?.ContractUrl,
-                RepresentativeName = request.ProfileInfo?.RepresentativeName,
-                RepresentativePhone = request.ProfileInfo?.RepresentativePhone,
-                RepresentativeEmail = request.ProfileInfo?.RepresentativeEmail,
-                WebsiteUrl = request.ProfileInfo?.WebsiteUrl,
-                Industry = request.ProfileInfo?.Industry,
-                CreatedByAdminId = user.UserId
+                RoleType = "admin",
+                Location = normalizedLocation, // ✅ Gán location đã chuẩn hóa
+                OnboardingStatus = "AdminSystem",
+                Note = "CreatedBySuperAdmin",
+                CreatedByAdminId = createdByAdminId
             };
 
-            await _userServiceClient.CreateUserProfileAsync(
-                user.UserId,
-                user.UserName,
-                user.Email,
-                request.RoleKey,
-                profile
-            );
+            await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, "admin", profile);
 
             if (!request.SkipEmailVerification && user.EmailVerificationToken != null)
-            {
                 await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
-            }
 
             return new AuthResponse
             {
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
-                Message = request.SkipEmailVerification
-                    ? "Tài khoản đã được tạo và xác minh bởi admin."
-                    : "Tài khoản đã được tạo. Vui lòng xác minh email.",
+                Message = request.SkipEmailVerification ? "Admin đã được tạo và xác minh." : "Admin đã được tạo. Vui lòng xác minh email.",
+                AccessToken = "",
+                RefreshToken = ""
+            };
+        }
+
+
+
+        public async Task<AuthResponse> RegisterManagerAsync(RegisterStaffRequest request)
+        {
+
+
+            return await RegisterSystemAccountAsync(new AdminAccountRegisterAdapter
+            {
+                UserName = request.UserName,
+                Email = request.Email,
+                SkipPasswordCreation = true,           
+                SkipEmailVerification = false,
+                RoleKey = "manager",
+                Location = request.Location,
+             
+                ProfileInfo = request.ProfileInfo
+            });
+        }
+
+
+
+
+
+        public async Task<AuthResponse> RegisterStaffAsync(RegisterStaffRequest request)
+        {
+            return await RegisterSystemAccountAsync(new AdminAccountRegisterAdapter
+            {
+                UserName = request.UserName,
+                Email = request.Email,
+                SkipPasswordCreation = true,          
+                SkipEmailVerification = false,
+                RoleKey = request.RoleKey!, 
+                Location = request.Location,
+                ProfileInfo = request.ProfileInfo
+            });
+        }
+
+        public async Task<AuthResponse> RegisterCoachAsync(RegisterCoachRequest request)
+        {
+            return await RegisterSystemAccountAsync(new AdminAccountRegisterAdapter
+            {
+                UserName = request.UserName,
+                Email = request.Email,
+                SkipPasswordCreation = true,           
+                SkipEmailVerification = false,
+                RoleKey = "coaching",
+                Location = request.Location,
+                ProfileInfo = request.ProfileInfo
+            });
+        }
+
+        public async Task<AuthResponse> RegisterPartnerAsync(RegisterPartnerRequest request)
+        {
+            return await RegisterSystemAccountAsync(new AdminAccountRegisterAdapter
+            {
+                UserName = request.UserName,
+                Email = request.Email,
+                SkipPasswordCreation = true,           // ✅ KHÔNG có mật khẩu
+                SkipEmailVerification = false,
+                RoleKey = "partner",
+                Location = request.Location,
+                 ProfileInfo = request.ProfileInfo
+            });
+        }
+
+        public async Task<AuthResponse> RegisterSupplierAsync(RegisterSupplierRequest request)
+        {
+            return await RegisterSystemAccountAsync(new AdminAccountRegisterAdapter
+            {
+                UserName = request.UserName,
+                Email = request.Email,
+                SkipPasswordCreation = true,           // ✅ KHÔNG có mật khẩu
+                SkipEmailVerification = false,
+                RoleKey = "supplier",
+                Location = request.Location,
+               ProfileInfo = request.ProfileInfo
+            });
+        }
+
+
+
+
+        public async Task<AuthResponse> RegisterSystemAccountAsync(AdminAccountRegisterAdapter request)
+        {
+            // 🔒 Lấy location từ token
+            var currentUserLocation = _httpContextAccessor.HttpContext?.User?.FindFirst("location")?.Value;
+            if (!TextNormalizer.IsSameLocation(currentUserLocation, request.Location))
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = $"Bạn không có quyền tạo tài khoản cho khu vực khác ({request.Location})."
+                };
+            }
+
+            // 🔍 Kiểm tra email
+            var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+            if (existingUser != null)
+                return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
+
+            // ✅ Chuẩn hóa location
+            var normalizedLocation = TextNormalizer.Normalize(request.Location);
+
+            // 🔐 Tạo token đặt mật khẩu
+            var resetToken = Guid.NewGuid().ToString();
+
+            // 🧾 Tạo user
+            var user = new UserAuth
+            {
+                UserId = Guid.NewGuid(),
+                UserName = request.UserName,
+                Email = request.Email,
+                PasswordHash = null, // Không có mật khẩu
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Location = normalizedLocation,
+                IsLocked = false,
+
+                EmailVerified = true, // ✅ Đã xác minh vì được admin tạo
+                EmailVerificationToken = null,
+                EmailVerificationExpiry = null,
+
+                ResetPasswordToken = resetToken,
+                ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24)
+            };
+
+            // 🔑 Gán Role
+            var role = await _userRepository.GetRoleByKeyAsync(request.RoleKey);
+            if (role == null)
+                return new AuthResponse { Success = false, Message = "Vai trò không hợp lệ." };
+
+            user.UserRoles = new List<UserRole>
+    {
+        new UserRole { UserId = user.UserId, RoleId = role.RoleId }
+    };
+
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            // 👤 Admin tạo
+            var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsedGuid) ? parsedGuid : null;
+
+            // 📦 Map profile
+            var profile = new UserProfilePayload
+            {
+                AccountId = user.UserId,
+                FullName = user.UserName,
+                Email = user.Email,
+                RoleType = request.RoleKey,
+                CreatedByAdminId = createdByAdminId,
+                Location = normalizedLocation
+            };
+
+            switch (request.ProfileInfo)
+            {
+                case StaffProfileInfoRequest staff:
+                    profile.Phone = staff.Phone;
+                    profile.Gender = staff.Gender;
+                    profile.DOB = staff.DOB?.ToString("yyyy-MM-dd");
+                    profile.Note = staff.Note;
+                    profile.Department = staff.Department;
+                    profile.Level = staff.Level;
+                    break;
+
+                case CoachProfileInfoRequest coach:
+                    profile.CoachType = coach.CoachType;
+                    profile.Specialty = coach.Specialty;
+                    profile.Module = coach.ModuleInCharge;
+                    profile.Note = coach.Bio;
+                    profile.Certifications = coach.Certifications;
+                    profile.LinkedInUrl = coach.LinkedInUrl;
+                    break;
+
+                case PartnerProfileInfoRequest partner:
+                    profile.OrganizationName = partner.OrganizationName;
+                    profile.PartnerType = partner.PartnerType;
+                    profile.Note = partner.Note;
+                    profile.RepresentativeName = partner.RepresentativeName;
+                    profile.RepresentativePhone = partner.RepresentativePhone;
+                    profile.RepresentativeEmail = partner.RepresentativeEmail;
+                    profile.Description = partner.Description;
+                    profile.WebsiteUrl = partner.WebsiteUrl;
+                    profile.Industry = partner.Industry;
+                    break;
+
+                default:
+                    return new AuthResponse { Success = false, Message = "Loại hồ sơ không được hỗ trợ." };
+            }
+
+            // 📤 Gửi sang UserService
+            await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, request.RoleKey, profile);
+
+            // ✉️ Gửi email đặt mật khẩu
+            await _emailService.SendSetPasswordEmailAsync(user.Email, resetToken);
+
+            return new AuthResponse
+            {
+                Success = true,
+                Email = user.Email,
+                FullName = user.UserName,
+                Message = $"Tài khoản {request.RoleKey} đã được tạo. Vui lòng kiểm tra email để thiết lập mật khẩu.",
                 AccessToken = string.Empty,
                 RefreshToken = string.Empty
             };
         }
+
+
+
+
+
+
+        public async Task<AuthResponse> SetPasswordAsync(SetPasswordThirtyRequest request)
+        {
+            var user = await _userRepository.GetByResetPasswordTokenAsync(request.Token); // ✅ tìm theo token
+
+            if (user == null)
+            {
+                return new AuthResponse { Success = false, Message = "Token không hợp lệ hoặc không tồn tại." };
+            }
+
+            if (user.ResetPasswordTokenExpiry.HasValue && user.ResetPasswordTokenExpiry.Value < DateTime.UtcNow)
+            {
+                return new AuthResponse { Success = false, Message = "Token đã hết hạn." };
+            }
+
+            user.PasswordHash = _passwordHasher.HashPassword(null!, request.NewPassword);
+            user.ResetPasswordToken = null;
+            user.ResetPasswordTokenExpiry = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            return new AuthResponse
+            {
+                Success = true,
+                Email = user.Email,
+                FullName = user.UserName,
+                Message = "Mật khẩu đã được thiết lập thành công. Bạn có thể đăng nhập ngay bây giờ."
+            };
+        }
+
 
     }
 }

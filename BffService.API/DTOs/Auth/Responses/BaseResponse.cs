@@ -1,4 +1,4 @@
-﻿namespace BffService.API.DTOs.Auth.Response
+﻿namespace BffService.API.DTOs.Responses
 {
     public class BaseResponse
     {

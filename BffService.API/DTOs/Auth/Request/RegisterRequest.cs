@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BffService.API.DTOs.Auth.Request
+namespace BffService.API.DTOs.Request
 {
     public class RegisterRequest
     {
