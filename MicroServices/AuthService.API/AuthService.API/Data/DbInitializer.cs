@@ -18,14 +18,14 @@ namespace AuthService.API.Data
             var adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD")
                 ?? throw new InvalidOperationException("⚠️ Missing ADMIN_PASSWORD in environment variables.");
 
-            // Nếu đã tồn tại admin thì bỏ qua
+            // Nếu đã tồn tại super admin thì bỏ qua
             if (await context.AuthUsers.AnyAsync(u => u.Email == adminEmail)) return;
 
-            // Tạo user admin
+            // Tạo user super admin
             var admin = new UserAuth
             {
                 UserId = Guid.NewGuid(),
-                UserName = "Admin",
+                UserName = "SuperAdmin",
                 Email = adminEmail,
                 EmailVerified = true,
                 IsLocked = false,
@@ -35,7 +35,6 @@ namespace AuthService.API.Data
 
             admin.PasswordHash = hasher.HashPassword(admin, adminPassword);
 
-            // Gán role admin
             // Gán role super_admin
             var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleKey == "super_admin");
             if (adminRole == null)
@@ -71,7 +70,7 @@ namespace AuthService.API.Data
                 profilePayload
             );
 
-            Console.WriteLine("✅ Admin user and profile seeded successfully.");
+            Console.WriteLine("✅ SuperAdmin user and profile seeded successfully.");
         }
     }
 }

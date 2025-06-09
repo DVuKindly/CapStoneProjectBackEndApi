@@ -7,138 +7,121 @@ namespace UserService.API.Data
     {
         public UserDbContext(DbContextOptions<UserDbContext> options) : base(options) { }
 
+        // 📦 DbSet cho tất cả các bảng
         public DbSet<UserProfile> UserProfiles { get; set; }
-        public DbSet<CoachProfile> CoachProfiles { get; set; }
         public DbSet<StaffProfile> StaffProfiles { get; set; }
+        public DbSet<CoachProfile> CoachProfiles { get; set; }
+        public DbSet<ManagerProfile> ManagerProfiles { get; set; }
         public DbSet<PartnerProfile> PartnerProfiles { get; set; }
+        public DbSet<LocationRegion> LocationRegions { get; set; }
         public DbSet<PendingMembershipRequest> PendingMembershipRequests { get; set; }
+        public DbSet<PendingThirdPartyRequest> PendingThirdPartyRequests { get; set; }
 
+        // ⚙️ Fluent API
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasDefaultSchema("UserDBCapStone");
+            base.OnModelCreating(modelBuilder);
 
-            // USER PROFILE
-            modelBuilder.Entity<UserProfile>(entity =>
-            {
-                entity.ToTable("UserProfiles");
-                entity.HasKey(e => e.Id);
-                entity.HasIndex(e => e.AccountId).IsUnique();
+            // 🔒 Unique constraint
+            modelBuilder.Entity<UserProfile>()
+                .HasIndex(u => u.AccountId)
+                .IsUnique();
 
-                entity.Property(e => e.AccountId).IsRequired();
-                entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.Phone).HasMaxLength(20);
-                entity.Property(e => e.Gender).HasMaxLength(10);
-                entity.Property(e => e.DOB);
-                entity.Property(e => e.AvatarUrl).HasMaxLength(500);
-                entity.Property(e => e.SocialLinks).HasMaxLength(1000);
-                entity.Property(e => e.Location).HasMaxLength(100);
-                entity.Property(e => e.RoleType).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.IsCompleted).IsRequired();
-                entity.Property(e => e.IsVerifiedByAdmin).IsRequired();
-                entity.Property(e => e.OnboardingStatus).HasMaxLength(50);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
-            });
+            // 🔁 1:1 relationships (AccountId)
+            modelBuilder.Entity<StaffProfile>()
+                .HasOne(s => s.UserProfile)
+                .WithMany()
+                .HasForeignKey(s => s.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // COACH PROFILE
-            modelBuilder.Entity<CoachProfile>(entity =>
-            {
-                entity.ToTable("CoachProfiles");
-                entity.HasKey(e => e.Id);
+            modelBuilder.Entity<CoachProfile>()
+                .HasOne(c => c.UserProfile)
+                .WithMany()
+                .HasForeignKey(c => c.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-                entity.Property(e => e.AccountId).IsRequired();
-                entity.Property(e => e.CoachType).HasMaxLength(100);
-                entity.Property(e => e.Specialty).HasMaxLength(255);
-                entity.Property(e => e.ModuleInCharge).HasMaxLength(255);
-                entity.Property(e => e.Region).HasMaxLength(100);
-                entity.Property(e => e.ExperienceYears);
-                entity.Property(e => e.Bio).HasMaxLength(1000);
-                entity.Property(e => e.Certifications).HasMaxLength(500);
-                entity.Property(e => e.LinkedInUrl).HasMaxLength(255);
+            modelBuilder.Entity<PartnerProfile>()
+                .HasOne(p => p.UserProfile)
+                .WithMany()
+                .HasForeignKey(p => p.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(e => e.UserProfile)
-                      .WithMany(u => u.CoachProfiles)
-                      .HasForeignKey(e => e.AccountId)
-                      .HasPrincipalKey(u => u.AccountId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+            modelBuilder.Entity<ManagerProfile>()
+                .HasOne(m => m.UserProfile)
+                .WithMany()
+                .HasForeignKey(m => m.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // STAFF PROFILE
-            modelBuilder.Entity<StaffProfile>(entity =>
-            {
-                entity.ToTable("StaffProfiles");
-                entity.HasKey(e => e.Id);
+            modelBuilder.Entity<PendingMembershipRequest>()
+                .HasOne(p => p.UserProfile)
+                .WithMany()
+                .HasForeignKey(p => p.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-                entity.Property(e => e.AccountId).IsRequired();
-                entity.Property(e => e.StaffGroup).HasMaxLength(100);
-                entity.Property(e => e.Department).HasMaxLength(100);
-                entity.Property(e => e.Level).HasMaxLength(50);
-                entity.Property(e => e.Phone).HasMaxLength(100);
-                entity.Property(e => e.Email).HasMaxLength(100);
-                entity.Property(e => e.Address).HasMaxLength(255);
-                entity.Property(e => e.ManagerId);
-                entity.Property(e => e.Note).HasMaxLength(255);
-                entity.Property(e => e.JoinedDate);
-                entity.Property(e => e.IsActive).IsRequired();
+            // 📍 Quan hệ với LocationRegion (1:N)
+            modelBuilder.Entity<UserProfile>()
+                .HasOne(u => u.LocationRegion)
+                .WithMany(r => r.UserProfiles)
+                .HasForeignKey(u => u.LocationId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-                entity.HasOne(e => e.UserProfile)
-                      .WithMany(u => u.StaffProfiles)
-                      .HasForeignKey(e => e.AccountId)
-                      .HasPrincipalKey(u => u.AccountId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+            modelBuilder.Entity<StaffProfile>()
+                .HasOne(s => s.LocationRegion)
+                .WithMany(r => r.StaffProfiles)
+                .HasForeignKey(s => s.LocationId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            // PARTNER PROFILE
-            modelBuilder.Entity<PartnerProfile>(entity =>
-            {
-                entity.ToTable("PartnerProfiles");
-                entity.HasKey(e => e.Id);
+            modelBuilder.Entity<PartnerProfile>()
+                .HasOne(p => p.LocationRegion)
+                .WithMany(r => r.PartnerProfiles)
+                .HasForeignKey(p => p.LocationId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-                entity.Property(e => e.AccountId).IsRequired();
-                entity.Property(e => e.OrganizationName).HasMaxLength(255);
-                entity.Property(e => e.PartnerType).HasMaxLength(100);
-                entity.Property(e => e.Location).HasMaxLength(100);
-                entity.Property(e => e.ContractUrl).HasMaxLength(500);
-                entity.Property(e => e.IsActivated).IsRequired();
-                entity.Property(e => e.ActivatedAt);
-                entity.Property(e => e.CreatedByAdminId);
-                entity.Property(e => e.RepresentativeName).HasMaxLength(255);
-                entity.Property(e => e.RepresentativePhone).HasMaxLength(100);
-                entity.Property(e => e.RepresentativeEmail).HasMaxLength(100);
-                entity.Property(e => e.Description).HasMaxLength(1000);
-                entity.Property(e => e.WebsiteUrl).HasMaxLength(255);
-                entity.Property(e => e.Industry).HasMaxLength(255);
-                entity.Property(e => e.JoinedAt);
+            modelBuilder.Entity<ManagerProfile>()
+                .HasOne(m => m.LocationRegion)
+                .WithMany(r => r.ManagerProfiles)
+                .HasForeignKey(m => m.LocationId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-                entity.HasOne(e => e.UserProfile)
-                      .WithMany(u => u.PartnerProfiles)
-                      .HasForeignKey(e => e.AccountId)
-                      .HasPrincipalKey(u => u.AccountId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+            modelBuilder.Entity<PendingMembershipRequest>()
+                .HasOne(p => p.LocationRegion)
+                .WithMany(r => r.PendingMembershipRequests)
+                .HasForeignKey(p => p.LocationId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            // PENDING MEMBERSHIP
-            modelBuilder.Entity<PendingMembershipRequest>(entity =>
-            {
-                entity.ToTable("PendingMembershipRequests");
-                entity.HasKey(e => e.Id);
+            modelBuilder.Entity<PendingThirdPartyRequest>()
+                .HasOne(p => p.LocationRegion)
+                .WithMany(r => r.PendingThirdPartyRequests)
+                .HasForeignKey(p => p.LocationId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-                entity.Property(e => e.AccountId).IsRequired();
-                entity.Property(e => e.PackageId).IsRequired(); // ✅ Thêm dòng này
-                entity.Property(e => e.RequestedPackageName).HasMaxLength(255);
-                entity.Property(e => e.Location).HasMaxLength(100);
-                entity.Property(e => e.Status).HasMaxLength(50);
-                entity.Property(e => e.StaffNote).HasMaxLength(1000);
-                entity.Property(e => e.ApprovedBy);
-                entity.Property(e => e.ApprovedAt);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
 
-                entity.HasOne(e => e.UserProfile)
-                      .WithMany(u => u.PendingMembershipRequests)
-                      .HasForeignKey(e => e.AccountId)
-                      .HasPrincipalKey(u => u.AccountId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+
+
+            modelBuilder.Entity<LocationRegion>().HasData(
+         new LocationRegion
+         {
+             Id = Guid.Parse("9f38b827-4e1a-4a6e-b8c5-5ff6b759a2a1"),
+             Name = "Hà Nội",
+             Description = "Khu vực Hà Nội",
+             CreatedAt = new DateTime(2024, 01, 01)
+         },
+         new LocationRegion
+         {
+             Id = Guid.Parse("5a418674-9e47-4d19-b827-1e8e2b25c324"),
+             Name = "Hải Phòng",
+             Description = "Khu vực Hải Phòng",
+             CreatedAt = new DateTime(2024, 01, 01)
+         },
+         new LocationRegion
+         {
+             Id = Guid.Parse("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"),
+             Name = "Đà Nẵng",
+             Description = "Khu vực Đà Nẵng",
+             CreatedAt = new DateTime(2024, 01, 01)
+         }
+     );
+
 
         }
     }

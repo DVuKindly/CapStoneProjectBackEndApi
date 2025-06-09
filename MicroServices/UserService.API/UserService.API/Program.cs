@@ -3,9 +3,10 @@ using UserService.API.Data;
 using UserService.API.Extensions;
 using UserService.API.Repositories.Implementations;
 using UserService.API.Repositories.Interfaces;
+
+using DotNetEnv;
 using UserService.API.Services.Implementations;
 using UserService.API.Services.Interfaces;
-using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,14 +22,14 @@ builder.Services.AddDbContext<UserDbContext>(options =>
         builder.Configuration.GetConnectionString("Default"),
         sql => sql.EnableRetryOnFailure()
     ));
-
-builder.Services.AddHttpContextAccessor();
-
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ICoachProfileService, CoachProfileService>();
 builder.Services.AddScoped<IStaffProfileService, StaffProfileService>();
 builder.Services.AddScoped<IPartnerProfileService, PartnerProfileService>();
-builder.Services.AddScoped<IPendingMembershipService, PendingMembershipService>();
+
+builder.Services.AddHttpContextAccessor();
+
+
 
 
 builder.Services.AddScoped<ICoachProfileRepository, CoachProfileRepository>();

@@ -11,9 +11,9 @@ namespace BffService.API.DTOs.AdminCreate
         [Required, EmailAddress]
         public string Email { get; set; } = null!;
 
-     
+
         [Required]
-        public string Location { get; set; } = null!;
+        public Guid LocationId { get; set; }
 
         public bool SkipPasswordCreation { get; set; } = true;
        

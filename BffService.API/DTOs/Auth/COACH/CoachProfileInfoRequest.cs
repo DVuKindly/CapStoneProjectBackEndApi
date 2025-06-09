@@ -14,9 +14,8 @@ namespace BffService.API.DTOs.COACH
         [MaxLength(255)]
         public string? ModuleInCharge { get; set; }
 
-        [Required, MaxLength(100)]
-        public string Region { get; set; } = null!;
-
+        [Required]
+        public Guid LocationId { get; set; }
         [Range(0, 100)]
         public int? ExperienceYears { get; set; }
 

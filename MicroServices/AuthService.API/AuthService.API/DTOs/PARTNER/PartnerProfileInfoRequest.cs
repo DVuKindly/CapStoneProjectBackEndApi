@@ -11,8 +11,8 @@ namespace AuthService.API.DTOs.PARTNER
         [MaxLength(100)]
         public string? PartnerType { get; set; }
 
-        [Required, MaxLength(100)]
-        public string Location { get; set; } = null!;
+        [Required]
+        public Guid LocationId { get; set; }
 
         [MaxLength(255)]
         public string? RepresentativeName { get; set; }

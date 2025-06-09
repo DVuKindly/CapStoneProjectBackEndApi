@@ -11,7 +11,7 @@
         public string? Phone { get; set; }
         public string? Gender { get; set; }
         public string? DOB { get; set; }
-        public string? Location { get; set; }
+        public Guid LocationId { get; set; }
         public string? OnboardingStatus { get; set; }
         public string? Note { get; set; }
     

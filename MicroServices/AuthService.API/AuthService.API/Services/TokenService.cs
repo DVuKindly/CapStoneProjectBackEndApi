@@ -26,16 +26,14 @@ namespace AuthService.API.Services
             var roles = user.UserRoles?.Select(r => r.Role.RoleKey).ToList() ?? new();
 
             var claims = new List<Claim>
-{
-    new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
-    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-    new Claim("location", user.Location ?? "") 
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+        new Claim("location", user.LocationId.ToString()) 
+    };
 
-};
-
+            // ✅ Thêm từng role vào claim
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-           
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -50,6 +48,7 @@ namespace AuthService.API.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
 
         public string GenerateRefreshToken()
         {

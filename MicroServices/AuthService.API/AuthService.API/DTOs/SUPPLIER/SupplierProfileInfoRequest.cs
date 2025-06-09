@@ -11,8 +11,8 @@ namespace AuthService.API.DTOs.SUPPLIER
         [MaxLength(100)]
         public string? TaxCode { get; set; }
 
-        [Required, MaxLength(100)]
-        public string? Location { get; set; }
+        [Required]
+        public Guid LocationId { get; set; }
 
         [MaxLength(1000)]
         public string? Description { get; set; }

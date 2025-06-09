@@ -15,7 +15,7 @@ namespace AuthService.API.Entities
 
         public string? PasswordHash { get; set; }
 
-        public string? Location { get; set; }
+        public Guid LocationId { get; set; }
 
         public bool EmailVerified { get; set; } = false;
         public string? EmailVerificationToken { get; set; }

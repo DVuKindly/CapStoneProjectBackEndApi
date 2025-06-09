@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AuthService.API.DTOs.AdminCreate;
+using System;
 using System.Threading.Tasks;
 
 namespace AuthService.API.Services
@@ -9,8 +10,10 @@ namespace AuthService.API.Services
             Guid userId,
             string userName,
             string email,
-            string roleType = "User",
+            string roleType = "user",
             object? profileInfo = null
         );
+        Task<List<LocationDto>> GetLocationsAsync();
+        Task<bool> IsValidLocationAsync(Guid locationId);
     }
 }

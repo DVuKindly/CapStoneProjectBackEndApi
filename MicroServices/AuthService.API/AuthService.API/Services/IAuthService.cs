@@ -38,5 +38,10 @@ namespace AuthService.API.Services
 
         // Kiểm tra trạng thái người dùng
         Task<AuthStatusResponse> GetStatusAsync(string userId);
+
+
+
+        // Location có sẵn 
+        Task<List<LocationDto>> GetLocationsAsync();
     }
 }

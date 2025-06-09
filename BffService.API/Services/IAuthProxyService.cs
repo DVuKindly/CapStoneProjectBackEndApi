@@ -40,5 +40,9 @@ namespace BffService.API.Services
 
         // Kiểm tra trạng thái người dùng
         Task<AuthStatusResponse?> GetStatusAsync(string userId, string token);
+
+        /// lấy danh sách khu vực 
+        /// 
+        Task<List<LocationDto>> GetAvailableLocationsAsync();
     }
 }

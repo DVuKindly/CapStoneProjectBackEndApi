@@ -5,10 +5,13 @@ using AuthService.API.DTOs.PARTNER;
 using AuthService.API.DTOs.Request;
 using AuthService.API.DTOs.Responses;
 using AuthService.API.DTOs.STAFF;
+using AuthService.API.DTOs.SUPPLIER;
 using AuthService.API.Entities;
 using AuthService.API.Helpers;
 using AuthService.API.Repositories;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -317,7 +320,7 @@ namespace AuthService.API.Services
                 EmailVerificationExpiry = DateTime.UtcNow.AddHours(24)
             };
 
-            var role = await _userRepository.GetRoleByKeyAsync("User");
+            var role = await _userRepository.GetRoleByKeyAsync("user");
             if (role == null)
             {
                 return new AuthResponse { Success = false, Message = "Role 'User' không tồn tại." };
@@ -336,11 +339,22 @@ namespace AuthService.API.Services
             await _userRepository.SaveChangesAsync();
 
             await _userServiceClient.CreateUserProfileAsync(
-                user.UserId,
-                user.UserName,
-                user.Email,
-                "User"
-            );
+        user.UserId,
+        user.UserName,
+        user.Email,
+        "user",
+        new UserProfilePayload
+        {
+            AccountId = user.UserId,
+            FullName = user.UserName,
+            Email = user.Email,
+            RoleType = "user",
+            OnboardingStatus = "Pending", 
+            Note = "Tạo từ RegisterAsync"
+        }
+    );
+
+
 
             if (!string.IsNullOrEmpty(user.EmailVerificationToken))
             {
@@ -363,13 +377,23 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> RegisterAdminAsync(RegisterBySuperAdminRequest request)
         {
+            // ✅ Kiểm tra LocationId hợp lệ bằng UserService
+            var isValidLocation = await _userServiceClient.IsValidLocationAsync(request.LocationId);
+            if (!isValidLocation)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Khu vực không hợp lệ. Vui lòng chọn từ danh sách được hỗ trợ."
+                };
+            }
+
+            // 🔍 Kiểm tra email đã tồn tại chưa
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
                 return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
 
-            // ✅ Normalize location
-            var normalizedLocation = TextNormalizer.Normalize(request.Location);
-
+            // 🧾 Tạo user admin
             var user = new UserAuth
             {
                 UserId = Guid.NewGuid(),
@@ -382,9 +406,10 @@ namespace AuthService.API.Services
                 EmailVerified = request.SkipEmailVerification,
                 EmailVerificationToken = request.SkipEmailVerification ? null : Guid.NewGuid().ToString(),
                 EmailVerificationExpiry = request.SkipEmailVerification ? null : DateTime.UtcNow.AddHours(24),
-                Location = normalizedLocation // ✅ Gán location đã chuẩn hóa
+                LocationId = request.LocationId
             };
 
+            // 🔑 Gán role "admin"
             var role = await _userRepository.GetRoleByKeyAsync("admin");
             if (role == null)
                 return new AuthResponse { Success = false, Message = "Vai trò không hợp lệ." };
@@ -394,36 +419,48 @@ namespace AuthService.API.Services
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
+            // 👤 Ai là người tạo?
             var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsed) ? parsed : null;
 
+            // 👑 Nếu là super_admin thì gắn AdminSystem
+            var currentUserRole = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
+            var onboardingStatus = currentUserRole == "super_admin" ? "AdminSystem" : "AdminLocation";
+
+            // 📦 Gửi profile sang UserService
             var profile = new UserProfilePayload
             {
                 AccountId = user.UserId,
                 FullName = user.UserName,
                 Email = user.Email,
                 RoleType = "admin",
-                Location = normalizedLocation, // ✅ Gán location đã chuẩn hóa
-                OnboardingStatus = "AdminSystem",
+                LocationId = request.LocationId,
+                OnboardingStatus = onboardingStatus,
                 Note = "CreatedBySuperAdmin",
                 CreatedByAdminId = createdByAdminId
             };
 
             await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, "admin", profile);
 
+            // ✉️ Gửi email xác minh nếu cần
             if (!request.SkipEmailVerification && user.EmailVerificationToken != null)
                 await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
 
+            // ✅ Trả kết quả
             return new AuthResponse
             {
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
-                Message = request.SkipEmailVerification ? "Admin đã được tạo và xác minh." : "Admin đã được tạo. Vui lòng xác minh email.",
+                Message = request.SkipEmailVerification
+                    ? "Admin đã được tạo và xác minh."
+                    : "Admin đã được tạo. Vui lòng xác minh email.",
                 AccessToken = "",
                 RefreshToken = ""
             };
         }
+
+
 
 
 
@@ -438,7 +475,7 @@ namespace AuthService.API.Services
                 SkipPasswordCreation = true,           
                 SkipEmailVerification = false,
                 RoleKey = "manager",
-                Location = request.Location,
+                LocationId = request.LocationId,
              
                 ProfileInfo = request.ProfileInfo
             });
@@ -457,7 +494,7 @@ namespace AuthService.API.Services
                 SkipPasswordCreation = true,          
                 SkipEmailVerification = false,
                 RoleKey = request.RoleKey!, 
-                Location = request.Location,
+                LocationId = request.LocationId,
                 ProfileInfo = request.ProfileInfo
             });
         }
@@ -471,7 +508,7 @@ namespace AuthService.API.Services
                 SkipPasswordCreation = true,           
                 SkipEmailVerification = false,
                 RoleKey = "coaching",
-                Location = request.Location,
+                LocationId = request.LocationId,
                 ProfileInfo = request.ProfileInfo
             });
         }
@@ -485,7 +522,7 @@ namespace AuthService.API.Services
                 SkipPasswordCreation = true,           // ✅ KHÔNG có mật khẩu
                 SkipEmailVerification = false,
                 RoleKey = "partner",
-                Location = request.Location,
+                LocationId = request.LocationId,
                  ProfileInfo = request.ProfileInfo
             });
         }
@@ -499,7 +536,7 @@ namespace AuthService.API.Services
                 SkipPasswordCreation = true,           // ✅ KHÔNG có mật khẩu
                 SkipEmailVerification = false,
                 RoleKey = "supplier",
-                Location = request.Location,
+                LocationId = request.LocationId,
                ProfileInfo = request.ProfileInfo
             });
         }
@@ -509,49 +546,60 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> RegisterSystemAccountAsync(AdminAccountRegisterAdapter request)
         {
-            // 🔒 Lấy location từ token
+            // 🔐 Lấy location và role hiện tại từ token
             var currentUserLocation = _httpContextAccessor.HttpContext?.User?.FindFirst("location")?.Value;
-            if (!TextNormalizer.IsSameLocation(currentUserLocation, request.Location))
+            var currentUserRole = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;
+
+            // ✅ SuperAdmin được bỏ qua kiểm tra, Admin phải kiểm tra khu vực
+            if (currentUserRole == "admin")
+            {
+                if (string.IsNullOrEmpty(currentUserLocation) || currentUserLocation != request.LocationId.ToString())
+                {
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Admin chỉ được phép tạo tài khoản trong khu vực của mình."
+                    };
+                }
+            }
+
+            // ✅ Kiểm tra khu vực có hợp lệ không
+            var isValidLocation = await _userServiceClient.IsValidLocationAsync(request.LocationId);
+            if (!isValidLocation)
             {
                 return new AuthResponse
                 {
                     Success = false,
-                    Message = $"Bạn không có quyền tạo tài khoản cho khu vực khác ({request.Location})."
+                    Message = "Khu vực không hợp lệ. Vui lòng chọn từ danh sách được hỗ trợ."
                 };
             }
 
-            // 🔍 Kiểm tra email
+            // 🔍 Kiểm tra email đã tồn tại chưa
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
                 return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
 
-            // ✅ Chuẩn hóa location
-            var normalizedLocation = TextNormalizer.Normalize(request.Location);
-
-            // 🔐 Tạo token đặt mật khẩu
+            // 🔑 Chuẩn bị token đặt mật khẩu
             var resetToken = Guid.NewGuid().ToString();
 
-            // 🧾 Tạo user
             var user = new UserAuth
             {
                 UserId = Guid.NewGuid(),
                 UserName = request.UserName,
                 Email = request.Email,
-                PasswordHash = null, // Không có mật khẩu
+                PasswordHash = null,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                Location = normalizedLocation,
+                LocationId = request.LocationId,
                 IsLocked = false,
-
-                EmailVerified = true, // ✅ Đã xác minh vì được admin tạo
+                EmailVerified = true,
                 EmailVerificationToken = null,
                 EmailVerificationExpiry = null,
-
                 ResetPasswordToken = resetToken,
                 ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24)
             };
 
-            // 🔑 Gán Role
+            // 🧾 Gán role
             var role = await _userRepository.GetRoleByKeyAsync(request.RoleKey);
             if (role == null)
                 return new AuthResponse { Success = false, Message = "Vai trò không hợp lệ." };
@@ -564,11 +612,11 @@ namespace AuthService.API.Services
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            // 👤 Admin tạo
+            // 👤 Lấy ID người tạo
             var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsedGuid) ? parsedGuid : null;
 
-            // 📦 Map profile
+            // 📦 Tạo profile
             var profile = new UserProfilePayload
             {
                 AccountId = user.UserId,
@@ -576,8 +624,11 @@ namespace AuthService.API.Services
                 Email = user.Email,
                 RoleType = request.RoleKey,
                 CreatedByAdminId = createdByAdminId,
-                Location = normalizedLocation
+                LocationId = request.LocationId
             };
+
+            if (request.RoleKey == "admin")
+                profile.OnboardingStatus = "AdminLocation";
 
             switch (request.ProfileInfo)
             {
@@ -611,14 +662,24 @@ namespace AuthService.API.Services
                     profile.Industry = partner.Industry;
                     break;
 
+                case SupplierProfileInfoRequest supplier:
+                    profile.OrganizationName = supplier.CompanyName;
+                    profile.RepresentativeName = supplier.ContactPerson;
+                    profile.RepresentativePhone = supplier.ContactPhone;
+                    profile.RepresentativeEmail = supplier.ContactEmail;
+                    profile.Description = supplier.Description;
+                    profile.WebsiteUrl = supplier.WebsiteUrl;
+                    profile.Industry = supplier.Industry;
+                    profile.Note = supplier.TaxCode;
+                    break;
+
                 default:
                     return new AuthResponse { Success = false, Message = "Loại hồ sơ không được hỗ trợ." };
             }
 
-            // 📤 Gửi sang UserService
             await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, request.RoleKey, profile);
 
-            // ✉️ Gửi email đặt mật khẩu
+            // 📧 Gửi email đặt mật khẩu
             await _emailService.SendSetPasswordEmailAsync(user.Email, resetToken);
 
             return new AuthResponse
@@ -631,6 +692,9 @@ namespace AuthService.API.Services
                 RefreshToken = string.Empty
             };
         }
+
+
+
 
 
 
@@ -668,6 +732,9 @@ namespace AuthService.API.Services
             };
         }
 
-
+        public async Task<List<LocationDto>> GetLocationsAsync()
+        {
+            return await _userServiceClient.GetLocationsAsync();
+        }
     }
 }

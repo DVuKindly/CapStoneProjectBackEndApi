@@ -13,9 +13,8 @@ namespace AuthService.API.DTOs.STAFF
 
         public DateTime? DOB { get; set; }
 
-        [Required, MaxLength(100)]
-        public string Location { get; set; } = null!;
-
+        [Required]
+        public Guid LocationId { get; set; }
         [MaxLength(255)]
         public string? Note { get; set; }
 

@@ -129,10 +129,21 @@ namespace BffService.API.Services
             }
             catch
             {
-                Console.WriteLine($"[BFF] AuthService returned invalid JSON: {content}");
+                Console.WriteLine($"[BFF] BffService returned invalid JSON: {content}");
                 return default;
             }
         }
+
+        public async Task<List<LocationDto>> GetAvailableLocationsAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/auth/locationsAvaible");
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadFromJsonAsync<List<LocationDto>>();
+            return result ?? new();
+        }
+
+
 
     }
 }

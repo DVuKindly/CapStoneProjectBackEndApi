@@ -228,5 +228,14 @@ namespace AuthService.API.Controllers
         }
 
 
+        [HttpGet("locationsAvaible")]
+        public async Task<IActionResult> GetAvailableLocations()
+        {
+            var locations = await _authService.GetLocationsAsync();
+            return Ok(locations);
+        }
+
+
+
     }
 }

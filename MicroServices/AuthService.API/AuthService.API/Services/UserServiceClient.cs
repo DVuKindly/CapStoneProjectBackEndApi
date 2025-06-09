@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using AuthService.API.Services;
 using AuthService.API.DTOs.Request;
+using AuthService.API.DTOs.AdminCreate;
 
 public class UserServiceClient : IUserServiceClient
 {
@@ -21,7 +22,7 @@ public class UserServiceClient : IUserServiceClient
         Guid userId,
         string userName,
         string email,
-        string roleType = "User",
+        string roleType = "user",
         object? profileInfo = null)
     {
         try
@@ -32,6 +33,7 @@ public class UserServiceClient : IUserServiceClient
                 FullName = userName,
                 Email = email,
                 RoleType = roleType
+
             };
 
             if (profileInfo is UserProfilePayload extra)
@@ -39,7 +41,7 @@ public class UserServiceClient : IUserServiceClient
                 profilePayload.Phone = extra.Phone;
                 profilePayload.Gender = extra.Gender;
                 profilePayload.DOB = extra.DOB;
-                profilePayload.Location = extra.Location;
+                profilePayload.LocationId = extra.LocationId;
                 profilePayload.OnboardingStatus = extra.OnboardingStatus;
                 profilePayload.Note = extra.Note;
 
@@ -64,14 +66,18 @@ public class UserServiceClient : IUserServiceClient
                 profilePayload.ManagerId = extra.ManagerId;
             }
 
-            // Gọi đúng endpoint theo role
-            var endpoint = roleType switch
+            var normalizedRole = roleType.ToLowerInvariant();
+
+            var endpoint = normalizedRole switch
             {
                 "partner" => "/api/userprofiles/create-partner",
-                "coaching" => "/api/userprofiles/create-coach",
-                "staff_service" or "staff_onboarding" => "/api/userprofiles/create-staff",
-                _ => "/api/userprofiles" // Default cho user/admin
+                "coaching" or "coach" => "/api/userprofiles/create-coach",
+                "staff_service" or "staff_onboarding" or "staff_content" => "/api/userprofiles/create-staff",
+                _ => "/api/userprofiles"
             };
+
+
+
 
             var jsonPayload = JsonSerializer.Serialize(profilePayload);
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
@@ -95,5 +101,26 @@ public class UserServiceClient : IUserServiceClient
         {
             _logger.LogError(ex, "❌ Exception occurred while calling UserService to create profile");
         }
+
+
+
+
+
+
     }
+
+    public async Task<List<LocationDto>> GetLocationsAsync()
+    {
+        var response = await _httpClient.GetAsync("/api/locations");
+        response.EnsureSuccessStatusCode();
+
+        var locations = await response.Content.ReadFromJsonAsync<List<LocationDto>>();
+        return locations ?? new();
+    }
+    public async Task<bool> IsValidLocationAsync(Guid locationId)
+    {
+        var response = await _httpClient.GetAsync($"/api/locations/{locationId}/exists");
+        return response.IsSuccessStatusCode;
+    }
+
 }

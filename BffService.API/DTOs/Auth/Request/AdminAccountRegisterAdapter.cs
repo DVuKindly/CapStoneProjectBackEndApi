@@ -18,7 +18,7 @@ namespace BffService.API.DTOs.Request
         public string RoleKey { get; set; } = null!;
 
         [Required]
-        public string Location { get; set; } = null!;
+        public Guid LocationId { get; set; }
 
         public bool SkipPasswordCreation { get; set; } = false; // 🔥 Mặc định là false
         public bool SkipEmailVerification { get; set; } = true;

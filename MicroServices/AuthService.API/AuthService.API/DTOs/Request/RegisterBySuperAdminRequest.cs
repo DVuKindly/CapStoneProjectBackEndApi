@@ -14,10 +14,10 @@ namespace AuthService.API.DTOs.Request
         [Required, MinLength(6)]
         public string Password { get; set; } = null!;
 
-       
 
-        [Required] // ✅ Bắt buộc truyền khu vực cho Admin
-        public string Location { get; set; } = null!;
+
+        [Required]
+        public Guid LocationId { get; set; }
 
         public bool SkipEmailVerification { get; set; } = true;
 
