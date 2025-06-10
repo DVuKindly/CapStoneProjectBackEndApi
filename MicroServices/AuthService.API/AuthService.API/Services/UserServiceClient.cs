@@ -72,6 +72,7 @@ public class UserServiceClient : IUserServiceClient
             {
                 "partner" => "/api/userprofiles/create-partner",
                 "coaching" or "coach" => "/api/userprofiles/create-coach",
+                "supplier" or "suppliers" => "/api/userprofiles/create-supplier",
                 "staff_service" or "staff_onboarding" or "staff_content" => "/api/userprofiles/create-staff",
                 _ => "/api/userprofiles"
             };

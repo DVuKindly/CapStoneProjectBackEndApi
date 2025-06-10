@@ -13,6 +13,7 @@ namespace UserService.API.Services.Implementations
         {
             var staff = new StaffProfile
             {
+                Id = request.AccountId,
                 Phone = request.Phone,
                 AccountId = request.AccountId,
                 Department = request.Department,

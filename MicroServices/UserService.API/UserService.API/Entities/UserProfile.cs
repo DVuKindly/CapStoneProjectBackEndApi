@@ -27,6 +27,19 @@ namespace UserService.API.Entities
 
         [MaxLength(255)]
         public string? AvatarUrl { get; set; }
+        [MaxLength(1000)]
+        public string? Interests { get; set; } 
+
+        [MaxLength(1000)]
+        public string? PersonalityTraits { get; set; } 
+
+        [MaxLength(2000)]
+        public string? Introduction { get; set; } 
+
+        [MaxLength(500)]
+        public string? CvUrl { get; set; }
+        [MaxLength(255)]
+        public string? Address { get; set; }
 
         [MaxLength(500)]
         public string? SocialLinks { get; set; }
@@ -50,8 +63,7 @@ namespace UserService.API.Entities
 
         public DateTime? UpdatedAt { get; set; }
 
-        [MaxLength(255)]
-        public string? Address { get; set; }
+      
 
         public Guid? CreatedByAdminId { get; set; }
 

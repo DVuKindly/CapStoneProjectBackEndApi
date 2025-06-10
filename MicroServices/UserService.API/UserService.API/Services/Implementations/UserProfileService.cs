@@ -55,5 +55,102 @@ namespace UserService.API.Services.Implementations
             }
         }
 
+
+
+        // ✅ GET profile cá nhân
+        public async Task<UserProfileDto> GetProfileAsync(Guid accountId)
+        {
+            var user = await _db.UserProfiles
+                .Include(u => u.LocationRegion)
+                .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+            if (user == null) return null!;
+
+            return new UserProfileDto
+            {
+                AccountId = user.AccountId,
+                FullName = user.FullName,
+                Phone = user.Phone,
+                Gender = user.Gender,
+                DOB = user.DOB,
+                AvatarUrl = user.AvatarUrl,
+                SocialLinks = user.SocialLinks,
+                LocationId = user.LocationId,
+                LocationName = user.LocationRegion?.Name,
+                Address = user.Address,
+                OnboardingStatus = user.OnboardingStatus,
+                Note = user.Note,
+                UpdatedAt = user.UpdatedAt
+            };
+        }
+
+        public async Task<UserProfileResponseDto> UpdateProfileAsync(Guid accountId, UpdateUserProfileDto dto)
+        {
+            var user = await _db.UserProfiles
+                .Include(u => u.LocationRegion)
+                .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+            if (user == null)
+            {
+                return new UserProfileResponseDto
+                {
+                    Success = false,
+                    Message = "Không tìm thấy người dùng."
+                };
+            }
+
+            // ✅ Cập nhật thông tin cho phép
+            user.FullName = dto.FullName;
+            user.Phone = dto.Phone;
+            user.Gender = dto.Gender;
+            user.DOB = dto.DOB;
+            user.AvatarUrl = dto.AvatarUrl;
+            user.SocialLinks = dto.SocialLinks;
+            user.Address = dto.Address;
+            user.Interests = dto.Interests;
+            user.PersonalityTraits = dto.PersonalityTraits;
+            user.Introduction = dto.Introduction;
+            user.CvUrl = dto.CvUrl;
+            user.Note = dto.Note;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+
+            // ✅ Lấy lại thông tin khu vực (nếu cần)
+            var locationRegion = await _db.LocationRegions
+                .FirstOrDefaultAsync(r => r.Id == user.LocationId);
+
+            return new UserProfileResponseDto
+            {
+                Success = true,
+                Message = "Cập nhật hồ sơ thành công.",
+                Data = new UserProfileDto
+                {
+                    AccountId = user.AccountId,
+                    FullName = user.FullName,
+                    Phone = user.Phone,
+                    Gender = user.Gender,
+                    DOB = user.DOB,
+                    AvatarUrl = user.AvatarUrl,
+                    SocialLinks = user.SocialLinks,
+                    Address = user.Address,
+                    LocationId = user.LocationId,
+                    LocationName = locationRegion?.Name,
+                    OnboardingStatus = user.OnboardingStatus,
+                    Note = user.Note,
+                    UpdatedAt = user.UpdatedAt,
+                    Interests = user.Interests,
+                    PersonalityTraits = user.PersonalityTraits,
+                    Introduction = user.Introduction,
+                    CvUrl = user.CvUrl
+                }
+            };
+        }
+
+
+
+
+
+
     }
 }

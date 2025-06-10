@@ -7,6 +7,7 @@ using UserService.API.Repositories.Interfaces;
 using DotNetEnv;
 using UserService.API.Services.Implementations;
 using UserService.API.Services.Interfaces;
+using UserService.API.Services.CleanData;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,9 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ICoachProfileService, CoachProfileService>();
 builder.Services.AddScoped<IStaffProfileService, StaffProfileService>();
 builder.Services.AddScoped<IPartnerProfileService, PartnerProfileService>();
-
+builder.Services.AddScoped<ISupplierProfileService,SupplierProfileService>();
+builder.Services.AddScoped<IMembershipRequestService, MembershipRequestService>();
+//builder.Services.AddHostedService<RejectedCleanupService>();
 builder.Services.AddHttpContextAccessor();
 
 
