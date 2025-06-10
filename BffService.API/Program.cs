@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using BffService.API.Services.User;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,7 @@ builder.Services.AddCors(options =>
             .AllowCredentials(); 
     });
 });
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -52,10 +54,17 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// url auth
 
 builder.Services.AddHttpClient<IAuthProxyService, AuthProxyService>(client =>
 {
     client.BaseAddress = new Uri("http://localhost:5001"); 
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5005");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 

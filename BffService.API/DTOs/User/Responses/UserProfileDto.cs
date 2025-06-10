@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace UserService.API.DTOs.Responses
+namespace BffService.API.DTOs.Responses
 {
     public class UserProfileDto
     {
