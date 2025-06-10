@@ -29,7 +29,7 @@ namespace UserService.API.Services.Implementations
                 FullName = request.FullName,
                 Phone = request.Phone,
                 Gender = request.Gender,
-                DOB = DateTime.Now,
+              
                 Address = request.Address,
                 LocationId = request.LocationId,
                 RoleType = request.RoleType,
@@ -38,7 +38,7 @@ namespace UserService.API.Services.Implementations
                 CreatedByAdminId = request.CreatedByAdminId,
                 IsCompleted = false,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = null
+              
             };
 
             await _db.UserProfiles.AddAsync(userProfile);
