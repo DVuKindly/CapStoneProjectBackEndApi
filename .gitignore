@@ -64,11 +64,6 @@ docker-db/
 secrets.json
 token.json
 
-########################################
-# 🔹 EF MIGRATIONS (tuỳ chọn nếu dùng Code First)
-########################################
-**/Migrations/
-*.db
 
 ########################################
 # 🔹 TEST / COVERAGE
