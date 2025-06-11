@@ -1,17 +1,21 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SharedKernel.DTOsChung.Request;
 using UserService.API.Data;
 using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
 using UserService.API.Entities;
+using UserService.API.Services.Implementations;
 using UserService.API.Services.Interfaces;
 
 public class MembershipRequestService : IMembershipRequestService
 {
     private readonly UserDbContext _db;
+    private readonly IAuthServiceClient _authServiceClient;
 
-    public MembershipRequestService(UserDbContext db)
+    public MembershipRequestService(UserDbContext db , IAuthServiceClient authServiceClient)
     {
         _db = db;
+        _authServiceClient = authServiceClient;
     }
 
     public async Task<BaseResponse> ApproveMembershipRequestAsync(Guid staffAccountId, ApproveMembershipRequestDto dto)
@@ -285,6 +289,76 @@ public class MembershipRequestService : IMembershipRequestService
             }
         }).ToList();
     }
+    public async Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId)
+    {
+        var request = await _db.PendingMembershipRequests
+            .Include(r => r.UserProfile)
+            .FirstOrDefaultAsync(r => r.Id == requestId);
 
-    
+        if (request == null || request.Status != "PendingPayment")
+            return null;
+
+        return new MembershipRequestSummaryDto
+        {
+            MembershipRequestId = request.Id,
+            AccountId = request.AccountId,
+            PackageId = request.PackageId,
+            RequestedPackageName = request.RequestedPackageName,
+            Amount = 0, // sẽ gọi từ MembershipPackageService để lấy
+            Status = request.Status
+        };
+    }
+
+   
+
+
+
+
+    public async Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(Guid requestId)
+    {
+        var request = await _db.PendingMembershipRequests
+            .Include(r => r.UserProfile)
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request == null || request.Status != "PendingPayment")
+        {
+            return new BaseResponse
+            {
+                Success = false,
+                Message = "Yêu cầu không tồn tại hoặc chưa đủ điều kiện cập nhật."
+            };
+        }
+
+        request.Status = "Approved";
+        request.PaymentStatus = "Paid";
+        request.PaymentTime = DateTime.UtcNow;
+
+        if (request.UserProfile != null)
+        {
+            request.UserProfile.OnboardingStatus = "Approved";
+        }
+
+        await _db.SaveChangesAsync();
+
+        // Gọi AuthService để chỉnh vai trò
+        var promoted = await _authServiceClient.PromoteUserToMemberAsync(request.AccountId);
+
+        if (!promoted)
+        {
+            return new BaseResponse
+            {
+                Success = false,
+                Message = "Cập nhật thanh toán OK, nhưng không thể cập nhật vai trò."
+            };
+        }
+
+        return new BaseResponse
+        {
+            Success = true,
+            Message = "Thanh toán và duyệt yêu cầu thành công."
+        };
+    }
+
+
+
 }

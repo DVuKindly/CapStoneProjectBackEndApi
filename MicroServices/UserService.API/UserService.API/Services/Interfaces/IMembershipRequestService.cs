@@ -1,4 +1,5 @@
-﻿using UserService.API.DTOs.Requests;
+﻿using SharedKernel.DTOsChung.Request;
+using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
 
 namespace UserService.API.Services.Interfaces
@@ -17,6 +18,14 @@ namespace UserService.API.Services.Interfaces
        //Từ chối yêu cầu
         Task<BaseResponse> RejectMembershipRequestAsync(Guid staffAccountId, RejectMembershipRequestDto dto);
 
+
+
+
+        // Lấy thông tin tóm tắt cho PaymentService
+        Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId);
+
+        // Dành cho PaymentService gọi về sau khi thanh toán thành công
+        Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(Guid requestId);
 
 
         Task<PendingMembershipRequestDto?> GetRequestDetailAsync(Guid requestId, Guid staffAccountId);

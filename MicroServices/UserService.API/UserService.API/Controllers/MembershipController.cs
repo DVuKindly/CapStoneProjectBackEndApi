@@ -82,7 +82,29 @@ public class MembershipController : ControllerBase
         return Ok(result);
     }
 
-    
+
+  
+    [HttpGet("payment-summary/{requestId}")]
+    [AllowAnonymous] 
+    public async Task<IActionResult> GetMembershipRequestSummary(Guid requestId)
+    {
+        var result = await _membershipRequestService.GetMembershipRequestSummaryAsync(requestId);
+        return result != null ? Ok(result) : NotFound("Không tìm thấy request hợp lệ hoặc không ở trạng thái chờ thanh toán.");
+    }
+
+
+
+
+
+   
+    [HttpPost("mark-paid/{requestId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> MarkMembershipRequestAsPaid(Guid requestId)
+    {
+        var result = await _membershipRequestService.MarkRequestAsPaidAndApprovedAsync(requestId);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
 
     private Guid GetAccountId()
     {

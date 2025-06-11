@@ -46,9 +46,11 @@ builder.Services.Configure<EmailSettings>(options =>
     options.FromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? "NextU";
 });
 
+var userServiceUrl = builder.Configuration["Services:UserService"];
+
 builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5005");
+    client.BaseAddress = new Uri(userServiceUrl);
 });
 
 var app = builder.Build();
