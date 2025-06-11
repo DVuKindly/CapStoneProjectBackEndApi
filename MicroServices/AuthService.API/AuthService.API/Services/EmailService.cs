@@ -11,38 +11,37 @@ namespace AuthService.API.Services
     {
         private readonly ILogger<EmailService> _logger;
         private readonly EmailSettings _emailSettings;
-        private readonly string _baseUrl;
-        private readonly string _resetUrl;
+        private const string ClientUrl = "http://localhost:3000";
 
         public EmailService(ILogger<EmailService> logger, IOptions<EmailSettings> options)
         {
             _logger = logger;
             _emailSettings = options.Value;
-            _baseUrl = Environment.GetEnvironmentVariable("BASE_CLIENT_URL") ?? "http://localhost:5000";
-            _resetUrl = Environment.GetEnvironmentVariable("RESET_PASSWORD_URL_BASE") ?? "http://localhost:3000";
         }
 
         public async Task SendVerificationEmailAsync(string email, string verificationToken)
         {
-            var link = $"{_baseUrl}/api/auth/verify-email?token={verificationToken}";
+            var link = $"{ClientUrl}/verify-email?token={verificationToken}";
             var subject = "Xác minh tài khoản NextU";
-            var body = $"<p>Vui lòng nhấn vào liên kết sau để xác minh tài khoản:</p><p><a href='{link}'>{link}</a></p>";
+            var body = $"<p>Vui lòng nhấn vào liên kết sau để xác minh tài khoản:</p>" +
+                       $"<p><a href='{link}'>{link}</a></p>";
 
             await SendEmailAsync(email, subject, body);
         }
 
         public async Task SendResetPasswordEmailAsync(string email, string resetToken)
         {
-            var link = $"{_resetUrl}/reset-password?token={resetToken}";
+            var link = $"{ClientUrl}/reset-password?token={resetToken}";
             var subject = "Khôi phục mật khẩu NextU";
-            var body = $"<p>Nhấn vào liên kết sau để đặt lại mật khẩu:</p><p><a href='{link}'>{link}</a></p>";
+            var body = $"<p>Nhấn vào liên kết sau để đặt lại mật khẩu:</p>" +
+                       $"<p><a href='{link}'>{link}</a></p>";
 
             await SendEmailAsync(email, subject, body);
         }
 
         public async Task SendSetPasswordEmailAsync(string email, string setPasswordToken)
         {
-            var link = $"{_resetUrl}/set-password?token={setPasswordToken}";
+            var link = $"{ClientUrl}/set-password?token={setPasswordToken}";
             var subject = "Thiết lập mật khẩu tài khoản NextU";
             var body = $@"
                 <p>Bạn đã được mời tham gia hệ thống NextU.</p>
