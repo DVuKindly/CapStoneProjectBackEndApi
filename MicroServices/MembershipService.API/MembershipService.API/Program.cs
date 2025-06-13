@@ -35,6 +35,14 @@ builder.Services.AddScoped<INextUServiceService, NextUServiceService>();
 builder.Services.AddScoped<IPackageDurationRepository, PackageDurationRepository>();
 builder.Services.AddScoped<IPackageDurationService, PackageDurationService>();
 builder.Services.AddAutoMapper(typeof(PackageDurationProfile));
+// ??ng ký DI cho PackageLevel
+builder.Services.AddScoped<IPackageLevelRepository, PackageLevelRepository>();
+builder.Services.AddScoped<IPackageLevelService, PackageLevelService>();
+builder.Services.AddAutoMapper(typeof(PackageLevelProfile));
+// ??ng ký DI cho BasicPackage
+builder.Services.AddScoped<IBasicPackageRepository, BasicPackageRepository>();
+builder.Services.AddScoped<IBasicPackageServiceRepository, BasicPackageServiceRepository>();
+builder.Services.AddScoped<IBasicPackageService, BasicPackageService>();
 
 var app = builder.Build();
 

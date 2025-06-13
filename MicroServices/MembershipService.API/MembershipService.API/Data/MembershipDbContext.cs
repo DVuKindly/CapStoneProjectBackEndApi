@@ -12,9 +12,10 @@ namespace MembershipService.API.Data
         public DbSet<Ecosystem> Ecosystems { get; set; }
         public DbSet<NextUService> NextUServices { get; set; }
         public DbSet<Media> Media { get; set; }
-        public DbSet<PackageType> PackageTypes { get; set; }
+        //public DbSet<PackageType> PackageTypes { get; set; }
         public DbSet<PackageDuration> PackageDurations { get; set; }
         public DbSet<BasicPackage> BasicPackages { get; set; }
+        public DbSet<BasicPackageService> BasicPackageServices { get; set; }
         public DbSet<ComboPackage> ComboPackages { get; set; }
         public DbSet<ComboPackageService> ComboPackageServices { get; set; }
         public DbSet<ServicePricing> ServicePricings { get; set; }
@@ -39,13 +40,6 @@ namespace MembershipService.API.Data
                 .HasOne(s => s.Ecosystem)
                 .WithMany(e => e.NextUServices)
                 .HasForeignKey(s => s.EcosystemId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // PackageType - BasicPackage
-            modelBuilder.Entity<BasicPackage>()
-                .HasOne(s => s.PackageType)
-                .WithMany(e => e.BasicPackages)
-                .HasForeignKey(s => s.PackageTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // PackageDuration - BasicPackage
