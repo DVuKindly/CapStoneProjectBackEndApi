@@ -11,11 +11,24 @@ using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env
-DotNetEnv.Env.Load(Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.Parent!.Parent!.FullName, ".env"));
+var envPath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.Parent!.Parent!.FullName, ".env");
+DotNetEnv.Env.Load(envPath);
 
+// 2. Thêm biến môi trường vào IConfiguration
+builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+
+var internalApiKey = builder.Configuration["InternalApi:ApiKey"];
+if (string.IsNullOrEmpty(internalApiKey))
+{
+    Console.WriteLine("⚠️ API Key for InternalApi not found or empty!");
+}
+else
+{
+    Console.WriteLine($"✅ API Key loaded: {internalApiKey}");
+}
 
 // Setup JWT + Swagger
 builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -46,12 +59,24 @@ builder.Services.Configure<EmailSettings>(options =>
     options.FromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? "NextU";
 });
 
+builder.Services.Configure<JwtSettings>(options =>
+{
+    options.SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? throw new Exception("Missing JWT_SECRET_KEY in .env");
+    options.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "AuthService";
+    options.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "AllMicroservices";
+    options.AccessTokenMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_MINUTES") ?? "30");
+    options.RefreshTokenDays = int.Parse(Environment.GetEnvironmentVariable("JWT_REFRESH_TOKEN_DAYS") ?? "7");
+});
+
+
+
 var userServiceUrl = builder.Configuration["Services:UserService"];
 
 builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
 {
-    client.BaseAddress = new Uri(userServiceUrl);
+    client.BaseAddress = new Uri(builder.Configuration["Services:UserService"]);
 });
+
 
 var app = builder.Build();
 
@@ -65,6 +90,8 @@ using (var scope = app.Services.CreateScope())
     await DbInitializer.SeedAsync(context, hasher, userServiceClient);
 }
 
+
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -75,3 +102,29 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

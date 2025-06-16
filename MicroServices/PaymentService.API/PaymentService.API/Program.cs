@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PaymentService.API.Data;
 using PaymentService.API.Services;
-using Pay = PaymentService.API.Services.PaymentService;
+using System.Text.Json.Serialization;
 
 namespace PaymentService.API
 {
@@ -11,41 +11,56 @@ namespace PaymentService.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container
-            builder.Services.AddControllers();
+            // 👇 Configure logging (optional, bổ sung để debug)
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+
+            // ✅ Add Controllers with JSON config to avoid circular ref
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null; // Optional: giữ đúng tên
+                });
+
+            // ✅ Add Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // Add DBContext
+            // ✅ Add EF Core
             builder.Services.AddDbContext<PaymentDbContext>(options =>
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("Default"),
                     sql => sql.EnableRetryOnFailure()
                 ));
 
-            // ✅ Cấu hình HttpClient để gọi sang UserService
-            builder.Services.AddHttpClient<IPaymentService, Pay>(client =>
-            {
-                var baseUrl = builder.Configuration["UserService:BaseUrl"];
-                client.BaseAddress = new Uri(baseUrl!); // ! để tránh warning null
-            });
-
-            builder.Services.AddHttpClient<IPaymentResultHandler, PaymentResultHandler>();
+            // ✅ Register Services
+            builder.Services.AddScoped<IPaymentService, PaymentService.API.Services.PaymentService>();
+            builder.Services.AddScoped<IPaymentWebhookService, PaymentWebhookService>();
+            builder.Services.AddHttpClient<IPaymentResultHandler, PaymentResultHandler>(); // gọi về UserService
 
             var app = builder.Build();
 
-            // Configure middleware
+            // ✅ Swagger only in development
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
+            // ⚙️ Middleware
             app.UseAuthorization();
-
             app.MapControllers();
 
-            app.Run();
+            try
+            {
+                app.Run();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Application failed to start: {ex.Message}");
+                throw;
+            }
         }
     }
 }

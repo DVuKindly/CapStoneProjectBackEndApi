@@ -1,24 +1,25 @@
-﻿
-using AuthService.API.Entities;
+﻿using AuthService.API.Entities;
+using AuthService.API.Helpers;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Newtonsoft.Json;
 
 namespace AuthService.API.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly string _jwtSecret;
-        private readonly TimeSpan _accessTokenExpiration = TimeSpan.FromMinutes(30);
-        private readonly TimeSpan _refreshTokenExpiration = TimeSpan.FromDays(7);
+        private readonly JwtSettings _jwtSettings;
+        private readonly TimeSpan _accessTokenExpiration;
+        private readonly TimeSpan _refreshTokenExpiration;
 
-        public TokenService()
+        public TokenService(IOptions<JwtSettings> jwtOptions)
         {
-            _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
-                         ?? throw new InvalidOperationException("JWT_SECRET_KEY is missing in environment variables or .env.");
+            _jwtSettings = jwtOptions.Value;
+            _accessTokenExpiration = TimeSpan.FromMinutes(_jwtSettings.AccessTokenMinutes);
+            _refreshTokenExpiration = TimeSpan.FromDays(_jwtSettings.RefreshTokenDays);
         }
 
         public string GenerateAccessToken(UserAuth user)
@@ -26,21 +27,21 @@ namespace AuthService.API.Services
             var roles = user.UserRoles?.Select(r => r.Role.RoleKey).ToList() ?? new();
 
             var claims = new List<Claim>
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-        new Claim("location", user.LocationId.ToString()) 
-    };
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+                new Claim("location", user.LocationId.ToString()),
+                new Claim("name", user.UserName ?? string.Empty)
+            };
 
-            // ✅ Thêm từng role vào claim
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: "AuthService",
-                audience: "AllMicroservices",
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
                 claims: claims,
                 expires: DateTime.UtcNow.Add(_accessTokenExpiration),
                 signingCredentials: creds
@@ -49,6 +50,38 @@ namespace AuthService.API.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        public string GenerateIdToken(UserAuth user)
+        {
+            var now = DateTime.UtcNow;
+            var roles = user.UserRoles?.Select(r => r.Role.RoleKey).ToList() ?? new();
+
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Name, user.UserName ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Iss, _jwtSettings.Issuer),
+                new Claim(JwtRegisteredClaimNames.Aud, _jwtSettings.Audience),
+                new Claim(JwtRegisteredClaimNames.Iat, new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+                new Claim("location", user.LocationId.ToString())
+            };
+
+            claims.AddRange(roles.Select(role => new Claim("role", role)));
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                notBefore: now,
+                expires: now.AddMinutes(10),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
 
         public string GenerateRefreshToken()
         {
@@ -60,26 +93,28 @@ namespace AuthService.API.Services
 
         public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
         {
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = false,
-                ValidateIssuer = false,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret)),
-                ValidateLifetime = false
-            };
-
             var tokenHandler = new JwtSecurityTokenHandler();
             try
             {
-                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
-
-                if (validatedToken is JwtSecurityToken jwt &&
-                    jwt.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
                 {
-                    return principal;
+                    ValidateAudience = false,
+                    ValidateIssuer = false,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey)),
+                    ValidateLifetime = false
+                }, out var validatedToken);
+
+                if (validatedToken is not JwtSecurityToken jwt ||
+                    !jwt.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return null;
                 }
 
+                return principal;
+            }
+            catch (SecurityTokenExpiredException)
+            {
                 return null;
             }
             catch
@@ -90,7 +125,7 @@ namespace AuthService.API.Services
 
         public bool IsRefreshTokenValid(string refreshToken)
         {
-            return !string.IsNullOrWhiteSpace(refreshToken) && refreshToken.Length > 32;
+            return !string.IsNullOrWhiteSpace(refreshToken) && refreshToken.Length >= 32;
         }
     }
 }
