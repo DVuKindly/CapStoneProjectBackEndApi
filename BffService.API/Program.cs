@@ -69,8 +69,17 @@ builder.Services.AddHttpClient("UserService", client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
+// HttpClient cho PaymentService
+builder.Services.AddHttpClient("PaymentService", client =>
+{
+    client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("PAYMENTSERVICE_URL") ?? "http://localhost:5010");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 // Swagger config
 builder.Services.AddSwaggerGen(c =>
@@ -124,4 +133,5 @@ app.Use(async (context, next) =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapReverseProxy();
 app.Run();

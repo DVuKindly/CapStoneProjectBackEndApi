@@ -61,6 +61,7 @@ namespace AuthService.API.Services
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Name, user.UserName ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Iss, _jwtSettings.Issuer),
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Aud, _jwtSettings.Audience),
                 new Claim(JwtRegisteredClaimNames.Iat, new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
                 new Claim("location", user.LocationId.ToString())

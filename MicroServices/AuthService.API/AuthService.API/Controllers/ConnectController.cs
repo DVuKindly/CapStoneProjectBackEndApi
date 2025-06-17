@@ -20,12 +20,17 @@ namespace AuthService.API.Controllers
 
             return Ok(new
             {
-                sub = claims[JwtRegisteredClaimNames.Sub],
-                name = claims.GetValueOrDefault(JwtRegisteredClaimNames.Name),
-                email = claims.GetValueOrDefault(JwtRegisteredClaimNames.Email),
+                // ✅ kiểm tra tồn tại hoặc fallback sang NameIdentifier nếu cần
+                sub = claims.GetValueOrDefault(JwtRegisteredClaimNames.Sub)
+                       ?? claims.GetValueOrDefault(ClaimTypes.NameIdentifier),
+                name = claims.GetValueOrDefault(JwtRegisteredClaimNames.Name)
+                       ?? claims.GetValueOrDefault(ClaimTypes.Name),
+                email = claims.GetValueOrDefault(JwtRegisteredClaimNames.Email)
+                        ?? claims.GetValueOrDefault(ClaimTypes.Email),
                 roles = identity.FindAll(ClaimTypes.Role).Select(r => r.Value).ToArray()
             });
         }
+
     }
 
 }
