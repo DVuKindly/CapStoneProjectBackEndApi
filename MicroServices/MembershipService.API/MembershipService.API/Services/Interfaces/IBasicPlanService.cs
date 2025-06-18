@@ -3,11 +3,11 @@ using MembershipService.API.Dtos.Response;
 
 namespace MembershipService.API.Services.Interfaces
 {
-    public interface IBasicPackageService
+    public interface IBasicPlanService
     {
-        Task<BasicPackageResponse> CreateAsync(BasicPackageCreateRequest request);
-        Task<BasicPackageResponse?> GetByIdAsync(Guid id);
-        Task<List<BasicPackageResponse>> GetAllAsync();
+        Task<BasicPlanResponse> CreateAsync(BasicPlanCreateRequest request);
+        Task<BasicPlanResponse?> GetByIdAsync(Guid id);
+        Task<List<BasicPlanResponse>> GetAllAsync();
         Task<bool> UpdateAsync(Guid id, BasicPackageUpdateRequest request);
         Task<bool> DeleteAsync(Guid id);
     }

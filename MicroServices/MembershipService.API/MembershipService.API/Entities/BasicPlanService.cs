@@ -2,13 +2,13 @@
 
 namespace MembershipService.API.Entities
 {
-    public class BasicPackageService : AuditableEntity
+    public class BasicPlanService : AuditableEntity
     {
         public Guid Id { get; set; }
 
         // FK đến BasicPackage
-        public Guid BasicPackageId { get; set; }
-        public BasicPackage BasicPackage { get; set; }
+        public Guid BasicPlanId { get; set; }
+        public BasicPlan BasicPlan { get; set; }
 
         // FK đến dịch vụ
         public Guid NextUServiceId { get; set; }

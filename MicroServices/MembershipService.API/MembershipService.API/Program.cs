@@ -39,10 +39,18 @@ builder.Services.AddAutoMapper(typeof(PackageDurationProfile));
 builder.Services.AddScoped<IPackageLevelRepository, PackageLevelRepository>();
 builder.Services.AddScoped<IPackageLevelService, PackageLevelService>();
 builder.Services.AddAutoMapper(typeof(PackageLevelProfile));
-// ??ng ký DI cho BasicPackage
-builder.Services.AddScoped<IBasicPackageRepository, BasicPackageRepository>();
-builder.Services.AddScoped<IBasicPackageServiceRepository, BasicPackageServiceRepository>();
-builder.Services.AddScoped<IBasicPackageService, BasicPackageService>();
+// ??ng ký DI cho BasicPlan
+builder.Services.AddScoped<IBasicPlanRepository, BasicPlanRepository>();
+builder.Services.AddScoped<IBasicPlanServiceRepository, BasicPlanServiceRepository>();
+builder.Services.AddScoped<IBasicPlanService, BasicPlanService>();
+builder.Services.AddAutoMapper(typeof(BasicPackageProfile).Assembly);
+// ??ng ký DI cho ComboPlan
+builder.Services.AddScoped<IComboPlanRepository, ComboPlanRepository>();
+builder.Services.AddScoped<IComboPlanServiceRepository, ComboPlanServiceRepository>();
+builder.Services.AddScoped<IComboPlanService, ComboPlanService>();
+builder.Services.AddAutoMapper(typeof(ComboPlanProfile).Assembly);
+
+
 
 var app = builder.Build();
 

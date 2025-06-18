@@ -2,6 +2,7 @@
 using MembershipService.API.Entities;
 using MembershipService.API.Repositories.Interfaces;
 using MembershipService.API.Services.Interfaces;
+using Sprache;
 using static MembershipService.API.Dtos.Request.NextUServiceRequestDto;
 
 namespace MembershipService.API.Services.Implementations
@@ -18,8 +19,7 @@ namespace MembershipService.API.Services.Implementations
         public async Task<NextUServiceResponseDto> CreateAsync(CreateNextUServiceRequest request)
         {
             var ecosystem = await _repository.GetEcosystemByIdAsync(request.EcosystemId);
-            if (ecosystem == null)
-                throw new Exception("Ecosystem not found");
+            if (ecosystem == null) throw new Exception("Ecosystem not found");
 
             var service = new NextUService
             {
@@ -27,6 +27,7 @@ namespace MembershipService.API.Services.Implementations
                 Name = request.Name,
                 UnitType = request.UnitType,
                 EcosystemId = request.EcosystemId,
+                LocationId = request.LocationId,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "system"
             };
@@ -39,9 +40,12 @@ namespace MembershipService.API.Services.Implementations
                 Name = result.Name,
                 UnitType = result.UnitType,
                 EcosystemId = result.EcosystemId,
-                EcosystemName = ecosystem.Name
+                EcosystemName = ecosystem.Name,
+                LocationId = result.LocationId.GetValueOrDefault(),
+                LocationName = result.Location?.Name ?? ""
             };
         }
+
 
         public async Task<NextUServiceResponseDto> GetByIdAsync(Guid id)
         {
@@ -54,7 +58,10 @@ namespace MembershipService.API.Services.Implementations
                 Name = result.Name,
                 UnitType = result.UnitType,
                 EcosystemId = result.EcosystemId,
-                EcosystemName = result.Ecosystem?.Name
+                EcosystemName = result.Ecosystem?.Name,
+                LocationId = result.LocationId.GetValueOrDefault(),
+                LocationName = result.Location?.Name ?? "",
+                MediaGalleryId = result.MediaGallery?.Select(m => m.Id).ToList() ?? new List<Guid>()
             };
         }
 
@@ -67,9 +74,13 @@ namespace MembershipService.API.Services.Implementations
                 Name = x.Name,
                 UnitType = x.UnitType,
                 EcosystemId = x.EcosystemId,
-                EcosystemName = x.Ecosystem?.Name
+                EcosystemName = x.Ecosystem?.Name,
+                LocationId = x.LocationId.GetValueOrDefault(),
+                LocationName = x.Location?.Name ?? "",
+                MediaGalleryId = x.MediaGallery?.Select(m => m.Id).ToList() ?? new List<Guid>()
             }).ToList();
         }
+
 
         public async Task<NextUServiceResponseDto> UpdateAsync(Guid id, UpdateNextUServiceRequest request)
         {
@@ -79,6 +90,7 @@ namespace MembershipService.API.Services.Implementations
             existing.Name = request.Name;
             existing.UnitType = request.UnitType;
             existing.EcosystemId = request.EcosystemId;
+            existing.LocationId = request.LocationId;
             existing.UpdatedAt = DateTime.UtcNow;
 
             var result = await _repository.UpdateAsync(existing);
@@ -90,9 +102,12 @@ namespace MembershipService.API.Services.Implementations
                 Name = result.Name,
                 UnitType = result.UnitType,
                 EcosystemId = result.EcosystemId,
-                EcosystemName = ecosystem?.Name
+                EcosystemName = ecosystem?.Name,
+                LocationId = result.LocationId.GetValueOrDefault(),
+                LocationName = result.Location?.Name ?? ""
             };
         }
+
 
         public async Task<bool> DeleteAsync(Guid id)
         {

@@ -7,5 +7,9 @@
         public string UnitType { get; set; }
         public Guid EcosystemId { get; set; }
         public string EcosystemName { get; set; }
+        public Guid LocationId { get; set; }
+        public string LocationName { get; set; }
+
+        public List<Guid> MediaGalleryId { get; set; }
     }
 }

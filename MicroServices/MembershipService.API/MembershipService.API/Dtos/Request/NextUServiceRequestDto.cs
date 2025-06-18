@@ -7,6 +7,7 @@
             public string Name { get; set; }
             public string UnitType { get; set; }
             public Guid EcosystemId { get; set; }
+            public Guid LocationId { get; set; } 
         }
 
         public class UpdateNextUServiceRequest
@@ -14,6 +15,7 @@
             public string Name { get; set; }
             public string UnitType { get; set; }
             public Guid EcosystemId { get; set; }
+            public Guid LocationId { get; set; } 
         }
     }
 }

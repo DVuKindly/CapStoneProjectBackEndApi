@@ -8,7 +8,7 @@ namespace MembershipService.API.Entities
         public string Name { get; set; }
         public string? Description { get; set; }
 
-        public ICollection<BasicPackage> BasicPackages { get; set; }
+        public ICollection<ComboPlan> ComboPlans { get; set; }
     }
 
 }

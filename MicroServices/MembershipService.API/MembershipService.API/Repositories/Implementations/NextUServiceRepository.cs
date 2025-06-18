@@ -23,12 +23,20 @@ namespace MembershipService.API.Repositories.Implementations
 
         public async Task<NextUService> GetByIdAsync(Guid id)
         {
-            return await _context.NextUServices.Include(x => x.Ecosystem).FirstOrDefaultAsync(x => x.Id == id);
+            return await _context.NextUServices
+                .Include(x => x.Ecosystem)
+                .Include(x => x.Location)
+                .Include(x => x.MediaGallery)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<List<NextUService>> GetAllAsync()
         {
-            return await _context.NextUServices.Include(x => x.Ecosystem).ToListAsync();
+            return await _context.NextUServices
+                .Include(x => x.Ecosystem)
+                .Include(x => x.Location)
+                .Include(x => x.MediaGallery)
+                .ToListAsync();
         }
 
         public async Task<NextUService> UpdateAsync(NextUService service)

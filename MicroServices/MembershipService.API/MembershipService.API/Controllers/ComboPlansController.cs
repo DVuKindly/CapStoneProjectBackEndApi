@@ -7,17 +7,17 @@ namespace MembershipService.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class BasicPackagesController : ControllerBase
+    public class ComboPlansController : ControllerBase
     {
-        private readonly IBasicPackageService _service;
+        private readonly IComboPlanService _service;
 
-        public BasicPackagesController(IBasicPackageService service)
+        public ComboPlansController(IComboPlanService service)
         {
             _service = service;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] BasicPackageCreateRequest request)
+        public async Task<IActionResult> Create([FromBody] ComboPlanCreateRequest request)
         {
             var result = await _service.CreateAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
@@ -38,7 +38,7 @@ namespace MembershipService.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] BasicPackageUpdateRequest request)
+        public async Task<IActionResult> Update(Guid id, [FromBody] ComboPlanUpdateRequest request)
         {
             var success = await _service.UpdateAsync(id, request);
             return success ? NoContent() : NotFound();
@@ -50,6 +50,5 @@ namespace MembershipService.API.Controllers
             var success = await _service.DeleteAsync(id);
             return success ? NoContent() : NotFound();
         }
-
     }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MembershipService.API.Migrations
 {
     [DbContext(typeof(MembershipDbContext))]
-    [Migration("20250613061547_delete_PackageTypes_entity_editentity_basicPackageService")]
-    partial class delete_PackageTypes_entity_editentity_basicPackageService
+    [Migration("20250617181207_edit_relation_packageLevel")]
+    partial class edit_relation_packageLevel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace MembershipService.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPackage", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlan", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -44,15 +44,15 @@ namespace MembershipService.API.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PackageDurationId")
                         .HasColumnType("int");
-
-                    b.Property<Guid?>("PackageLevelId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
@@ -68,20 +68,20 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LocationId");
+
                     b.HasIndex("PackageDurationId");
 
-                    b.HasIndex("PackageLevelId");
-
-                    b.ToTable("BasicPackages");
+                    b.ToTable("BasicPlans");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPackageService", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanService", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("BasicPackageId")
+                    b.Property<Guid>("BasicPlanId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("CreatedAt")
@@ -101,20 +101,20 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BasicPackageId");
+                    b.HasIndex("BasicPlanId");
 
                     b.HasIndex("NextUServiceId");
 
-                    b.ToTable("BasicPackageServices");
+                    b.ToTable("BasicPlanServices");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.ComboPackage", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("BasicPackageId")
+                    b.Property<Guid>("BasicPlanId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
@@ -133,9 +133,15 @@ namespace MembershipService.API.Migrations
                     b.Property<bool>("IsSuggested")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PackageLevelId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
@@ -148,18 +154,22 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BasicPackageId");
+                    b.HasIndex("BasicPlanId");
 
-                    b.ToTable("ComboPackages");
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("PackageLevelId");
+
+                    b.ToTable("ComboPlans");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.ComboPackageService", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.ComboPlanService", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ComboPackageId")
+                    b.Property<Guid>("ComboPlanId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("CreatedAt")
@@ -179,11 +189,11 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ComboPackageId");
+                    b.HasIndex("ComboPlanId");
 
                     b.HasIndex("NextUServiceId");
 
-                    b.ToTable("ComboPackageServices");
+                    b.ToTable("ComboPlanServices");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Ecosystem", b =>
@@ -220,13 +230,47 @@ namespace MembershipService.API.Migrations
                     b.ToTable("Ecosystems");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.Location", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Locations");
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.Media", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("BasicPackageId")
+                    b.Property<Guid?>("BasicPlanId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("CreatedAt")
@@ -257,11 +301,11 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BasicPackageId");
+                    b.HasIndex("BasicPlanId");
 
                     b.HasIndex("NexUServiceId");
 
-                    b.ToTable("Media");
+                    b.ToTable("MediaGallery");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.NextUService", b =>
@@ -279,9 +323,15 @@ namespace MembershipService.API.Migrations
                     b.Property<Guid>("EcosystemId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("UnitType")
                         .IsRequired()
@@ -296,6 +346,8 @@ namespace MembershipService.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EcosystemId");
+
+                    b.HasIndex("LocationId");
 
                     b.ToTable("NextUServices");
                 });
@@ -364,128 +416,93 @@ namespace MembershipService.API.Migrations
                     b.ToTable("PackageLevels");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.ServicePricing", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlan", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                        .WithMany("BasicPlans")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Property<Guid?>("BasicPackageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("ComboPackageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("CreditCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsOptional")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("NextUServiceId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal?>("OverridePrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BasicPackageId");
-
-                    b.HasIndex("ComboPackageId");
-
-                    b.HasIndex("NextUServiceId");
-
-                    b.ToTable("ServicePricings");
-                });
-
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPackage", b =>
-                {
                     b.HasOne("MembershipService.API.Entities.PackageDuration", "PackageDuration")
-                        .WithMany("BasicPackages")
+                        .WithMany("BasicPlans")
                         .HasForeignKey("PackageDurationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MembershipService.API.Entities.PackageLevel", "PackageLevel")
-                        .WithMany("BasicPackages")
-                        .HasForeignKey("PackageLevelId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.Navigation("Location");
 
                     b.Navigation("PackageDuration");
-
-                    b.Navigation("PackageLevel");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPackageService", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanService", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.BasicPackage", "BasicPackage")
-                        .WithMany("BasicPackageServices")
-                        .HasForeignKey("BasicPackageId")
+                    b.HasOne("MembershipService.API.Entities.BasicPlan", "BasicPlan")
+                        .WithMany("BasicPlanServices")
+                        .HasForeignKey("BasicPlanId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
-                        .WithMany("BasicPackageServices")
+                        .WithMany("BasicPlanServices")
                         .HasForeignKey("NextUServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("BasicPackage");
+                    b.Navigation("BasicPlan");
 
                     b.Navigation("NextUService");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.ComboPackage", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.BasicPackage", "BasicPackage")
-                        .WithMany("ComboPackages")
-                        .HasForeignKey("BasicPackageId")
+                    b.HasOne("MembershipService.API.Entities.BasicPlan", "BasicPlan")
+                        .WithMany("ComboPlans")
+                        .HasForeignKey("BasicPlanId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("BasicPackage");
+                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                        .WithMany("ComboPlans")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MembershipService.API.Entities.PackageLevel", "PackageLevel")
+                        .WithMany("ComboPlans")
+                        .HasForeignKey("PackageLevelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BasicPlan");
+
+                    b.Navigation("Location");
+
+                    b.Navigation("PackageLevel");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.ComboPackageService", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.ComboPlanService", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.ComboPackage", "ComboPackage")
-                        .WithMany("ComboPackageServices")
-                        .HasForeignKey("ComboPackageId")
+                    b.HasOne("MembershipService.API.Entities.ComboPlan", "ComboPlan")
+                        .WithMany("ComboPlanServices")
+                        .HasForeignKey("ComboPlanId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
-                        .WithMany("ComboPackageServices")
+                        .WithMany("ComboPlanServices")
                         .HasForeignKey("NextUServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("ComboPackage");
+                    b.Navigation("ComboPlan");
 
                     b.Navigation("NextUService");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Media", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.BasicPackage", "BasicPackage")
+                    b.HasOne("MembershipService.API.Entities.BasicPlan", "BasicPlan")
                         .WithMany("MediaGallery")
-                        .HasForeignKey("BasicPackageId")
+                        .HasForeignKey("BasicPlanId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
@@ -493,7 +510,7 @@ namespace MembershipService.API.Migrations
                         .HasForeignKey("NexUServiceId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("BasicPackage");
+                    b.Navigation("BasicPlan");
 
                     b.Navigation("NextUService");
                 });
@@ -506,50 +523,28 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                        .WithMany("NextUServices")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Ecosystem");
+
+                    b.Navigation("Location");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.ServicePricing", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlan", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.BasicPackage", "BasicPackage")
-                        .WithMany("ServicePricings")
-                        .HasForeignKey("BasicPackageId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.Navigation("BasicPlanServices");
 
-                    b.HasOne("MembershipService.API.Entities.ComboPackage", "ComboPackage")
-                        .WithMany("ServicePricings")
-                        .HasForeignKey("ComboPackageId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
-                        .WithMany("ServicePricings")
-                        .HasForeignKey("NextUServiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BasicPackage");
-
-                    b.Navigation("ComboPackage");
-
-                    b.Navigation("NextUService");
-                });
-
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPackage", b =>
-                {
-                    b.Navigation("BasicPackageServices");
-
-                    b.Navigation("ComboPackages");
+                    b.Navigation("ComboPlans");
 
                     b.Navigation("MediaGallery");
-
-                    b.Navigation("ServicePricings");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.ComboPackage", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
                 {
-                    b.Navigation("ComboPackageServices");
-
-                    b.Navigation("ServicePricings");
+                    b.Navigation("ComboPlanServices");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Ecosystem", b =>
@@ -557,25 +552,32 @@ namespace MembershipService.API.Migrations
                     b.Navigation("NextUServices");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.Location", b =>
+                {
+                    b.Navigation("BasicPlans");
+
+                    b.Navigation("ComboPlans");
+
+                    b.Navigation("NextUServices");
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.NextUService", b =>
                 {
-                    b.Navigation("BasicPackageServices");
+                    b.Navigation("BasicPlanServices");
 
-                    b.Navigation("ComboPackageServices");
+                    b.Navigation("ComboPlanServices");
 
                     b.Navigation("MediaGallery");
-
-                    b.Navigation("ServicePricings");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.PackageDuration", b =>
                 {
-                    b.Navigation("BasicPackages");
+                    b.Navigation("BasicPlans");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.PackageLevel", b =>
                 {
-                    b.Navigation("BasicPackages");
+                    b.Navigation("ComboPlans");
                 });
 #pragma warning restore 612, 618
         }
