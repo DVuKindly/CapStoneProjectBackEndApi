@@ -2,12 +2,12 @@
 
 namespace MembershipService.API.Entities
 {
-    public class ComboPackageService : AuditableEntity
+    public class ComboPlanService : AuditableEntity
     {
         public Guid Id { get; set; }
 
-        public Guid ComboPackageId { get; set; }
-        public ComboPackage ComboPackage { get; set; }
+        public Guid ComboPlanId { get; set; }
+        public ComboPlan ComboPlan { get; set; }
 
         public Guid NextUServiceId { get; set; }
         public NextUService NextUService { get; set; }

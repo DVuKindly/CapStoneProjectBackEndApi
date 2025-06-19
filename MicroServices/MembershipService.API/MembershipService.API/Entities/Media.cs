@@ -12,8 +12,8 @@ namespace MembershipService.API.Entities
         public Guid? NexUServiceId { get; set; }
         public NextUService? NextUService { get; set; }
 
-        public Guid? BasicPackageId { get; set; }
-        public BasicPackage? BasicPackage { get; set; }
+        public Guid? BasicPlanId { get; set; }
+        public BasicPlan? BasicPlan { get; set; }
     }
 
 }

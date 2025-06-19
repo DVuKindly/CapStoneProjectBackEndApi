@@ -2,7 +2,7 @@
 
 namespace MembershipService.API.Entities
 {
-    public class BasicPackage : AuditableEntity
+    public class BasicPlan : AuditableEntity
     {
         public Guid Id { get; set; }
         public string Code { get; set; }
@@ -11,14 +11,13 @@ namespace MembershipService.API.Entities
         public decimal Price { get; set; }
         public bool VerifyBuy { get; set; }
 
-        public Guid? PackageLevelId { get; set; }
-        public PackageLevel? PackageLevel { get; set; }
-        public int PackageDurationId { get; set; }       
+        public int PackageDurationId { get; set; }
         public PackageDuration PackageDuration { get; set; }
+        public Guid? LocationId { get; set; }
+        public Location? Location { get; set; } = null!;
 
         public ICollection<Media> MediaGallery { get; set; }
-        public ICollection<ServicePricing> ServicePricings { get; set; }
-        public ICollection<ComboPackage> ComboPackages { get; set; }
-        public ICollection<BasicPackageService> BasicPackageServices { get; set; }
+        public ICollection<ComboPlan> ComboPlans { get; set; }
+        public ICollection<BasicPlanService> BasicPlanServices { get; set; }
     }
 }
