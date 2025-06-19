@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 using UserService.API.Entities;
 
 [Table("PendingMembershipRequests")]
-
 public class PendingMembershipRequest
 {
     [Key]
@@ -17,6 +16,9 @@ public class PendingMembershipRequest
 
     [MaxLength(255)]
     public string? RequestedPackageName { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? Amount { get; set; }
 
     [MaxLength(1000)]
     public string? Interests { get; set; }
@@ -47,28 +49,25 @@ public class PendingMembershipRequest
 
     // Thanh toán
     [MaxLength(50)]
-    public string? PaymentMethod { get; set; }  // "momo", "vnpay", "bank_transfer", "manual"
+    public string? PaymentMethod { get; set; }
 
     [MaxLength(50)]
-    public string? PaymentStatus { get; set; } = "Pending";  // "Pending", "Paid", "Failed", "Expired"
+    public string? PaymentStatus { get; set; } = "Pending";
 
-    public DateTime? PaymentTime { get; set; }  // Thời điểm thanh toán thực tế
+    public DateTime? PaymentTime { get; set; }
 
     [MaxLength(100)]
-    public string? PaymentTransactionId { get; set; } // Mã giao dịch từ hệ thống thứ 3
+    public string? PaymentTransactionId { get; set; }
 
     [MaxLength(1000)]
-    public string? PaymentNote { get; set; } // Ghi chú thêm, lý do lỗi nếu Failed
+    public string? PaymentNote { get; set; }
 
     [MaxLength(1000)]
-    public string? PaymentProofUrl { get; set; } // URL ảnh hóa đơn nếu là thủ công
-
+    public string? PaymentProofUrl { get; set; }
 
     // 🔁 Navigation
     [ForeignKey("AccountId")]
     public virtual UserProfile? UserProfile { get; set; }
 
-    [ForeignKey("LocationId")]
-    public virtual LocationRegion? LocationRegion { get; set; }
+    
 }
-

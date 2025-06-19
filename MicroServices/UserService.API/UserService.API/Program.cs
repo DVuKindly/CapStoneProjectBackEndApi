@@ -39,6 +39,7 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 
 var authServiceUrl = builder.Configuration["Services:AuthService"];
 var paymentServiceUrl = builder.Configuration["Services:PaymentService"];
+var membershipServiceUrl = builder.Configuration["Services:MembershipService"];
 
 
 builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
@@ -49,6 +50,11 @@ builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
 builder.Services.AddHttpClient<IPaymentServiceClient, PaymentServiceClient>(client =>
 {
     client.BaseAddress = new Uri(paymentServiceUrl);
+});
+
+builder.Services.AddHttpClient<IMembershipServiceClient, MembershipServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(membershipServiceUrl); 
 });
 
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();

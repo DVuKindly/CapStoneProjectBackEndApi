@@ -11,72 +11,144 @@ public class MembershipRequestService : IMembershipRequestService
 {
     private readonly UserDbContext _db;
     private readonly IAuthServiceClient _authServiceClient;
+    private readonly IMembershipServiceClient _membershipServiceClient;
 
-    public MembershipRequestService(UserDbContext db , IAuthServiceClient authServiceClient)
+    public MembershipRequestService(UserDbContext db , IAuthServiceClient authServiceClient, IMembershipServiceClient membershipServiceClient)
     {
+        _membershipServiceClient = membershipServiceClient;
         _db = db;
         _authServiceClient = authServiceClient;
     }
 
     public async Task<BaseResponse> ApproveMembershipRequestAsync(Guid staffAccountId, ApproveMembershipRequestDto dto)
     {
-        var staffLocationId = await _db.StaffProfiles
+        // 1. Lấy LocationRegionId của nhân viên
+        var staffRegionId = await _db.StaffProfiles
             .Where(s => s.AccountId == staffAccountId)
             .Select(s => s.LocationId)
             .FirstOrDefaultAsync();
 
+        if (staffRegionId == null)
+        {
+            return new BaseResponse
+            {
+                Success = false,
+                Message = "Không tìm thấy khu vực của nhân viên."
+            };
+        }
+
+        // 2. Lấy danh sách MembershipLocationId được ánh xạ từ LocationRegionId
+        var mappedMembershipLocationIds = await _db.LocationMappings
+            .Where(m => m.LocationRegionId == staffRegionId)
+            .Select(m => m.MembershipLocationId)
+            .ToListAsync();
+
+        if (!mappedMembershipLocationIds.Any())
+        {
+            return new BaseResponse
+            {
+                Success = false,
+                Message = "Nhân viên không được phân quyền duyệt yêu cầu khu vực nào."
+            };
+        }
+
+        // 3. Tìm yêu cầu hợp lệ trong danh sách ánh xạ
         var request = await _db.PendingMembershipRequests
             .Include(r => r.UserProfile)
-            .FirstOrDefaultAsync(r => r.Id == dto.RequestId && r.LocationId == staffLocationId);
+            .FirstOrDefaultAsync(r =>
+                r.Id == dto.RequestId &&
+                r.LocationId.HasValue &&
+                mappedMembershipLocationIds.Contains(r.LocationId.Value));
 
         if (request == null)
         {
-            return new BaseResponse { Success = false, Message = "Không tìm thấy yêu cầu hoặc bạn không có quyền duyệt yêu cầu này." };
+            return new BaseResponse
+            {
+                Success = false,
+                Message = "Không tìm thấy yêu cầu hoặc bạn không có quyền duyệt yêu cầu này."
+            };
         }
 
+        // 4. Kiểm tra trạng thái yêu cầu
         if (request.Status != "Pending")
         {
-            return new BaseResponse { Success = false, Message = "Yêu cầu này đã được xử lý." };
+            return new BaseResponse
+            {
+                Success = false,
+                Message = "Yêu cầu này đã được xử lý."
+            };
         }
 
-        request.Status = "PendingPayment"; // Hoặc "Approved" nếu không cần chờ thanh toán
+        // 5. Cập nhật trạng thái
+        request.Status = "PendingPayment"; // hoặc "Approved" nếu bỏ qua thanh toán
         request.ApprovedAt = DateTime.UtcNow;
         request.StaffNote = dto.StaffNote;
 
-        // ✅ Cập nhật UserProfile
+        // 6. Đồng bộ trạng thái hồ sơ user
         var user = request.UserProfile!;
-        user.OnboardingStatus = "PendingPayment"; // Hoặc "Approved"
-        user.LocationId = request.LocationId;
+        user.OnboardingStatus = "PendingPayment"; // hoặc "Approved"
+        if (request.LocationId.HasValue)
+        {
+            var regionId = await _db.LocationMappings
+                .Where(m => m.MembershipLocationId == request.LocationId.Value)
+                .Select(m => m.LocationRegionId)
+                .FirstOrDefaultAsync();
+
+            if (regionId != Guid.Empty)
+            {
+                user.LocationId = regionId;
+            }
+        }
 
         await _db.SaveChangesAsync();
 
-        return new BaseResponse { Success = true, Message = "Duyệt yêu cầu thành công." };
+        return new BaseResponse
+        {
+            Success = true,
+            Message = "Duyệt yêu cầu thành công."
+        };
     }
+
 
 
     public async Task<BaseResponse> RejectMembershipRequestAsync(Guid staffAccountId, RejectMembershipRequestDto dto)
     {
-        var staff = await _db.StaffProfiles
+        // 1. Lấy LocationRegionId của staff
+        var staffRegionId = await _db.StaffProfiles
             .Where(s => s.AccountId == staffAccountId)
-            .Select(s => new { s.AccountId, s.LocationId })
+            .Select(s => s.LocationId)
             .FirstOrDefaultAsync();
 
-        if (staff == null || staff.LocationId == null)
-            return new BaseResponse { Success = false, Message = "Không tìm thấy thông tin nhân viên hoặc khu vực." };
+        if (staffRegionId == Guid.Empty)
+            return new BaseResponse { Success = false, Message = "Không tìm thấy thông tin khu vực của nhân viên." };
 
+        // 2. Lấy danh sách MembershipLocationId mà staff khu vực đó có quyền duyệt
+        var mappedMembershipLocationIds = await _db.LocationMappings
+            .Where(m => m.LocationRegionId == staffRegionId)
+            .Select(m => m.MembershipLocationId)
+            .ToListAsync();
+
+        if (mappedMembershipLocationIds == null || !mappedMembershipLocationIds.Any())
+            return new BaseResponse { Success = false, Message = "Bạn không được phân quyền duyệt bất kỳ khu vực nào." };
+
+        // 3. Lấy request phù hợp với quyền khu vực
         var request = await _db.PendingMembershipRequests
             .Include(r => r.UserProfile)
-            .FirstOrDefaultAsync(r => r.Id == dto.RequestId && r.Status == "Pending");
+            .FirstOrDefaultAsync(r =>
+                r.Id == dto.RequestId &&
+                r.Status == "Pending" &&
+                r.LocationId.HasValue &&
+                mappedMembershipLocationIds.Contains(r.LocationId.Value));
 
-        if (request == null || request.LocationId != staff.LocationId)
-            return new BaseResponse { Success = false, Message = "Yêu cầu không hợp lệ hoặc đã được xử lý." };
+        if (request == null)
+            return new BaseResponse { Success = false, Message = "Không tìm thấy yêu cầu hợp lệ trong khu vực của bạn." };
 
-        // Cập nhật trạng thái và ghi chú
+        // 4. Cập nhật trạng thái từ chối
         request.Status = "Rejected";
         request.StaffNote = dto.Reason;
         request.ApprovedAt = DateTime.UtcNow;
 
-        // Đồng thời cập nhật trạng thái trong hồ sơ người dùng
+        // 5. Cập nhật trạng thái người dùng
         if (request.UserProfile != null)
         {
             request.UserProfile.OnboardingStatus = "Rejected";
@@ -84,61 +156,84 @@ public class MembershipRequestService : IMembershipRequestService
 
         await _db.SaveChangesAsync();
 
-        return new BaseResponse { Success = true, Message = "Yêu cầu đã bị từ chối và trạng thái người dùng được cập nhật." };
+        return new BaseResponse
+        {
+            Success = true,
+            Message = "Yêu cầu đã bị từ chối và trạng thái người dùng được cập nhật."
+        };
     }
+
+
 
 
     public async Task<List<PendingMembershipRequestDto>> GetPendingRequestsForStaffAsync(Guid staffAccountId)
     {
-        // Lấy locationId của staff từ bảng StaffProfiles
-        var staffLocationId = await _db.StaffProfiles
+        // 1. Lấy LocationRegionId của Staff đang đăng nhập
+        var staffRegionId = await _db.StaffProfiles
             .Where(s => s.AccountId == staffAccountId)
             .Select(s => s.LocationId)
             .FirstOrDefaultAsync();
 
-        if (staffLocationId == null)
+        if (staffRegionId == null)
             return new List<PendingMembershipRequestDto>();
 
-        // Lấy các request có cùng LocationId và đang Pending
-        var pendingRequests = await _db.PendingMembershipRequests
-            .Where(r => r.LocationId == staffLocationId && r.Status == "Pending")
-            .Include(r => r.UserProfile)
-            .Include(r => r.LocationRegion)
+        // 2. Lấy danh sách MembershipLocationId được ánh xạ từ LocationRegionId
+        var mappedMembershipLocationIds = await _db.LocationMappings
+            .Where(m => m.LocationRegionId == staffRegionId)
+            .Select(m => m.MembershipLocationId)
             .ToListAsync();
 
-        var result = new List<PendingMembershipRequestDto>();
+        if (mappedMembershipLocationIds == null || !mappedMembershipLocationIds.Any())
+            return new List<PendingMembershipRequestDto>();
 
-        foreach (var r in pendingRequests)
+        // 3. Lấy danh sách request ở các MembershipLocationId đó
+        var pendingRequests = await _db.PendingMembershipRequests
+            .Where(r => mappedMembershipLocationIds.Contains(r.LocationId!.Value) && r.Status == "Pending")
+            .Include(r => r.UserProfile)
+            .ToListAsync();
+
+        if (!pendingRequests.Any())
+            return new List<PendingMembershipRequestDto>();
+
+        // 4. Lấy tất cả PackageId duy nhất để gọi MembershipService
+        var packageIds = pendingRequests
+            .Where(r => r.PackageId.HasValue)
+            .Select(r => r.PackageId!.Value)
+            .Distinct()
+            .ToList();
+
+        var plans = await _membershipServiceClient.GetBasicPlansByIdsAsync(packageIds);
+        var planDict = plans.ToDictionary(p => p.Id, p => p);
+
+        // 5. Mapping sang DTO
+        var result = pendingRequests.Select(r =>
         {
-            var userProfile = r.UserProfile;
+            var user = r.UserProfile;
+            planDict.TryGetValue(r.PackageId ?? Guid.Empty, out var plan);
 
-            // Khởi tạo ExtendedProfileDto từ UserProfile
-            var extendedProfile = new ExtendedProfileDto
-            {
-                Gender = userProfile?.Gender,
-                DOB = userProfile?.DOB,
-                AvatarUrl = userProfile?.AvatarUrl,
-                SocialLinks = userProfile?.SocialLinks,
-                Address = userProfile?.Address,
-                RoleType = userProfile?.RoleType
-            };
-
-            result.Add(new PendingMembershipRequestDto
+            return new PendingMembershipRequestDto
             {
                 RequestId = r.Id,
-                FullName = userProfile?.FullName,
-               
+                FullName = user?.FullName,
                 RequestedPackageName = r.RequestedPackageName,
                 MessageToStaff = r.MessageToStaff,
-                LocationName = r.LocationRegion?.Name,
                 CreatedAt = r.CreatedAt,
+                LocationName = plan?.LocationName, // ✅ từ MembershipService
                 Interests = r.Interests,
                 PersonalityTraits = r.PersonalityTraits,
                 Introduction = r.Introduction,
                 CvUrl = r.CvUrl,
-                ExtendedProfile = extendedProfile
-            });
-        }
+                ExtendedProfile = new ExtendedProfileDto
+                {
+                    Gender = user?.Gender,
+                    DOB = user?.DOB,
+                    AvatarUrl = user?.AvatarUrl,
+                    SocialLinks = user?.SocialLinks,
+                    Address = user?.Address,
+                    RoleType = user?.RoleType
+                }
+            };
+        }).ToList();
 
         return result;
     }
@@ -146,8 +241,11 @@ public class MembershipRequestService : IMembershipRequestService
 
 
 
+
+
     public async Task<BaseResponse> SubmitRequestAsync(Guid accountId, MembershipRequestDto dto)
     {
+        // 1. Lấy user profile từ DB
         var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
         if (user == null)
         {
@@ -158,31 +256,36 @@ public class MembershipRequestService : IMembershipRequestService
             };
         }
 
+        // 2. Kiểm tra hồ sơ cá nhân đã hoàn thiện chưa
         if (!IsUserProfileCompleted(user))
         {
             return new BaseResponse
             {
                 Success = false,
-                Message = "Vui lòng hoàn tất hồ sơ cá nhân trước khi gửi yêu cầu. Để đội ngũ chúng tôi nhanh chóng có được thông tin của bạn để hỗ trợ"
+                Message = "Vui lòng hoàn tất hồ sơ cá nhân trước khi gửi yêu cầu. Để đội ngũ chúng tôi nhanh chóng có được thông tin của bạn để hỗ trợ."
             };
         }
-       
-        var locationExists = await _db.LocationRegions.AnyAsync(r => r.Id == dto.LocationId);
-        if (!locationExists)
+
+        // 3. Gọi MembershipService.API để lấy thông tin gói
+        var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
+        if (plan == null)
         {
             return new BaseResponse
             {
                 Success = false,
-                Message = "Khu vực bạn chọn không hợp lệ."
+                Message = "Không tìm thấy gói bạn đã chọn hoặc gói không hợp lệ."
             };
         }
+
+        // 4. Tạo yêu cầu membership mới với thông tin snapshot từ MembershipService
         var request = new PendingMembershipRequest
         {
             Id = Guid.NewGuid(),
             AccountId = accountId,
             PackageId = dto.PackageId,
-            RequestedPackageName = dto.RequestedPackageName,
-            LocationId = dto.LocationId,
+            RequestedPackageName = plan.LocationName,
+            Amount = plan.Price,
+            LocationId = plan.LocationId,
             Interests = user.Interests,
             PersonalityTraits = user.PersonalityTraits,
             Introduction = user.Introduction,
@@ -192,6 +295,7 @@ public class MembershipRequestService : IMembershipRequestService
             CreatedAt = DateTime.UtcNow
         };
 
+        // 5. Lưu vào DB
         _db.PendingMembershipRequests.Add(request);
         await _db.SaveChangesAsync();
 
@@ -201,6 +305,8 @@ public class MembershipRequestService : IMembershipRequestService
             Message = "Gửi yêu cầu thành công. Vui lòng chờ duyệt từ đội ngũ hỗ trợ."
         };
     }
+
+
 
     private bool IsUserProfileCompleted(UserProfile user)
     {
@@ -218,66 +324,52 @@ public class MembershipRequestService : IMembershipRequestService
 
     public async Task<PendingMembershipRequestDto?> GetRequestDetailAsync(Guid requestId, Guid staffAccountId)
     {
-        var staffLocationId = await _db.StaffProfiles
+        // 1. Lấy LocationRegionId của Staff (UserService)
+        var staffRegionId = await _db.StaffProfiles
             .Where(s => s.AccountId == staffAccountId)
             .Select(s => s.LocationId)
             .FirstOrDefaultAsync();
 
+        if (staffRegionId == null) return null;
+
+        // 2. Lấy tất cả MembershipLocationId ánh xạ với LocationRegionId
+        var mappedMembershipLocationIds = await _db.LocationMappings
+            .Where(m => m.LocationRegionId == staffRegionId)
+            .Select(m => m.MembershipLocationId)
+            .ToListAsync();
+
+        if (!mappedMembershipLocationIds.Any()) return null;
+
+        // 3. Tìm request có requestId và LocationId nằm trong danh sách ánh xạ
         var request = await _db.PendingMembershipRequests
             .Include(r => r.UserProfile)
-            .Include(r => r.LocationRegion)
-            .FirstOrDefaultAsync(r => r.Id == requestId && r.LocationId == staffLocationId);
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.LocationId.HasValue && mappedMembershipLocationIds.Contains(r.LocationId.Value));
 
         if (request == null) return null;
 
+        var user = request.UserProfile;
+
+        // 4. Lấy thông tin gói từ MembershipService để hiển thị tên location
+        string? locationName = null;
+        if (request.PackageId.HasValue)
+        {
+            var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(request.PackageId.Value);
+            locationName = plan?.LocationName;
+        }
+
+        // 5. Mapping sang DTO
         return new PendingMembershipRequestDto
         {
             RequestId = request.Id,
-            FullName = request.UserProfile?.FullName,
-           
+            FullName = user?.FullName,
             RequestedPackageName = request.RequestedPackageName,
             MessageToStaff = request.MessageToStaff,
             CreatedAt = request.CreatedAt,
-            LocationName = request.LocationRegion?.Name,
+            LocationName = locationName, // Lấy từ MembershipService
             Interests = request.Interests,
             PersonalityTraits = request.PersonalityTraits,
             Introduction = request.Introduction,
             CvUrl = request.CvUrl,
-            ExtendedProfile = new ExtendedProfileDto
-            {
-                Gender = request.UserProfile?.Gender,
-                DOB = request.UserProfile?.DOB,
-                AvatarUrl = request.UserProfile?.AvatarUrl,
-                SocialLinks = request.UserProfile?.SocialLinks,
-                Address = request.UserProfile?.Address,
-                RoleType = request.UserProfile?.RoleType
-            }
-        };
-    }
-
-    public async Task<List<PendingMembershipRequestDto>> GetRequestHistoryAsync(Guid accountId)
-    {
-        var requests = await _db.PendingMembershipRequests
-            .Where(r => r.AccountId == accountId)
-            .Include(r => r.LocationRegion)
-            .OrderByDescending(r => r.CreatedAt)
-            .ToListAsync();
-
-        var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
-
-        return requests.Select(r => new PendingMembershipRequestDto
-        {
-            RequestId = r.Id,
-            FullName = user?.FullName,
-           
-            RequestedPackageName = r.RequestedPackageName,
-            MessageToStaff = r.MessageToStaff,
-            CreatedAt = r.CreatedAt,
-            LocationName = r.LocationRegion?.Name,
-            Interests = r.Interests,
-            PersonalityTraits = r.PersonalityTraits,
-            Introduction = r.Introduction,
-            CvUrl = r.CvUrl,
             ExtendedProfile = new ExtendedProfileDto
             {
                 Gender = user?.Gender,
@@ -287,8 +379,65 @@ public class MembershipRequestService : IMembershipRequestService
                 Address = user?.Address,
                 RoleType = user?.RoleType
             }
-        }).ToList();
+        };
     }
+
+
+
+
+    public async Task<List<PendingMembershipRequestDto>> GetRequestHistoryAsync(Guid accountId)
+    {
+        // 1. Lấy toàn bộ request của user
+        var requests = await _db.PendingMembershipRequests
+            .Where(r => r.AccountId == accountId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        // 2. Lấy thông tin user 1 lần
+        var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+        // 3. Tạo danh sách PackageId để gọi MembershipService 1 lần (nếu có)
+        var packageIds = requests
+            .Where(r => r.PackageId.HasValue)
+            .Select(r => r.PackageId!.Value)
+            .Distinct()
+            .ToList();
+
+        var plans = await _membershipServiceClient.GetBasicPlansByIdsAsync(packageIds);
+        var planDict = plans.ToDictionary(p => p.Id, p => p);
+
+        // 4. Duyệt và mapping kết quả
+        var result = requests.Select(r =>
+        {
+            planDict.TryGetValue(r.PackageId ?? Guid.Empty, out var plan);
+
+            return new PendingMembershipRequestDto
+            {
+                RequestId = r.Id,
+                FullName = user?.FullName,
+                RequestedPackageName = r.RequestedPackageName,
+                MessageToStaff = r.MessageToStaff,
+                CreatedAt = r.CreatedAt,
+                LocationName = plan?.LocationName, // ⬅️ Lấy từ MembershipService
+                Interests = r.Interests,
+                PersonalityTraits = r.PersonalityTraits,
+                Introduction = r.Introduction,
+                CvUrl = r.CvUrl,
+                ExtendedProfile = new ExtendedProfileDto
+                {
+                    Gender = user?.Gender,
+                    DOB = user?.DOB,
+                    AvatarUrl = user?.AvatarUrl,
+                    SocialLinks = user?.SocialLinks,
+                    Address = user?.Address,
+                    RoleType = user?.RoleType
+                }
+            };
+        }).ToList();
+
+        return result;
+    }
+
     public async Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId)
     {
         var request = await _db.PendingMembershipRequests

@@ -1,4 +1,4 @@
-﻿namespace MembershipService.API.Dtos.Response
+﻿namespace UserService.API.DTOs.Responses
 {
     public class BasicPlanResponse
     {
@@ -22,6 +22,6 @@
 
         public string? LocationName { get; set; }
 
-        public List<Guid> NextUServiceIds { get; set; } = new(); 
+        public List<Guid> NextUServiceIds { get; set; } = new(); // Tránh null exception khi deserialize
     }
 }

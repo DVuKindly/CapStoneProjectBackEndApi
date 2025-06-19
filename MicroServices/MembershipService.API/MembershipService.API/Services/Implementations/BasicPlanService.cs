@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using MembershipService.API.Data;
 using MembershipService.API.Dtos.Request;
 using MembershipService.API.Dtos.Response;
 using MembershipService.API.Entities;
 using MembershipService.API.Repositories.Interfaces;
 using MembershipService.API.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Entity = MembershipService.API.Entities.BasicPlanService;
 
 namespace MembershipService.API.Services.Implementations
@@ -13,8 +15,9 @@ namespace MembershipService.API.Services.Implementations
         private readonly IBasicPlanRepository _packageRepo;
         private readonly IBasicPlanServiceRepository _serviceRepo;
         private readonly IMapper _mapper;
-
+        private readonly MembershipDbContext _db;
         public BasicPlanService(
+            MembershipDbContext db,
             IBasicPlanRepository packageRepo,
             IBasicPlanServiceRepository serviceRepo,
             IMapper mapper)
@@ -22,6 +25,7 @@ namespace MembershipService.API.Services.Implementations
             _packageRepo = packageRepo;
             _serviceRepo = serviceRepo;
             _mapper = mapper;
+            _db = db;
         }
 
         public async Task<BasicPlanResponse> CreateAsync(BasicPlanCreateRequest request)
@@ -125,5 +129,28 @@ namespace MembershipService.API.Services.Implementations
             return true;
         }
 
+
+        //vũ code
+        public async Task<List<BasicPlanResponse>> GetByIdsAsync(List<Guid> ids)
+        {
+            if (ids == null || ids.Count == 0)
+                return new List<BasicPlanResponse>();
+
+            var plans = await _db.BasicPlans
+                .Where(p => ids.Contains(p.Id))
+                .ToListAsync();
+
+            return plans.Select(p => new BasicPlanResponse
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price,
+                LocationId = p.LocationId.Value,
+
+                LocationName = p.Name,
+                
+            }).ToList();
+        }
     }
 }
