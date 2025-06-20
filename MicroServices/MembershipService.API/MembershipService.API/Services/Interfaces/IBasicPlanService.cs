@@ -10,5 +10,9 @@ namespace MembershipService.API.Services.Interfaces
         Task<List<BasicPlanResponse>> GetAllAsync();
         Task<bool> UpdateAsync(Guid id, BasicPackageUpdateRequest request);
         Task<bool> DeleteAsync(Guid id);
+
+
+        // vũ code
+        Task<List<BasicPlanResponse>> GetByIdsAsync(List<Guid> ids);
     }
 }

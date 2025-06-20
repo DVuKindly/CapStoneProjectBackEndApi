@@ -1,4 +1,5 @@
 ﻿using MembershipService.API.Dtos.Request;
+using MembershipService.API.Dtos.Response;
 using MembershipService.API.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -50,6 +51,11 @@ namespace MembershipService.API.Controllers
             var success = await _service.DeleteAsync(id);
             return success ? NoContent() : NotFound();
         }
-
+        [HttpPost("batch")]
+        public async Task<ActionResult<List<BasicPlanResponse>>> GetBasicPlansByIds([FromBody] List<Guid> ids)
+        {
+            var result = await _service.GetByIdsAsync(ids);
+            return Ok(result);
+        }
     }
 }
