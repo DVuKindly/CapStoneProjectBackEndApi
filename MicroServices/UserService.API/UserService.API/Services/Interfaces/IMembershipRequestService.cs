@@ -25,7 +25,7 @@ namespace UserService.API.Services.Interfaces
         Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId);
 
         // Dành cho PaymentService gọi về sau khi thanh toán thành công
-        Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(Guid requestId);
+        Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(MarkPaidRequestDto dto);
 
 
         Task<PendingMembershipRequestDto?> GetRequestDetailAsync(Guid requestId, Guid staffAccountId);

@@ -234,8 +234,14 @@ namespace AuthService.API.Controllers
             var locations = await _authService.GetLocationsAsync();
             return Ok(locations);
         }
-
-
-
+       
+      
     }
+
+    public class PromoteToMemberRequest
+    {
+        public Guid AccountId { get; set; }
+    }
+
 }
+

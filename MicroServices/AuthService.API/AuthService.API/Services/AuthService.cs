@@ -1,4 +1,5 @@
-﻿using AuthService.API.DTOs.AdminCreate;
+﻿using AuthService.API.Data;
+using AuthService.API.DTOs.AdminCreate;
 
 using AuthService.API.DTOs.COACH;
 using AuthService.API.DTOs.PARTNER;
@@ -8,10 +9,12 @@ using AuthService.API.DTOs.STAFF;
 using AuthService.API.DTOs.SUPPLIER;
 using AuthService.API.Entities;
 using AuthService.API.Helpers;
+using AuthService.API.Helpers.AuthService.API.Helpers;
 using AuthService.API.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -26,17 +29,25 @@ namespace AuthService.API.Services
         private readonly IPasswordHasher<UserAuth> _passwordHasher;
         private readonly IUserServiceClient _userServiceClient;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly JwtSettings _jwtSettings;
+        private readonly AuthDbContext _context;
+        
+
 
         public AuthService(
             IUserRepository userRepository,
             ITokenService tokenService,
             IEmailService emailService,
+            IOptions<JwtSettings> jwtOptions,
+             AuthDbContext context,
             IUserServiceClient userServiceClient,
             IHttpContextAccessor httpContextAccessor)
         {
             _userRepository = userRepository;
             _tokenService = tokenService;
             _emailService = emailService;
+            _context = context;
+            _jwtSettings = jwtOptions.Value;
             _httpContextAccessor = httpContextAccessor;
             _passwordHasher = new PasswordHasher<UserAuth>();
             _userServiceClient = userServiceClient;
@@ -44,11 +55,16 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            var user = await _userRepository.GetByEmailAsync(request.Email);
+            // ⚠️ Query user and include their roles
+            var user = await _userRepository.GetByEmailWithRoleAsync(request.Email);
 
             if (user == null)
             {
-                return new AuthResponse { Success = false, Message = "Tài khoản không tồn tại." };
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.AccountNotFound
+                };
             }
 
             if (!user.EmailVerified)
@@ -56,65 +72,107 @@ namespace AuthService.API.Services
                 return new AuthResponse
                 {
                     Success = false,
-                    Message = "Email chưa được xác minh. Vui lòng kiểm tra email để xác thực tài khoản."
+                    Message = AuthMessages.EmailNotVerified
                 };
             }
 
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
             if (result == PasswordVerificationResult.Failed)
             {
-                return new AuthResponse { Success = false, Message = "Sai mật khẩu." };
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.LoginFailed
+                };
             }
 
-            var accessToken = _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-
-            await _userRepository.UpdateAsync(user);
-            await _userRepository.SaveChangesAsync();
             if (user.IsLocked)
             {
                 return new AuthResponse
                 {
                     Success = false,
-                    Message = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên."
+                    Message = AuthMessages.AccountLocked
                 };
             }
 
+            // ✅ Generate tokens
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            var idToken = _tokenService.GenerateIdToken(user);
+
+            // ✅ Update refresh token info
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            var roleKey = user.UserRoles?.FirstOrDefault()?.Role?.RoleKey;
+
             return new AuthResponse
             {
+                UserId = user.UserId,
+                LocationId = user.LocationId,
                 Success = true,
+                Message = AuthMessages.LoginSuccess,
                 Email = user.Email,
                 FullName = user.UserName,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                IdToken = idToken,
+                Role = roleKey
             };
         }
 
-        public async Task<AuthResponse> RefreshTokenAsync(string token)
+
+
+        public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
         {
-            var user = await _userRepository.GetByRefreshTokenAsync(token);
+            var user = await _context.AuthUsers
+                .Include(u => u.UserRoles).ThenInclude(r => r.Role)
+                .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+
+            // ❌ Nếu không tìm thấy hoặc token hết hạn
             if (user == null || user.RefreshTokenExpiry < DateTime.UtcNow)
-                return new AuthResponse { Success = false, Message = "Invalid or expired refresh token." };
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Invalid or expired refresh token."
+                };
+            }
 
+            // ✅ Ngăn dùng lại token cũ bằng cách xóa
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            await _context.SaveChangesAsync();
+
+            // ✅ Sinh token mới
             var newAccessToken = _tokenService.GenerateAccessToken(user);
+            var newIdToken = _tokenService.GenerateIdToken(user);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
+            var newRefreshTokenExpiry = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenDays);
 
+            // ✅ Gán token mới
             user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-            await _userRepository.SaveChangesAsync();
+            user.RefreshTokenExpiry = newRefreshTokenExpiry;
+            await _context.SaveChangesAsync();
 
             return new AuthResponse
             {
                 Success = true,
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken,
+                IdToken = newIdToken,
                 Email = user.Email,
                 FullName = user.UserName,
-                AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken
+                Role = user.UserRoles.FirstOrDefault()?.Role?.RoleKey ?? string.Empty,
+                UserId = user.UserId,
+                LocationId = user.LocationId
             };
         }
+
+
 
         public async Task<AuthResponse> ChangePasswordAsync(ChangePasswordRequest request, string token)
         {
@@ -168,18 +226,28 @@ namespace AuthService.API.Services
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null)
             {
-                return new AuthResponse { Success = false, Message = "Email không tồn tại." };
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.EmailNotFound
+                };
             }
 
             user.ResetPasswordToken = Guid.NewGuid().ToString();
             user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(2);
 
             await _userRepository.SaveChangesAsync();
+
             var resetPasswordUrl = $"http://localhost:3000/reset-password?token={user.ResetPasswordToken}";
             await _emailService.SendResetPasswordEmailAsync(user.Email, user.ResetPasswordToken!);
 
-            return new AuthResponse { Success = true, Message = "Đã gửi email để reset mật khẩu." };
+            return new AuthResponse
+            {
+                Success = true,
+                Message = AuthMessages.ResetEmailSent
+            };
         }
+
 
 
         public async Task<AuthResponse> ResetPasswordAsync(ResetPasswordRequest request)
@@ -187,7 +255,11 @@ namespace AuthService.API.Services
             var user = await _userRepository.GetByResetPasswordTokenAsync(request.Token);
             if (user == null || user.ResetPasswordTokenExpiry < DateTime.UtcNow)
             {
-                return new AuthResponse { Success = false, Message = "Token không hợp lệ hoặc đã hết hạn." };
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.InvalidOrExpiredToken
+                };
             }
 
             user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
@@ -197,8 +269,13 @@ namespace AuthService.API.Services
 
             await _userRepository.SaveChangesAsync();
 
-            return new AuthResponse { Success = true, Message = "Mật khẩu đã được thay đổi thành công." };
+            return new AuthResponse
+            {
+                Success = true,
+                Message = AuthMessages.PasswordResetSuccess
+            };
         }
+
 
 
         public async Task<bool> VerifyEmailAsync(string token)
@@ -303,7 +380,11 @@ namespace AuthService.API.Services
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
-                return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.EmailAlreadyExists
+                };
             }
 
             var user = new UserAuth
@@ -323,7 +404,11 @@ namespace AuthService.API.Services
             var role = await _userRepository.GetRoleByKeyAsync("user");
             if (role == null)
             {
-                return new AuthResponse { Success = false, Message = "Role 'User' không tồn tại." };
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.RoleNotFound
+                };
             }
 
             user.UserRoles = new List<UserRole>
@@ -339,22 +424,20 @@ namespace AuthService.API.Services
             await _userRepository.SaveChangesAsync();
 
             await _userServiceClient.CreateUserProfileAsync(
-        user.UserId,
-        user.UserName,
-        user.Email,
-        "user",
-        new UserProfilePayload
-        {
-            AccountId = user.UserId,
-            FullName = user.UserName,
-            Email = user.Email,
-            RoleType = "user",
-            OnboardingStatus = "Pending", 
-            Note = "Tạo từ RegisterAsync"
-        }
-    );
-
-
+                user.UserId,
+                user.UserName,
+                user.Email,
+                "user",
+                new UserProfilePayload
+                {
+                    AccountId = user.UserId,
+                    FullName = user.UserName,
+                    Email = user.Email,
+                    RoleType = "user",
+                    OnboardingStatus = "Pending",
+                    Note = "Created from RegisterAsync"
+                }
+            );
 
             if (!string.IsNullOrEmpty(user.EmailVerificationToken))
             {
@@ -366,7 +449,7 @@ namespace AuthService.API.Services
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
-                Message = "Đăng ký thành công. Vui lòng xác minh email để tiếp tục.",
+                Message = AuthMessages.RegisterSuccess,
                 AccessToken = string.Empty,
                 RefreshToken = string.Empty
             };
@@ -375,25 +458,32 @@ namespace AuthService.API.Services
 
 
 
+
         public async Task<AuthResponse> RegisterAdminAsync(RegisterBySuperAdminRequest request)
         {
-            // ✅ Kiểm tra LocationId hợp lệ bằng UserService
+            // ✅ Validate location via UserService
             var isValidLocation = await _userServiceClient.IsValidLocationAsync(request.LocationId);
             if (!isValidLocation)
             {
                 return new AuthResponse
                 {
                     Success = false,
-                    Message = "Khu vực không hợp lệ. Vui lòng chọn từ danh sách được hỗ trợ."
+                    Message = AuthMessages.InvalidLocation
                 };
             }
 
-            // 🔍 Kiểm tra email đã tồn tại chưa
+            // 🔍 Check if email already exists
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
-                return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.AdminAlreadyExists
+                };
+            }
 
-            // 🧾 Tạo user admin
+            // 🧾 Create user
             var user = new UserAuth
             {
                 UserId = Guid.NewGuid(),
@@ -409,25 +499,34 @@ namespace AuthService.API.Services
                 LocationId = request.LocationId
             };
 
-            // 🔑 Gán role "admin"
+            // 🔑 Assign role "admin"
             var role = await _userRepository.GetRoleByKeyAsync("admin");
             if (role == null)
-                return new AuthResponse { Success = false, Message = "Vai trò không hợp lệ." };
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.RoleInvalid
+                };
+            }
 
-            user.UserRoles = new List<UserRole> { new UserRole { UserId = user.UserId, RoleId = role.RoleId } };
+            user.UserRoles = new List<UserRole>
+    {
+        new UserRole { UserId = user.UserId, RoleId = role.RoleId }
+    };
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            // 👤 Ai là người tạo?
+            // 👤 Get creator info
             var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsed) ? parsed : null;
 
-            // 👑 Nếu là super_admin thì gắn AdminSystem
+            // 👑 Determine onboarding status
             var currentUserRole = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
             var onboardingStatus = currentUserRole == "super_admin" ? "AdminSystem" : "AdminLocation";
 
-            // 📦 Gửi profile sang UserService
+            // 📦 Send profile to UserService
             var profile = new UserProfilePayload
             {
                 AccountId = user.UserId,
@@ -442,23 +541,26 @@ namespace AuthService.API.Services
 
             await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, "admin", profile);
 
-            // ✉️ Gửi email xác minh nếu cần
+            // ✉️ Send email verification if needed
             if (!request.SkipEmailVerification && user.EmailVerificationToken != null)
+            {
                 await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
+            }
 
-            // ✅ Trả kết quả
+            
             return new AuthResponse
             {
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
                 Message = request.SkipEmailVerification
-                    ? "Admin đã được tạo và xác minh."
-                    : "Admin đã được tạo. Vui lòng xác minh email.",
-                AccessToken = "",
-                RefreshToken = ""
+                    ? AuthMessages.AdminCreatedAndVerified
+                    : AuthMessages.AdminCreatedNeedVerify,
+                AccessToken = string.Empty,
+                RefreshToken = string.Empty
             };
         }
+
 
 
 
@@ -546,11 +648,9 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> RegisterSystemAccountAsync(AdminAccountRegisterAdapter request)
         {
-            // 🔐 Lấy location và role hiện tại từ token
             var currentUserLocation = _httpContextAccessor.HttpContext?.User?.FindFirst("location")?.Value;
             var currentUserRole = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;
 
-            // ✅ SuperAdmin được bỏ qua kiểm tra, Admin phải kiểm tra khu vực
             if (currentUserRole == "admin")
             {
                 if (string.IsNullOrEmpty(currentUserLocation) || currentUserLocation != request.LocationId.ToString())
@@ -558,28 +658,31 @@ namespace AuthService.API.Services
                     return new AuthResponse
                     {
                         Success = false,
-                        Message = "Admin chỉ được phép tạo tài khoản trong khu vực của mình."
+                        Message = AuthMessages.UnauthorizedLocationCreation
                     };
                 }
             }
 
-            // ✅ Kiểm tra khu vực có hợp lệ không
             var isValidLocation = await _userServiceClient.IsValidLocationAsync(request.LocationId);
             if (!isValidLocation)
             {
                 return new AuthResponse
                 {
                     Success = false,
-                    Message = "Khu vực không hợp lệ. Vui lòng chọn từ danh sách được hỗ trợ."
+                    Message = AuthMessages.InvalidLocation
                 };
             }
 
-            // 🔍 Kiểm tra email đã tồn tại chưa
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
-                return new AuthResponse { Success = false, Message = "Email đã tồn tại." };
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.RoleAlreadyExists
+                };
+            }
 
-            // 🔑 Chuẩn bị token đặt mật khẩu
             var resetToken = Guid.NewGuid().ToString();
 
             var user = new UserAuth
@@ -599,10 +702,15 @@ namespace AuthService.API.Services
                 ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24)
             };
 
-            // 🧾 Gán role
             var role = await _userRepository.GetRoleByKeyAsync(request.RoleKey);
             if (role == null)
-                return new AuthResponse { Success = false, Message = "Vai trò không hợp lệ." };
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.RoleInvalid
+                };
+            }
 
             user.UserRoles = new List<UserRole>
     {
@@ -612,11 +720,9 @@ namespace AuthService.API.Services
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            // 👤 Lấy ID người tạo
             var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsedGuid) ? parsedGuid : null;
 
-            // 📦 Tạo profile
             var profile = new UserProfilePayload
             {
                 AccountId = user.UserId,
@@ -674,12 +780,15 @@ namespace AuthService.API.Services
                     break;
 
                 default:
-                    return new AuthResponse { Success = false, Message = "Loại hồ sơ không được hỗ trợ." };
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = AuthMessages.UnsupportedProfileInfo
+                    };
             }
 
             await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, request.RoleKey, profile);
 
-            // 📧 Gửi email đặt mật khẩu
             await _emailService.SendSetPasswordEmailAsync(user.Email, resetToken);
 
             return new AuthResponse
@@ -687,7 +796,7 @@ namespace AuthService.API.Services
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
-                Message = $"Tài khoản {request.RoleKey} đã được tạo. Vui lòng kiểm tra email để thiết lập mật khẩu.",
+                Message = string.Format(AuthMessages.SystemAccountCreated, request.RoleKey),
                 AccessToken = string.Empty,
                 RefreshToken = string.Empty
             };
@@ -701,18 +810,27 @@ namespace AuthService.API.Services
 
 
 
+
         public async Task<AuthResponse> SetPasswordAsync(SetPasswordThirtyRequest request)
         {
-            var user = await _userRepository.GetByResetPasswordTokenAsync(request.Token); // ✅ tìm theo token
+            var user = await _userRepository.GetByResetPasswordTokenAsync(request.Token);
 
             if (user == null)
             {
-                return new AuthResponse { Success = false, Message = "Token không hợp lệ hoặc không tồn tại." };
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.InvalidToken
+                };
             }
 
             if (user.ResetPasswordTokenExpiry.HasValue && user.ResetPasswordTokenExpiry.Value < DateTime.UtcNow)
             {
-                return new AuthResponse { Success = false, Message = "Token đã hết hạn." };
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.TokenExpired
+                };
             }
 
             user.PasswordHash = _passwordHasher.HashPassword(null!, request.NewPassword);
@@ -728,13 +846,60 @@ namespace AuthService.API.Services
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
-                Message = "Mật khẩu đã được thiết lập thành công. Bạn có thể đăng nhập ngay bây giờ."
+                Message = AuthMessages.SetPasswordSuccess
             };
         }
+
 
         public async Task<List<LocationDto>> GetLocationsAsync()
         {
             return await _userServiceClient.GetLocationsAsync();
         }
+
+        public async Task<bool> PromoteUserToMemberAsync(Guid accountId)
+        {
+            var user = await _userRepository.GetUserWithRolesByAccountIdAsync(accountId);
+            if (user == null)
+                return false;
+
+            var memberRole = await _userRepository.GetRoleByKeyAsync("member");
+            if (memberRole == null)
+                return false;
+
+            // Xóa role cũ
+            if (user.UserRoles != null && user.UserRoles.Any())
+            {
+                foreach (var ur in user.UserRoles.ToList())
+                {
+                    await _userRepository.RemoveUserRoleAsync(user.UserId, ur.RoleId);
+                }
+            }
+
+            // Thêm role member
+            await _userRepository.AddUserRoleAsync(new UserRole
+            {
+                UserId = user.UserId,
+                RoleId = memberRole.RoleId
+            });
+
+            // Cập nhật profile bên UserService
+            var profileUpdate = new UserProfilePayload
+            {
+                AccountId = user.UserId,
+                OnboardingStatus = "Approved",
+                RoleType = "member"
+            };
+
+            await _userServiceClient.UpdateUserProfileStatusAsync(profileUpdate);
+
+            user.UpdatedAt = DateTime.UtcNow;
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            return true;
+        }
+
+
+
     }
 }

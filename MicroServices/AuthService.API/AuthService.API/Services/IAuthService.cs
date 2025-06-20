@@ -40,6 +40,7 @@ namespace AuthService.API.Services
         Task<AuthStatusResponse> GetStatusAsync(string userId);
 
 
+        Task<bool> PromoteUserToMemberAsync(Guid accountId);
 
         // Location có sẵn 
         Task<List<LocationDto>> GetLocationsAsync();

@@ -39,6 +39,7 @@ public static class ServiceCollectionExtensions
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
+                        ValidateLifetime = true,
                         ValidIssuer = jwt.Issuer,
                         ValidateAudience = true,
                         ValidAudience = jwt.Audience,

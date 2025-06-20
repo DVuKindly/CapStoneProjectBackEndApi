@@ -96,14 +96,16 @@ public class MembershipController : ControllerBase
 
 
 
-   
-    [HttpPost("mark-paid/{requestId}")]
+
+    [HttpPost("mark-paid")]
     [AllowAnonymous]
-    public async Task<IActionResult> MarkMembershipRequestAsPaid(Guid requestId)
+    public async Task<IActionResult> MarkMembershipRequestAsPaid([FromBody] MarkPaidRequestDto dto)
     {
-        var result = await _membershipRequestService.MarkRequestAsPaidAndApprovedAsync(requestId);
+        var result = await _membershipRequestService.MarkRequestAsPaidAndApprovedAsync(dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
+
+
 
 
     private Guid GetAccountId()

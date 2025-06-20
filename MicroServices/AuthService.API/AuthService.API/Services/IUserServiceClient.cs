@@ -1,4 +1,5 @@
 ﻿using AuthService.API.DTOs.AdminCreate;
+using AuthService.API.DTOs.Request;
 using System;
 using System.Threading.Tasks;
 
@@ -15,5 +16,9 @@ namespace AuthService.API.Services
         );
         Task<List<LocationDto>> GetLocationsAsync();
         Task<bool> IsValidLocationAsync(Guid locationId);
+
+
+        Task<bool> UpdateUserProfileStatusAsync(UserProfilePayload payload);
+
     }
 }

@@ -2,7 +2,10 @@
 using PaymentService.API.DTOs.Requests;
 using PaymentService.API.DTOs.Response;
 using PaymentService.API.Entities;
-using SharedKernel.DTOsChung.Request;
+using System.Net.Http.Json;
+
+
+using SharedDto = SharedKernel.DTOsChung.Request.MembershipRequestSummaryDto;
 
 namespace PaymentService.API.Services
 {
@@ -21,17 +24,21 @@ namespace PaymentService.API.Services
 
         public async Task<BaseResponse> CreatePaymentRequestAsync(Guid accountId, CreatePaymentRequestDto dto)
         {
-            // 1. Gọi sang UserService để lấy info MembershipRequest (summary)
-            var userServiceBaseUrl = _config["UserService:BaseUrl"];
-            var summary = await _httpClient.GetFromJsonAsync<MembershipRequestSummaryDto>(
-                $"{userServiceBaseUrl}/api/membership/payment-summary/{dto.MembershipRequestId}");
-            
             if (dto.MembershipRequestId == Guid.Empty)
                 return new BaseResponse { Success = false, Message = "MembershipRequestId không hợp lệ." };
 
+            // 1. Gọi sang UserService để lấy thông tin yêu cầu thành viên
+            var userServiceBaseUrl = _config["UserService:BaseUrl"];
+            var summary = await _httpClient.GetFromJsonAsync<SharedDto>(
+                $"{userServiceBaseUrl}/api/membership/payment-summary/{dto.MembershipRequestId}");
+
             if (summary == null || summary.Status != "PendingPayment")
             {
-                return new BaseResponse { Success = false, Message = "Không thể tạo thanh toán vì request không hợp lệ." };
+                return new BaseResponse
+                {
+                    Success = false,
+                    Message = "Không thể tạo thanh toán vì request không hợp lệ hoặc đã thanh toán."
+                };
             }
 
             // 2. Tạo bản ghi PaymentRequest
@@ -50,7 +57,7 @@ namespace PaymentService.API.Services
             _db.PaymentRequests.Add(paymentRequest);
             await _db.SaveChangesAsync();
 
-            // 3. Giả lập tạo link VNPAY / Momo (mock trước)
+            // 3. Tạo đường dẫn redirect giả lập cho payment gateway
             var fakeRedirectUrl = $"{dto.PaymentMethod}-pay.com/pay?requestCode={paymentRequest.RequestCode}";
 
             return new BaseResponse
@@ -65,5 +72,4 @@ namespace PaymentService.API.Services
             };
         }
     }
-
 }

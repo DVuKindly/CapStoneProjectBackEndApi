@@ -7,7 +7,7 @@ using UserService.API.Entities;
 using UserService.API.Services.Implementations;
 using UserService.API.Services.Interfaces;
 
-public class MembershipRequestService : IMembershipRequestService
+public class MembershipRequestService : IMembershipRequestService   
 {
     private readonly UserDbContext _db;
     private readonly IAuthServiceClient _authServiceClient;
@@ -309,16 +309,16 @@ public class MembershipRequestService : IMembershipRequestService
         };
     }
 
-   
 
 
 
 
-    public async Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(Guid requestId)
+
+    public async Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(MarkPaidRequestDto dto)
     {
         var request = await _db.PendingMembershipRequests
             .Include(r => r.UserProfile)
-            .FirstOrDefaultAsync(r => r.Id == requestId);
+            .FirstOrDefaultAsync(r => r.Id == dto.RequestId);
 
         if (request == null || request.Status != "PendingPayment")
         {
@@ -329,35 +329,53 @@ public class MembershipRequestService : IMembershipRequestService
             };
         }
 
+        // Cập nhật trạng thái và thông tin thanh toán
         request.Status = "Approved";
         request.PaymentStatus = "Paid";
         request.PaymentTime = DateTime.UtcNow;
+        request.PaymentMethod = dto.PaymentMethod;
+        request.PaymentTransactionId = dto.PaymentTransactionId;
+        request.PaymentNote = dto.PaymentNote;
+        request.PaymentProofUrl = dto.PaymentProofUrl;
 
         if (request.UserProfile != null)
         {
             request.UserProfile.OnboardingStatus = "Approved";
+            request.UserProfile.RoleType = "member";
         }
 
         await _db.SaveChangesAsync();
 
-        // Gọi AuthService để chỉnh vai trò
-        var promoted = await _authServiceClient.PromoteUserToMemberAsync(request.AccountId);
+        bool promoted = false;
+        try
+        {
+            promoted = await _authServiceClient.PromoteUserToMemberAsync(request.AccountId);
+        }
+        catch (Exception ex)
+        {
+            // Bạn nên inject ILogger để log chi tiết lỗi ra để dễ debug
+            promoted = false;
+        }
 
         if (!promoted)
         {
             return new BaseResponse
             {
                 Success = false,
-                Message = "Cập nhật thanh toán OK, nhưng không thể cập nhật vai trò."
+                Message = "Cập nhật thanh toán OK, nhưng không thể cập nhật vai trò trong AuthService."
             };
         }
 
         return new BaseResponse
         {
             Success = true,
-            Message = "Thanh toán và duyệt yêu cầu thành công."
+            Message = "Thanh toán và duyệt yêu cầu thành công, vai trò user đã được cập nhật."
         };
     }
+
+
+
+
 
 
 

@@ -9,5 +9,7 @@ namespace AuthService.API.Services
         string GenerateRefreshToken();
         ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
         bool IsRefreshTokenValid(string refreshToken);
+        string GenerateIdToken(UserAuth user);
+
     }
 }

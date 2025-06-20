@@ -124,4 +124,32 @@ public class UserServiceClient : IUserServiceClient
         return response.IsSuccessStatusCode;
     }
 
+
+    public async Task<bool> UpdateUserProfileStatusAsync(UserProfilePayload payload)
+    {
+        try
+        {
+            var jsonPayload = JsonSerializer.Serialize(payload);
+            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync("/api/userprofiles/update-status", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogError("❌ Failed to update profile status → {StatusCode}: {Error}", response.StatusCode, error);
+                return false;
+            }
+
+            _logger.LogInformation("✅ Profile status updated successfully for AccountId: {AccountId}", payload.AccountId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Exception occurred while calling UserService to update profile status");
+            return false;
+        }
+    }
+
+
 }

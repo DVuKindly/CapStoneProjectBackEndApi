@@ -14,5 +14,15 @@ namespace AuthService.API.Repositories
         Task AddAsync(UserAuth user);
         Task UpdateAsync(UserAuth user);
         Task SaveChangesAsync();
+        Task<UserAuth?> GetByEmailWithRoleAsync(string email);
+
+        // MỚI: Lấy user cùng roles (để cập nhật role)
+        Task<UserAuth?> GetUserWithRolesByAccountIdAsync(Guid accountId);
+
+        // MỚI: Xóa một role của user
+        Task RemoveUserRoleAsync(Guid userId, Guid roleId);
+
+        // MỚI: Thêm role cho user
+        Task AddUserRoleAsync(UserRole userRole);
     }
 }

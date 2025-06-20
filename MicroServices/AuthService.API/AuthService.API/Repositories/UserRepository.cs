@@ -45,6 +45,15 @@ namespace AuthService.API.Repositories
         {
             return await _context.AuthUsers.FirstOrDefaultAsync(u => u.ResetPasswordToken == token);
         }
+        public async Task<UserAuth?> GetByEmailWithRoleAsync(string email)
+        {
+            return await _context.AuthUsers
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+
 
         public async Task AddAsync(UserAuth user)
         {
@@ -60,6 +69,32 @@ namespace AuthService.API.Repositories
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        // Lấy user kèm roles
+        public async Task<UserAuth?> GetUserWithRolesByAccountIdAsync(Guid accountId)
+        {
+            return await _context.AuthUsers
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.UserId == accountId);
+        }
+
+        // Xóa role của user
+        public async Task RemoveUserRoleAsync(Guid userId, Guid roleId)
+        {
+            var userRole = await _context.UserRoles
+                .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
+
+            if (userRole != null)
+            {
+                _context.UserRoles.Remove(userRole);
+            }
+        }
+
+        // Thêm role cho user
+        public async Task AddUserRoleAsync(UserRole userRole)
+        {
+            await _context.UserRoles.AddAsync(userRole);
         }
     }
 }
