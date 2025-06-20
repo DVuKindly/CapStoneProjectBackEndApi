@@ -17,6 +17,8 @@ namespace UserService.API.Data
         public DbSet<PendingMembershipRequest> PendingMembershipRequests { get; set; }
         public DbSet<PendingThirdPartyRequest> PendingThirdPartyRequests { get; set; }
         public DbSet<LocationMapping> LocationMappings { get; set; }
+        public DbSet<Membership> Memberships { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,6 +47,19 @@ namespace UserService.API.Data
             // LocationMapping cấu hình
             modelBuilder.Entity<LocationMapping>()
                 .HasKey(x => x.Id);
+
+
+
+            // lịch sử pending 
+
+
+            modelBuilder.Entity<Membership>().HasOne<UserProfile>()
+    .WithMany()
+    .HasForeignKey(m => m.AccountId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Membership>().Property(m => m.PackageName).HasMaxLength(200);
+            modelBuilder.Entity<Membership>().Property(m => m.Amount).HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<LocationMapping>()
                 .HasIndex(x => new { x.LocationRegionId, x.MembershipLocationId })

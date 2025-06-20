@@ -58,6 +58,8 @@ public class PendingMembershipRequest
 
     [MaxLength(100)]
     public string? PaymentTransactionId { get; set; }
+    public string PackageType { get; set; } = null!;
+
 
     [MaxLength(1000)]
     public string? PaymentNote { get; set; }

@@ -44,6 +44,22 @@ public class MembershipServiceClient : IMembershipServiceClient
             return new List<BasicPlanResponse>();
         }
     }
+    public async Task<ComboPlanDto?> GetComboPlanByIdAsync(Guid id)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/api/comboplans/{id}");
+            if (!response.IsSuccessStatusCode) return null;
+
+            return await response.Content.ReadFromJsonAsync<ComboPlanDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to call MembershipService to get combo plan");
+            return null;
+        }
+    }
+
 
 
 

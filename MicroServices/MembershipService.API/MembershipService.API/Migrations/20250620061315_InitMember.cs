@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace MembershipService.API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitAuthDb : Migration
+    public partial class InitMember : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -278,6 +280,16 @@ namespace MembershipService.API.Migrations
                         principalTable: "NextUServices",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.InsertData(
+                table: "Locations",
+                columns: new[] { "Id", "Code", "CreatedAt", "CreatedBy", "Description", "Name", "UpdatedAt", "UpdatedBy" },
+                values: new object[,]
+                {
+                    { new Guid("11111111-1111-1111-1111-111111111111"), "HN", null, null, "Khu vực miền Bắc", "Hà Nội", null, null },
+                    { new Guid("22222222-2222-2222-2222-222222222222"), "DN", null, null, "Khu vực miền Trung", "Đà Nẵng", null, null },
+                    { new Guid("33333333-3333-3333-3333-333333333333"), "HCM", null, null, "Khu vực miền Nam", "Hồ Chí Minh", null, null }
                 });
 
             migrationBuilder.CreateIndex(

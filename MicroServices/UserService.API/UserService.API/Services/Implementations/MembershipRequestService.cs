@@ -242,21 +242,16 @@ public class MembershipRequestService : IMembershipRequestService
 
 
 
-
     public async Task<BaseResponse> SubmitRequestAsync(Guid accountId, MembershipRequestDto dto)
     {
-        // 1. Lấy user profile từ DB
+        var packageType = dto.PackageType?.ToLower();
+        if (packageType != "basic" && packageType != "combo")
+            return new BaseResponse { Success = false, Message = "Loại gói không hợp lệ. Chỉ được chọn 'basic' hoặc 'combo'." };
+
         var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
         if (user == null)
-        {
-            return new BaseResponse
-            {
-                Success = false,
-                Message = "Không tìm thấy hồ sơ người dùng."
-            };
-        }
+            return new BaseResponse { Success = false, Message = "Không tìm thấy hồ sơ người dùng." };
 
-        // 2. Kiểm tra hồ sơ cá nhân đã hoàn thiện chưa
         if (!IsUserProfileCompleted(user))
         {
             return new BaseResponse
@@ -266,45 +261,147 @@ public class MembershipRequestService : IMembershipRequestService
             };
         }
 
-        // 3. Gọi MembershipService.API để lấy thông tin gói
-        var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
-        if (plan == null)
+        var existingRequest = await _db.PendingMembershipRequests
+            .AnyAsync(r => r.AccountId == accountId && r.Status == "Pending");
+
+        if (existingRequest)
         {
             return new BaseResponse
             {
                 Success = false,
-                Message = "Không tìm thấy gói bạn đã chọn hoặc gói không hợp lệ."
+                Message = "Bạn đã gửi một yêu cầu và đang chờ xét duyệt. Vui lòng đợi trước khi gửi thêm yêu cầu mới."
             };
         }
 
-        // 4. Tạo yêu cầu membership mới với thông tin snapshot từ MembershipService
-        var request = new PendingMembershipRequest
+        if (packageType == "basic")
         {
-            Id = Guid.NewGuid(),
-            AccountId = accountId,
-            PackageId = dto.PackageId,
-            RequestedPackageName = plan.LocationName,
-            Amount = plan.Price,
-            LocationId = plan.LocationId,
-            Interests = user.Interests,
-            PersonalityTraits = user.PersonalityTraits,
-            Introduction = user.Introduction,
-            CvUrl = user.CvUrl,
-            MessageToStaff = dto.MessageToStaff,
-            Status = "Pending",
-            CreatedAt = DateTime.UtcNow
-        };
+            var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
+            if (plan == null)
+                return new BaseResponse { Success = false, Message = "Không tìm thấy gói Basic bạn đã chọn." };
 
-        // 5. Lưu vào DB
-        _db.PendingMembershipRequests.Add(request);
-        await _db.SaveChangesAsync();
+            if (plan.VerifyBuy)
+            {
+                var membership = new Membership
+                {
+                    Id = Guid.NewGuid(),
+                    AccountId = accountId,
+                    PackageId = plan.Id,
+                    PackageType = "basic",
+                    PackageName = plan.Name,
+                    Amount = plan.Price,
+                    LocationId = plan.LocationId ?? Guid.Empty,
+                    UsedForRoleUpgrade = true,
+                    PurchasedAt = DateTime.UtcNow
+                };
 
-        return new BaseResponse
+                _db.Memberships.Add(membership);
+
+                // ✅ Cập nhật user profile
+                user.OnboardingStatus = "Approved";
+                user.RoleType = "member";
+
+                await _db.SaveChangesAsync();
+
+                // ✅ Gọi Auth để nâng quyền
+                bool promoted = false;
+                try
+                {
+                    promoted = await _authServiceClient.PromoteUserToMemberAsync(accountId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"PromoteUserToMemberAsync failed: {ex.Message}");
+                }
+
+                return new BaseResponse
+                {
+                    Success = promoted,
+                    Message = promoted
+                        ? "Gói đã được ghi nhận và vai trò được nâng cấp thành công."
+                        : "Gói đã được ghi nhận nhưng chưa thể nâng cấp vai trò.",
+                    Data = new
+                    {
+                        IsDirectPurchase = true,
+                        MembershipId = membership.Id,
+                        PackageId = plan.Id,
+                        PackageName = plan.Name,
+                        Amount = plan.Price,
+                        LocationId = plan.LocationId
+                    }
+                };
+            }
+
+
+            var request = new PendingMembershipRequest
+            {
+                Id = Guid.NewGuid(),
+                AccountId = accountId,
+                PackageId = plan.Id,
+                RequestedPackageName = plan.Name,
+                Amount = plan.Price,
+                LocationId = plan.LocationId ?? Guid.Empty, // ✅ fix null
+                Interests = user.Interests,
+                PersonalityTraits = user.PersonalityTraits,
+                Introduction = user.Introduction,
+                CvUrl = user.CvUrl,
+                MessageToStaff = dto.MessageToStaff,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow,
+                PackageType = "Basic"
+            };
+
+            _db.PendingMembershipRequests.Add(request);
+            await _db.SaveChangesAsync();
+
+            return new BaseResponse
+            {
+                Success = true,
+                Message = "Yêu cầu của bạn đã được gửi. Vui lòng chờ đội ngũ xét duyệt.",
+                Data = new { IsDirectPurchase = false, RequestId = request.Id }
+            };
+        }
+        else if (packageType == "combo")
         {
-            Success = true,
-            Message = "Gửi yêu cầu thành công. Vui lòng chờ duyệt từ đội ngũ hỗ trợ."
-        };
+            var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
+            if (combo == null)
+                return new BaseResponse { Success = false, Message = "Không tìm thấy gói Combo bạn đã chọn." };
+
+            var request = new PendingMembershipRequest
+            {
+                Id = Guid.NewGuid(),
+                AccountId = accountId,
+                PackageId = combo.Id,
+                RequestedPackageName = combo.Name,
+                Amount = combo.TotalPrice,
+                LocationId = combo.LocationId ?? Guid.Empty, // ✅ ép kiểu rõ ràng
+                Interests = user.Interests,
+                PersonalityTraits = user.PersonalityTraits,
+                Introduction = user.Introduction,
+                CvUrl = user.CvUrl,
+                MessageToStaff = dto.MessageToStaff,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow,
+                PackageType = "Combo"
+            };
+
+            _db.PendingMembershipRequests.Add(request);
+            await _db.SaveChangesAsync();
+
+            return new BaseResponse
+            {
+                Success = true,
+                Message = "Yêu cầu mua gói Combo đã được gửi. Vui lòng chờ xét duyệt.",
+                Data = new { IsDirectPurchase = false, RequestId = request.Id }
+            };
+        }
+
+        return new BaseResponse { Success = false, Message = "Xảy ra lỗi không xác định." };
     }
+
+
+
+
+
 
 
 
@@ -387,16 +484,13 @@ public class MembershipRequestService : IMembershipRequestService
 
     public async Task<List<PendingMembershipRequestDto>> GetRequestHistoryAsync(Guid accountId)
     {
-        // 1. Lấy toàn bộ request của user
         var requests = await _db.PendingMembershipRequests
             .Where(r => r.AccountId == accountId)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
 
-        // 2. Lấy thông tin user 1 lần
         var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
 
-        // 3. Tạo danh sách PackageId để gọi MembershipService 1 lần (nếu có)
         var packageIds = requests
             .Where(r => r.PackageId.HasValue)
             .Select(r => r.PackageId!.Value)
@@ -406,7 +500,6 @@ public class MembershipRequestService : IMembershipRequestService
         var plans = await _membershipServiceClient.GetBasicPlansByIdsAsync(packageIds);
         var planDict = plans.ToDictionary(p => p.Id, p => p);
 
-        // 4. Duyệt và mapping kết quả
         var result = requests.Select(r =>
         {
             planDict.TryGetValue(r.PackageId ?? Guid.Empty, out var plan);
@@ -418,11 +511,18 @@ public class MembershipRequestService : IMembershipRequestService
                 RequestedPackageName = r.RequestedPackageName,
                 MessageToStaff = r.MessageToStaff,
                 CreatedAt = r.CreatedAt,
-                LocationName = plan?.LocationName, // ⬅️ Lấy từ MembershipService
+                LocationName = plan?.LocationName,
                 Interests = r.Interests,
                 PersonalityTraits = r.PersonalityTraits,
                 Introduction = r.Introduction,
                 CvUrl = r.CvUrl,
+                PackageType = r.PackageType,
+                Status = r.Status,
+                Amount = (decimal)r.Amount!,
+
+                PaymentStatus = r.PaymentStatus,
+                PaymentMethod = r.PaymentMethod,
+                PaymentTime = r.PaymentTime,
                 ExtendedProfile = new ExtendedProfileDto
                 {
                     Gender = user?.Gender,
@@ -437,6 +537,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         return result;
     }
+
 
     public async Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId)
     {

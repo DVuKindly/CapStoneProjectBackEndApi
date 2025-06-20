@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MembershipService.API.Migrations
 {
     [DbContext(typeof(MembershipDbContext))]
-    [Migration("20250619143055_InitAuthDb")]
-    partial class InitAuthDb
+    [Migration("20250620061315_InitMember")]
+    partial class InitMember
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -262,6 +262,29 @@ namespace MembershipService.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Locations");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Code = "HN",
+                            Description = "Khu vực miền Bắc",
+                            Name = "Hà Nội"
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Code = "DN",
+                            Description = "Khu vực miền Trung",
+                            Name = "Đà Nẵng"
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            Code = "HCM",
+                            Description = "Khu vực miền Nam",
+                            Name = "Hồ Chí Minh"
+                        });
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Media", b =>

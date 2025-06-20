@@ -8,5 +8,9 @@ namespace UserService.API.Services.Interfaces
         Task<BasicPlanDto?> GetBasicPlanByIdAsync(Guid id);
 
         Task<List<BasicPlanResponse>> GetBasicPlansByIdsAsync(List<Guid> ids);
+
+
+
+        Task<ComboPlanDto?> GetComboPlanByIdAsync(Guid id);
     }
 }
