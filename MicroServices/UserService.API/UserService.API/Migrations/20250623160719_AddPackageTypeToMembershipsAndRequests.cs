@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UserService.API.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class AddPackageTypeToMembershipsAndRequests : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -25,6 +25,27 @@ namespace UserService.API.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_LocationRegions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LocationMappings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RegionName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LocationRegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MembershipLocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LocationMappings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LocationMappings_LocationRegions_LocationRegionId",
+                        column: x => x.LocationRegionId,
+                        principalTable: "LocationRegions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -50,8 +71,7 @@ namespace UserService.API.Migrations
                         name: "FK_PendingThirdPartyRequests_LocationRegions_LocationId",
                         column: x => x.LocationId,
                         principalTable: "LocationRegions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -147,6 +167,37 @@ namespace UserService.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Memberships",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PackageId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PackageType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PackageName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UsedForRoleUpgrade = table.Column<bool>(type: "bit", nullable: false),
+                    PurchasedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Memberships", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Memberships_UserProfiles_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Memberships_UserProfiles_UserProfileId",
+                        column: x => x.UserProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PartnerProfiles",
                 columns: table => new
                 {
@@ -191,6 +242,7 @@ namespace UserService.API.Migrations
                     AccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PackageId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RequestedPackageName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Interests = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     PersonalityTraits = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     Introduction = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
@@ -205,18 +257,19 @@ namespace UserService.API.Migrations
                     PaymentStatus = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     PaymentTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PaymentTransactionId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PackageType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PaymentNote = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    PaymentProofUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                    PaymentProofUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    LocationRegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PendingMembershipRequests", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PendingMembershipRequests_LocationRegions_LocationId",
-                        column: x => x.LocationId,
+                        name: "FK_PendingMembershipRequests_LocationRegions_LocationRegionId",
+                        column: x => x.LocationRegionId,
                         principalTable: "LocationRegions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PendingMembershipRequests_UserProfiles_AccountId",
                         column: x => x.AccountId,
@@ -303,10 +356,26 @@ namespace UserService.API.Migrations
                     { new Guid("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Đà Nẵng", "Đà Nẵng" }
                 });
 
+            migrationBuilder.InsertData(
+                table: "LocationMappings",
+                columns: new[] { "Id", "CreatedAt", "LocationRegionId", "MembershipLocationId", "RegionName" },
+                values: new object[,]
+                {
+                    { new Guid("aaaa1111-0000-0000-0000-000000000001"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("9f38b827-4e1a-4a6e-b8c5-5ff6b759a2a1"), new Guid("10000000-0000-0000-0000-000000000001"), "Hà Nội" },
+                    { new Guid("aaaa1111-0000-0000-0000-000000000002"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("5a418674-9e47-4d19-b827-1e8e2b25c324"), new Guid("10000000-0000-0000-0000-000000000002"), "Hải Phòng" },
+                    { new Guid("aaaa1111-0000-0000-0000-000000000003"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"), new Guid("10000000-0000-0000-0000-000000000003"), "Đà Nẵng" }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_CoachProfiles_AccountId",
                 table: "CoachProfiles",
                 column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LocationMappings_LocationRegionId_MembershipLocationId",
+                table: "LocationMappings",
+                columns: new[] { "LocationRegionId", "MembershipLocationId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ManagerProfiles_AccountId",
@@ -317,6 +386,16 @@ namespace UserService.API.Migrations
                 name: "IX_ManagerProfiles_LocationId",
                 table: "ManagerProfiles",
                 column: "LocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Memberships_AccountId",
+                table: "Memberships",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Memberships_UserProfileId",
+                table: "Memberships",
+                column: "UserProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PartnerProfiles_AccountId",
@@ -334,9 +413,9 @@ namespace UserService.API.Migrations
                 column: "AccountId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PendingMembershipRequests_LocationId",
+                name: "IX_PendingMembershipRequests_LocationRegionId",
                 table: "PendingMembershipRequests",
-                column: "LocationId");
+                column: "LocationRegionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PendingThirdPartyRequests_LocationId",
@@ -382,7 +461,13 @@ namespace UserService.API.Migrations
                 name: "CoachProfiles");
 
             migrationBuilder.DropTable(
+                name: "LocationMappings");
+
+            migrationBuilder.DropTable(
                 name: "ManagerProfiles");
+
+            migrationBuilder.DropTable(
+                name: "Memberships");
 
             migrationBuilder.DropTable(
                 name: "PartnerProfiles");

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UserService.API.DTOs.Requests;
+using UserService.API.Services.Implementations;
 using UserService.API.Services.Interfaces;
 
 [ApiController]
@@ -10,10 +11,12 @@ using UserService.API.Services.Interfaces;
 public class MembershipController : ControllerBase
 {
     private readonly IMembershipRequestService _membershipRequestService;
+    private readonly IMembershipService _membershipService;
 
-    public MembershipController(IMembershipRequestService membershipRequestService)
+    public MembershipController(IMembershipRequestService membershipRequestService, IMembershipService membershipService)
     {
         _membershipRequestService = membershipRequestService;
+        _membershipService = membershipService;
     }
 
     [HttpPost("requestMember")]
@@ -97,7 +100,6 @@ public class MembershipController : ControllerBase
 
 
 
-
     [HttpPost("mark-paid")]
     [AllowAnonymous]
     public async Task<IActionResult> MarkMembershipRequestAsPaid([FromBody] MarkPaidRequestDto dto)
@@ -106,7 +108,14 @@ public class MembershipController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-
+    [HttpGet("my-packages")]
+    [Authorize]
+    public async Task<IActionResult> GetMyPurchasedMemberships()
+    {
+        var accountId = GetAccountIdFromToken();
+        var result = await _membershipService.GetUserMembershipsAsync(accountId);
+        return Ok(result);
+    }
 
 
     private Guid GetAccountId()

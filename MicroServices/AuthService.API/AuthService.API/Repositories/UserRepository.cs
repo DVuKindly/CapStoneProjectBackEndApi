@@ -98,9 +98,11 @@ namespace AuthService.API.Repositories
           
         }
 
-        public Task AddUserRoleAsync(UserRole userRole)
+        public async Task AddUserRoleAsync(UserRole userRole)
         {
-            throw new NotImplementedException();
+            await _context.UserRoles.AddAsync(userRole);
         }
-    } 
+
+
+    }
 }

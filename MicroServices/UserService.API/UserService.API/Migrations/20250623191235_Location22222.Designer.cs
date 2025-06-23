@@ -12,8 +12,8 @@ using UserService.API.Data;
 namespace UserService.API.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250616111107_InitAuthDb")]
-    partial class InitAuthDb
+    [Migration("20250623191235_Location22222")]
+    partial class Location22222
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -151,6 +151,72 @@ namespace UserService.API.Migrations
                     b.ToTable("ManagerProfiles");
                 });
 
+            modelBuilder.Entity("Membership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ExpireAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PackageName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PackageType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PaymentTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentTransactionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PlanSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PurchasedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("UsedForRoleUpgrade")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("Memberships");
+                });
+
             modelBuilder.Entity("PartnerProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -226,6 +292,9 @@ namespace UserService.API.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime2");
 
@@ -247,12 +316,19 @@ namespace UserService.API.Migrations
                     b.Property<Guid?>("LocationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("LocationRegionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("MessageToStaff")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<Guid?>("PackageId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PackageType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PaymentMethod")
                         .HasMaxLength(50)
@@ -297,7 +373,7 @@ namespace UserService.API.Migrations
 
                     b.HasIndex("AccountId");
 
-                    b.HasIndex("LocationId");
+                    b.HasIndex("LocationRegionId");
 
                     b.ToTable("PendingMembershipRequests");
                 });
@@ -408,6 +484,61 @@ namespace UserService.API.Migrations
                     b.HasIndex("LocationId");
 
                     b.ToTable("StaffProfiles");
+                });
+
+            modelBuilder.Entity("UserService.API.Entities.LocationMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid>("LocationRegionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MembershipLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RegionName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationRegionId", "MembershipLocationId")
+                        .IsUnique();
+
+                    b.ToTable("LocationMappings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("aaaa1111-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            LocationRegionId = new Guid("9f38b827-4e1a-4a6e-b8c5-5ff6b759a2a1"),
+                            MembershipLocationId = new Guid("10000000-0000-0000-0000-000000000001"),
+                            RegionName = "Hà Nội"
+                        },
+                        new
+                        {
+                            Id = new Guid("aaaa1111-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            LocationRegionId = new Guid("5a418674-9e47-4d19-b827-1e8e2b25c324"),
+                            MembershipLocationId = new Guid("10000000-0000-0000-0000-000000000002"),
+                            RegionName = "Hải Phòng"
+                        },
+                        new
+                        {
+                            Id = new Guid("aaaa1111-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            LocationRegionId = new Guid("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"),
+                            MembershipLocationId = new Guid("10000000-0000-0000-0000-000000000003"),
+                            RegionName = "Đà Nẵng"
+                        });
                 });
 
             modelBuilder.Entity("UserService.API.Entities.SupplierProfile", b =>
@@ -584,6 +715,21 @@ namespace UserService.API.Migrations
                     b.Navigation("UserProfile");
                 });
 
+            modelBuilder.Entity("Membership", b =>
+                {
+                    b.HasOne("UserService.API.Entities.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
+                        .WithMany()
+                        .HasForeignKey("UserProfileId");
+
+                    b.Navigation("UserProfile");
+                });
+
             modelBuilder.Entity("PartnerProfile", b =>
                 {
                     b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
@@ -610,12 +756,9 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("LocationRegion", null)
                         .WithMany("PendingMembershipRequests")
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("LocationRegion");
+                        .HasForeignKey("LocationRegionId");
 
                     b.Navigation("UserProfile");
                 });
@@ -624,8 +767,7 @@ namespace UserService.API.Migrations
                 {
                     b.HasOne("LocationRegion", "LocationRegion")
                         .WithMany("PendingThirdPartyRequests")
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("LocationId");
 
                     b.Navigation("LocationRegion");
                 });
@@ -646,6 +788,17 @@ namespace UserService.API.Migrations
                     b.Navigation("LocationRegion");
 
                     b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("UserService.API.Entities.LocationMapping", b =>
+                {
+                    b.HasOne("LocationRegion", "LocationRegion")
+                        .WithMany()
+                        .HasForeignKey("LocationRegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LocationRegion");
                 });
 
             modelBuilder.Entity("UserService.API.Entities.SupplierProfile", b =>

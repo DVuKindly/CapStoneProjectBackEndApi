@@ -4,11 +4,10 @@ using UserService.API.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using System.Text;
 using System.Text.Json;
+using System.Net.Http;
 
 namespace UserService.API.Services.Implementations
 {
-
-
     public class AuthServiceClient : IAuthServiceClient
     {
         private readonly HttpClient _httpClient;
@@ -22,14 +21,21 @@ namespace UserService.API.Services.Implementations
 
         public async Task<bool> PromoteUserToMemberAsync(Guid accountId)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/internal/promote-to-member");
-            // Thêm header API Key cho request
+            var request = new HttpRequestMessage(HttpMethod.Post, "/bff/api/auth/internal/promote-to-member");
             request.Headers.Add("X-Api-Key", _apiKey);
-
             request.Content = new StringContent(JsonSerializer.Serialize(new { AccountId = accountId }), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
 
+        public async Task<bool> DowngradeUserRoleAsync(Guid accountId)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, $"/bff/api/auth/internal/downgrade-member");
+            request.Headers.Add("X-Api-Key", _apiKey);
+            request.Content = new StringContent(JsonSerializer.Serialize(new { AccountId = accountId }), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
             return response.IsSuccessStatusCode;
         }
     }
@@ -38,9 +44,4 @@ namespace UserService.API.Services.Implementations
     {
         public Guid AccountId { get; set; }
     }
-
 }
-
-
-
-

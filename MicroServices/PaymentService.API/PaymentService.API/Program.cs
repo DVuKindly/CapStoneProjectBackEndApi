@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PaymentService.API.Data;
 using PaymentService.API.Services;
+using PaymentService.API.Services.Interfaces;
 using System.Text.Json.Serialization;
 
 namespace PaymentService.API
@@ -38,6 +39,14 @@ namespace PaymentService.API
             builder.Services.AddScoped<IPaymentService, PaymentService.API.Services.PaymentService>();
             builder.Services.AddScoped<IPaymentWebhookService, PaymentWebhookService>();
             builder.Services.AddHttpClient<IPaymentResultHandler, PaymentResultHandler>(); // gọi về UserService
+            builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>((provider, client) =>
+            {
+                var config = provider.GetRequiredService<IConfiguration>();
+                var baseUrl = config["UserService:BaseUrl"]; 
+                client.BaseAddress = new Uri(baseUrl);
+                client.DefaultRequestHeaders.Add("X-Internal-Call", "true");
+            });
+
 
             var app = builder.Build();
 

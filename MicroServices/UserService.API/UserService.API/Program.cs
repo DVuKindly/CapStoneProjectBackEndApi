@@ -56,6 +56,10 @@ builder.Services.AddHttpClient<IMembershipServiceClient, MembershipServiceClient
 {
     client.BaseAddress = new Uri(membershipServiceUrl); 
 });
+builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5000"); 
+});
 
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ICoachProfileService, CoachProfileService>();
@@ -63,7 +67,7 @@ builder.Services.AddScoped<IStaffProfileService, StaffProfileService>();
 builder.Services.AddScoped<IPartnerProfileService, PartnerProfileService>();
 builder.Services.AddScoped<ISupplierProfileService, SupplierProfileService>();
 builder.Services.AddScoped<IMembershipRequestService, MembershipRequestService>();
-
+builder.Services.AddScoped<IMembershipService, MembershipService>();
 builder.Services.AddScoped<ICoachProfileRepository, CoachProfileRepository>();
 
 

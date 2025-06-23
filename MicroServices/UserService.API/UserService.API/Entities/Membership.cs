@@ -1,35 +1,47 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using UserService.API.Entities;
 
-
-namespace UserService.API.Entities
+public class Membership
 {
-    public class Membership 
-    {
-        public Guid Id { get; set; }
+    [Key]
+    public Guid Id { get; set; }
 
-        [Required]
-        public Guid AccountId { get; set; }
+    public Guid AccountId { get; set; }
 
-        [Required]
-        public Guid PackageId { get; set; }
+    public Guid PackageId { get; set; }
 
-        [Required]
-        public string PackageType { get; set; } = "basic"; 
+    public string PackageType { get; set; } = "basic";
 
-        [Required]
-        [MaxLength(200)]
-        public string PackageName { get; set; }
+    public string PackageName { get; set; } = string.Empty;
 
-        public decimal Amount { get; set; }
+    public decimal Amount { get; set; }
 
-        [Required]
-        public Guid LocationId { get; set; }
+    public DateTime PurchasedAt { get; set; } = DateTime.UtcNow;
 
-        public bool UsedForRoleUpgrade { get; set; } = false;
+    public string? PaymentStatus { get; set; }
 
-        public DateTime PurchasedAt { get; set; } = DateTime.UtcNow;
+    public string? PaymentMethod { get; set; }
+    public int? PackageDurationValue { get; set; }
+    public string? PackageDurationUnit { get; set; }  // "day", "month", "year"
 
-     
-        public UserProfile? UserProfile { get; set; }
-    }
+    public string? PaymentTransactionId { get; set; }
+
+    public DateTime? PaymentTime { get; set; }
+
+    public string? PaymentNote { get; set; }
+
+    public Guid LocationId { get; set; }
+
+    public bool UsedForRoleUpgrade { get; set; } = false;
+
+    public DateTime? ExpireAt { get; set; }
+
+    [NotMapped]
+    public bool IsActive => !ExpireAt.HasValue || ExpireAt > DateTime.UtcNow;
+
+    public string? PlanSource { get; set; }
+
+    public Guid? UserProfileId { get; set; }
+    public UserProfile? UserProfile { get; set; }
 }

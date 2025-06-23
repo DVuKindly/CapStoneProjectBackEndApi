@@ -30,7 +30,7 @@ namespace PaymentService.API.Services
             // 1. Gọi sang UserService để lấy thông tin yêu cầu thành viên
             var userServiceBaseUrl = _config["UserService:BaseUrl"];
             var summary = await _httpClient.GetFromJsonAsync<SharedDto>(
-                $"{userServiceBaseUrl}/api/membership/payment-summary/{dto.MembershipRequestId}");
+            $"{userServiceBaseUrl}/api/user/memberships/payment-summary/{dto.MembershipRequestId}");
 
             if (summary == null || summary.Status != "PendingPayment")
             {

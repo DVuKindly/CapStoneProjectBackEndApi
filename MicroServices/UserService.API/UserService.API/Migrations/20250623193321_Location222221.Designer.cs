@@ -12,8 +12,8 @@ using UserService.API.Data;
 namespace UserService.API.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250619155802_Seed_LocationRegionsAndMappings")]
-    partial class Seed_LocationRegionsAndMappings
+    [Migration("20250623193321_Location222221")]
+    partial class Location222221
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -151,6 +151,78 @@ namespace UserService.API.Migrations
                     b.ToTable("ManagerProfiles");
                 });
 
+            modelBuilder.Entity("Membership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ExpireAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PackageDurationUnit")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PackageDurationValue")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PackageName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PackageType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PaymentTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentTransactionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PlanSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PurchasedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("UsedForRoleUpgrade")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("Memberships");
+                });
+
             modelBuilder.Entity("PartnerProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -259,6 +331,10 @@ namespace UserService.API.Migrations
 
                     b.Property<Guid?>("PackageId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PackageType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PaymentMethod")
                         .HasMaxLength(50)
@@ -641,6 +717,21 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("LocationRegion");
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("Membership", b =>
+                {
+                    b.HasOne("UserService.API.Entities.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
+                        .WithMany()
+                        .HasForeignKey("UserProfileId");
 
                     b.Navigation("UserProfile");
                 });

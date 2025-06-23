@@ -33,7 +33,8 @@ namespace PaymentService.API.Services
                 return;
             }
 
-            var endpoint = $"{userServiceUrl.TrimEnd('/')}/api/membership/mark-paid";
+            var endpoint = $"{userServiceUrl.TrimEnd('/')}/api/user/memberships/mark-paid";
+
 
             try
             {

@@ -127,51 +127,31 @@ namespace MembershipService.API.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Location>().HasData(
-      new Location
-      {
-          Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-          Name = "Hà Nội",
-          Description = "Khu vực miền Bắc",
-          Code = "HN"
-      },
-      new Location
-      {
-          Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-          Name = "Đà Nẵng",
-          Description = "Khu vực miền Trung",
-          Code = "DN"
-      },
-      new Location
-      {
-          Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
-          Name = "Hồ Chí Minh",
-          Description = "Khu vực miền Nam",
-          Code = "HCM"
-      }
-  );
-
 
             modelBuilder.Entity<Location>().HasData(
-    new Location
-    {
-        Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
-        Name = "Hà Nội",
-        Description = "Khu vực miền Bắc"
-    },
-    new Location
-    {
-        Id = Guid.Parse("10000000-0000-0000-0000-000000000002"),
-        Name = "Đà Nẵng",
-        Description = "Khu vực miền Trung"
-    },
-    new Location
-    {
-        Id = Guid.Parse("10000000-0000-0000-0000-000000000003"),
-        Name = "Hồ Chí Minh",
-        Description = "Khu vực miền Nam"
-    }
-);
+               new Location
+               {
+                   Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
+                   Name = "Hà Nội",
+                   Description = "Khu vực miền Bắc",
+                   Code = "HN"
+               },
+               new Location
+               {
+                   Id = Guid.Parse("10000000-0000-0000-0000-000000000002"),
+                   Name = "Đà Nẵng",
+                   Description = "Khu vực miền Trung",
+                   Code = "DN" 
+               },
+               new Location
+               {
+                   Id = Guid.Parse("10000000-0000-0000-0000-000000000003"),
+                   Name = "Hải Phòng",
+                   Description = "Hải Phòng",
+                   Code = "HP"
+               }
+           );
+
 
         }
 

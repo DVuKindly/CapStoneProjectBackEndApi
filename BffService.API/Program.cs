@@ -1,10 +1,7 @@
-﻿
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System.Text;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,26 +14,26 @@ if (!File.Exists(envPath))
 }
 DotNetEnv.Env.Load(envPath);
 
-// JWT Key from .env
+// JWT Secret Key
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
                ?? throw new InvalidOperationException("Missing JWT_SECRET_KEY in .env");
 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
-// CORS for frontend
+// === CORS ===
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend3000", builder =>
+    options.AddPolicy("AllowFrontend3000", policy =>
     {
-        builder.WithOrigins("http://localhost:3000")
-               .AllowAnyHeader()
-               .AllowAnyMethod()
-               .AllowCredentials();
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
 builder.Services.AddHttpContextAccessor();
 
-// JWT Authentication config
+// === JWT Authentication ===
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -56,7 +53,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Proxy HttpClients
+// === Register Proxy HttpClients ===
 builder.Services.AddHttpClient("AuthService", client =>
 {
     client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("AUTHSERVICE_URL") ?? "http://localhost:5001");
@@ -69,19 +66,25 @@ builder.Services.AddHttpClient("UserService", client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
-// HttpClient cho PaymentService
 builder.Services.AddHttpClient("PaymentService", client =>
 {
     client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("PAYMENTSERVICE_URL") ?? "http://localhost:5010");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
+builder.Services.AddHttpClient("MembershipService", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5008"); // 📌 Ghi rõ luôn MembershipService
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+// === Controllers + Reverse Proxy ===
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-// Swagger config
+// === Swagger + Bearer Auth ===
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "BffService.API", Version = "v1" });
@@ -111,6 +114,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// === Middleware Pipeline ===
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -122,6 +126,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend3000");
+
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path;
@@ -134,4 +139,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapReverseProxy();
+
 app.Run();

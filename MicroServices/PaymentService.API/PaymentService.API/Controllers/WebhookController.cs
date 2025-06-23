@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PaymentService.API.DTOs.Requests;
+using PaymentService.API.DTOs.Response;
+
 using PaymentService.API.Services;
 using System.Threading.Tasks;
 
@@ -20,14 +22,22 @@ namespace PaymentService.API.Controllers
         public async Task<IActionResult> MomoWebhook([FromBody] MomoWebhookDto dto)
         {
             if (dto == null)
-                return BadRequest("Payload null");
+                return BadRequest(new { message = "Payload không được null" });
 
-            var result = await _paymentWebhookService.HandleMomoWebhookAsync(dto);
+            WebhookResult result = await _paymentWebhookService.HandleMomoWebhookAsync(dto);
 
-            if (!result)
-                return BadRequest("Xử lý webhook không thành công");
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    message = result.Message ?? "Xử lý webhook không thành công"
+                });
+            }
 
-            return Ok("Webhook xử lý thành công");
+            return Ok(new
+            {
+                message = result.Message ?? "Webhook xử lý thành công"
+            });
         }
     }
 }
