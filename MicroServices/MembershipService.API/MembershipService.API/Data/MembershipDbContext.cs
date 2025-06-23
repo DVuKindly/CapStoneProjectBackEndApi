@@ -151,6 +151,28 @@ namespace MembershipService.API.Data
       }
   );
 
+
+            modelBuilder.Entity<Location>().HasData(
+    new Location
+    {
+        Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
+        Name = "Hà Nội",
+        Description = "Khu vực miền Bắc"
+    },
+    new Location
+    {
+        Id = Guid.Parse("10000000-0000-0000-0000-000000000002"),
+        Name = "Đà Nẵng",
+        Description = "Khu vực miền Trung"
+    },
+    new Location
+    {
+        Id = Guid.Parse("10000000-0000-0000-0000-000000000003"),
+        Name = "Hồ Chí Minh",
+        Description = "Khu vực miền Nam"
+    }
+);
+
         }
 
 

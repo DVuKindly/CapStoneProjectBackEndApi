@@ -22,7 +22,7 @@ namespace AuthService.API.Services
             _refreshTokenExpiration = TimeSpan.FromDays(_jwtSettings.RefreshTokenDays);
         }
 
-        public string GenerateAccessToken(UserAuth user)
+        public string GenerateAccessToken(UserAuth user, List<string> permissionKeys)
         {
             var roles = user.UserRoles?.Select(r => r.Role.RoleKey).ToList() ?? new();
 
@@ -35,6 +35,7 @@ namespace AuthService.API.Services
             };
 
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.AddRange(permissionKeys.Select(p => new Claim("permission", p)));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

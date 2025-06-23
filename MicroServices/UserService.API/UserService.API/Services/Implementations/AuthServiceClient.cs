@@ -22,7 +22,7 @@ namespace UserService.API.Services.Implementations
 
         public async Task<bool> PromoteUserToMemberAsync(Guid accountId)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "api/internal/promote-to-member");
+            var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/internal/promote-to-member");
             // Thêm header API Key cho request
             request.Headers.Add("X-Api-Key", _apiKey);
 

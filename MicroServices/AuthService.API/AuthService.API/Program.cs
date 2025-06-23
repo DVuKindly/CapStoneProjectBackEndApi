@@ -71,11 +71,13 @@ builder.Services.Configure<JwtSettings>(options =>
 
 
 var userServiceUrl = builder.Configuration["Services:UserService"];
-
 builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Services:UserService"]);
+    client.BaseAddress = new Uri("http://localhost:5000"); // ✅
+    client.DefaultRequestHeaders.Add("X-Internal-Call", "true");
 });
+
+
 
 
 var app = builder.Build();

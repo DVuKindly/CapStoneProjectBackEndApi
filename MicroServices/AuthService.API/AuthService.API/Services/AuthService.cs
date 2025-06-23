@@ -1,4 +1,5 @@
 ﻿using AuthService.API.Data;
+using AuthService.API.DTOs;
 using AuthService.API.DTOs.AdminCreate;
 
 using AuthService.API.DTOs.COACH;
@@ -96,7 +97,14 @@ namespace AuthService.API.Services
             }
 
             // ✅ Generate tokens
-            var accessToken = _tokenService.GenerateAccessToken(user);
+            var permissionKeys = user.UserRoles
+     .SelectMany(ur => ur.Role.RolePermissions)
+     .Select(rp => rp.Permission.PermissionKey)
+     .Distinct()
+     .ToList();
+
+            var accessToken = _tokenService.GenerateAccessToken(user, permissionKeys);
+
             var refreshToken = _tokenService.GenerateRefreshToken();
             var idToken = _tokenService.GenerateIdToken(user);
 
@@ -124,6 +132,31 @@ namespace AuthService.API.Services
             };
         }
 
+        public async Task<BaseResponse> ChangeUserRoleAsync(Guid userId, Guid newRoleId)
+        {
+            var user = await _userRepository.GetUserWithRolesByAccountIdAsync(userId);
+            if (user == null)
+                return new BaseResponse(false, "User not found");
+
+            // Xoá toàn bộ role cũ
+            foreach (var oldRole in user.UserRoles)
+            {
+                await _userRepository.RemoveUserRoleAsync(user.UserId, oldRole.RoleId);
+            }
+
+            // Gán role mới
+            var newUserRole = new UserRole
+            {
+                UserId = userId,
+                RoleId = newRoleId
+            };
+
+            await _userRepository.AddUserRoleAsync(newUserRole);
+            await _userRepository.SaveChangesAsync();
+
+            return new BaseResponse(true, "User role updated successfully");
+        }
+
 
 
         public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
@@ -148,7 +181,14 @@ namespace AuthService.API.Services
             await _context.SaveChangesAsync();
 
             // ✅ Sinh token mới
-            var newAccessToken = _tokenService.GenerateAccessToken(user);
+            var permissionKeys = user.UserRoles
+       .SelectMany(ur => ur.Role.RolePermissions)
+       .Select(rp => rp.Permission.PermissionKey)
+       .Distinct()
+       .ToList();
+
+            var newAccessToken = _tokenService.GenerateAccessToken(user, permissionKeys);
+
             var newIdToken = _tokenService.GenerateIdToken(user);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
             var newRefreshTokenExpiry = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenDays);
@@ -306,44 +346,7 @@ namespace AuthService.API.Services
             };
         }
 
-        public async Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request)
-        {
-            var user = await _userRepository.GetByEmailAsync(request.Email);
-            if (user == null)
-            {
-                user = new UserAuth
-                {
-                    UserId = Guid.NewGuid(),
-                    Email = request.Email,
-                    UserName = request.FullName,
-                    Provider = "Google",
-                    ProviderId = request.ProviderId,
-                    PasswordHash = null,
-                    EmailVerified = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                await _userRepository.AddAsync(user);
-                await _userRepository.SaveChangesAsync();
-            }
-
-            var accessToken = _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-            await _userRepository.SaveChangesAsync();
-
-            return new AuthResponse
-            {
-                Success = true,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                Email = user.Email,
-                FullName = user.UserName
-            };
-        }
+       
 
 
         public async Task<AuthResponse> LogoutAsync(string token)
@@ -899,7 +902,80 @@ namespace AuthService.API.Services
             return true;
         }
 
+        public Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request)
+        {
+            throw new NotImplementedException();
+        }
 
+        public async Task<BaseResponse> AssignRoleAsync(Guid userId, Guid roleId)
+        {
+            var exists = await  _context.UserRoles.AnyAsync(x => x.UserId == userId && x.RoleId == roleId);
+            if (exists)
+                return new BaseResponse(false, "User already has this role.");
 
+             _context.UserRoles.Add(new UserRole { UserId = userId, RoleId = roleId });
+            await  _context.SaveChangesAsync();
+            return new BaseResponse(true, "Role assigned successfully.");
+        }
+
+        public async Task<BaseResponse> AssignPermissionToRoleAsync(Guid roleId, Guid permissionId)
+        {
+            var exists = await  _context.RolePermissions.AnyAsync(x => x.RoleId == roleId && x.PermissionId == permissionId);
+            if (exists)
+                return new BaseResponse(false, "Permission already assigned to this role.");
+
+             _context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = permissionId });
+            await  _context.SaveChangesAsync();
+            return new BaseResponse(true, "Permission assigned to role successfully.");
+        }
+
+        public async Task<BaseResponse> AssignPermissionToUserAsync(Guid userId, Guid permissionId)
+        {
+            var exists = await  _context.UserPermissions.AnyAsync(x => x.UserId == userId && x.PermissionId == permissionId);
+            if (exists)
+                return new BaseResponse(false, "Permission already assigned to user.");
+
+             _context.UserPermissions.Add(new UserPermission { UserId = userId, PermissionId = permissionId });
+            await  _context.SaveChangesAsync();
+            return new BaseResponse(true, "Permission assigned to user successfully.");
+        }
+
+        public async Task<List<RoleDto>> GetUserRolesAsync(Guid userId)
+        {
+            var roles = await  _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Include(ur => ur.Role)
+                .Select(ur => new RoleDto
+                {
+                    RoleId = ur.Role.RoleId,
+                    RoleKey = ur.Role.RoleKey,
+                    RoleName = ur.Role.RoleName,
+                    Description = ur.Role.Description
+                })
+                .ToListAsync();
+
+            return roles;
+        }
+
+        public async Task<List<RoleDto>> GetAllRolesAsync()
+        {
+            return await  _context.Roles.Select(r => new RoleDto
+            {
+                RoleId = r.RoleId,
+                RoleKey = r.RoleKey,
+                RoleName = r.RoleName,
+                Description = r.Description
+            }).ToListAsync();
+        }
+
+        public async Task<List<PermissionDto>> GetAllPermissionsAsync()
+        {
+            return await  _context.Permissions.Select(p => new PermissionDto
+            {
+                PermissionId = p.PermissionId,
+                PermissionKey = p.PermissionKey,
+                Description = p.Description
+            }).ToListAsync();
+        }
     }
 }

@@ -8,7 +8,7 @@ using UserService.API.Services.Interfaces;
 namespace UserService.API.Controllers
 {
     [ApiController]
-    [Route("api/userprofiles")]
+    [Route("api/user/profiles")]
     public class UserProfilesController : ControllerBase
     {
         private readonly ILogger<UserProfilesController> _logger;

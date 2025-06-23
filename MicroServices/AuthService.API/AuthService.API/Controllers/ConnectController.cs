@@ -6,7 +6,7 @@ using System.Security.Claims;
 namespace AuthService.API.Controllers
 {
     [ApiController]
-    [Route("connect")]
+    [Route("api/auth/connectinfo")]
     public class ConnectController : ControllerBase
     {
         [HttpGet("userinfo")]

@@ -48,9 +48,11 @@ namespace AuthService.API.Repositories
         public async Task<UserAuth?> GetByEmailWithRoleAsync(string email)
         {
             return await _context.AuthUsers
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.Email == email);
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                    .ThenInclude(r => r.RolePermissions)
+                        .ThenInclude(rp => rp.Permission)
+            .FirstOrDefaultAsync(u => u.Email == email);
         }
 
 
@@ -75,26 +77,30 @@ namespace AuthService.API.Repositories
         public async Task<UserAuth?> GetUserWithRolesByAccountIdAsync(Guid accountId)
         {
             return await _context.AuthUsers
-                .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.UserId == accountId);
+           .Include(u => u.UserRoles)
+               .ThenInclude(ur => ur.Role)
+                   .ThenInclude(r => r.RolePermissions)
+                       .ThenInclude(rp => rp.Permission)
+           .FirstOrDefaultAsync(u => u.UserId == accountId);
         }
 
         // Xóa role của user
         public async Task RemoveUserRoleAsync(Guid userId, Guid roleId)
         {
             var userRole = await _context.UserRoles
-                .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
-
+         .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
             if (userRole != null)
             {
                 _context.UserRoles.Remove(userRole);
+                await _context.SaveChangesAsync();
             }
+
+          
         }
 
-        // Thêm role cho user
-        public async Task AddUserRoleAsync(UserRole userRole)
+        public Task AddUserRoleAsync(UserRole userRole)
         {
-            await _context.UserRoles.AddAsync(userRole);
+            throw new NotImplementedException();
         }
-    }
+    } 
 }

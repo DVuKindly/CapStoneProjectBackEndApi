@@ -4,6 +4,7 @@ using AuthService.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthService.API.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    partial class AuthDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250622195321_Seed_LocationRegionsAndMappings2")]
+    partial class Seed_LocationRegionsAndMappings2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,36 +79,6 @@ namespace AuthService.API.Migrations
                             PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0006"),
                             Description = "Tạo đối tác",
                             PermissionKey = "create_partner"
-                        },
-                        new
-                        {
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0007"),
-                            Description = "Tạo Manager",
-                            PermissionKey = "create_manager"
-                        },
-                        new
-                        {
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0008"),
-                            Description = "Tạo Staff Onboarding",
-                            PermissionKey = "create_staff_onboarding"
-                        },
-                        new
-                        {
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0009"),
-                            Description = "Tạo Staff Service",
-                            PermissionKey = "create_staff_service"
-                        },
-                        new
-                        {
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0010"),
-                            Description = "Tạo Staff Content",
-                            PermissionKey = "create_staff_content"
-                        },
-                        new
-                        {
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0011"),
-                            Description = "Tạo Coach",
-                            PermissionKey = "create_coach"
                         });
                 });
 
@@ -254,71 +227,6 @@ namespace AuthService.API.Migrations
                         {
                             RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
                             PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0006")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0007")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0008")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0009")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0010")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0011")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0004")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0005")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0006")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0007")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0008")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0009")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0010")
-                        },
-                        new
-                        {
-                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0011")
                         });
                 });
 

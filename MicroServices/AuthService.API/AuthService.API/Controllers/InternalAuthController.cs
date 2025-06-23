@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 namespace AuthService.API.Controllers
 {
     [ApiController]
-    [Route("api/internal")]
+    [Route("api/auth/internal")]
+
     public class InternalAuthController : ControllerBase
     {
         private readonly IAuthService _authService;

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace AuthService.API.Controllers
 {
     [ApiController]
-    [Route("connect")]
+    [Route("api/auth/connect")]
     public class TokenController : ControllerBase
     {
         private readonly IAuthService _authService;
