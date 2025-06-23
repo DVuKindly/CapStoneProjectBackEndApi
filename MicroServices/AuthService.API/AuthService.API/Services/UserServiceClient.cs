@@ -1,11 +1,8 @@
-﻿using System.Net.Http;
+﻿using AuthService.API.DTOs.AdminCreate;
+using AuthService.API.DTOs.Request;
+using AuthService.API.Services;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using AuthService.API.Services;
-using AuthService.API.DTOs.Request;
-using AuthService.API.DTOs.AdminCreate;
 
 public class UserServiceClient : IUserServiceClient
 {
@@ -33,11 +30,11 @@ public class UserServiceClient : IUserServiceClient
                 FullName = userName,
                 Email = email,
                 RoleType = roleType
-
             };
 
             if (profileInfo is UserProfilePayload extra)
             {
+                // ✅ Bổ sung thông tin chi tiết từ profileInfo
                 profilePayload.Phone = extra.Phone;
                 profilePayload.Gender = extra.Gender;
                 profilePayload.DOB = extra.DOB;
@@ -70,14 +67,12 @@ public class UserServiceClient : IUserServiceClient
 
             var endpoint = normalizedRole switch
             {
-                "partner" => "/api/userprofiles/create-partner",
-                "coaching" or "coach" => "/api/userprofiles/create-coach",
-                "supplier" or "suppliers" => "/api/userprofiles/create-supplier",
-                "staff_service" or "staff_onboarding" or "staff_content" => "/api/userprofiles/create-staff",
-                _ => "/api/userprofiles"
+                "partner" => "/bff/api/user/profiles/create-partner",
+                "coaching" or "coach" => "/bff/api/user/profiles/create-coach",
+                "supplier" or "suppliers" => "/bff/api/user/profiles/create-supplier",
+                "staff_service" or "staff_onboarding" or "staff_content" => "/bff/api/user/profiles/create-staff",
+                _ => "/bff/api/user/profiles"
             };
-
-
 
 
             var jsonPayload = JsonSerializer.Serialize(profilePayload);
@@ -102,28 +97,22 @@ public class UserServiceClient : IUserServiceClient
         {
             _logger.LogError(ex, "❌ Exception occurred while calling UserService to create profile");
         }
-
-
-
-
-
-
     }
 
     public async Task<List<LocationDto>> GetLocationsAsync()
     {
-        var response = await _httpClient.GetAsync("/api/locations");
+        var response = await _httpClient.GetAsync("/bff/api/user/locations");
         response.EnsureSuccessStatusCode();
 
         var locations = await response.Content.ReadFromJsonAsync<List<LocationDto>>();
         return locations ?? new();
     }
+
     public async Task<bool> IsValidLocationAsync(Guid locationId)
     {
-        var response = await _httpClient.GetAsync($"/api/locations/{locationId}/exists");
+        var response = await _httpClient.GetAsync($"/bff/api/user/locations/{locationId}/exists");
         return response.IsSuccessStatusCode;
     }
-
 
     public async Task<bool> UpdateUserProfileStatusAsync(UserProfilePayload payload)
     {
@@ -132,7 +121,7 @@ public class UserServiceClient : IUserServiceClient
             var jsonPayload = JsonSerializer.Serialize(payload);
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PutAsync("/api/userprofiles/update-status", content);
+            var response = await _httpClient.PutAsync("/bff/api/user/profiles/update-status", content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -150,6 +139,4 @@ public class UserServiceClient : IUserServiceClient
             return false;
         }
     }
-
-
 }

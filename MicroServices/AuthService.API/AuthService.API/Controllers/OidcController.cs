@@ -10,7 +10,8 @@ using Microsoft.Extensions.Options;
 namespace AuthService.API.Controllers
 {
     [ApiController]
-    [Route(".well-known")]
+    [Route("api/auth/oidc")]
+
     public class OidcController : ControllerBase
     {
         private readonly JwtSettings _jwtSettings;

@@ -1,4 +1,5 @@
-﻿using AuthService.API.DTOs.AdminCreate;
+﻿using AuthService.API.DTOs;
+using AuthService.API.DTOs.AdminCreate;
 using AuthService.API.DTOs.Request;
 using AuthService.API.DTOs.Responses;
 
@@ -44,5 +45,17 @@ namespace AuthService.API.Services
 
         // Location có sẵn 
         Task<List<LocationDto>> GetLocationsAsync();
+
+
+
+        Task<BaseResponse> AssignRoleAsync(Guid userId, Guid roleId);
+        Task<BaseResponse> AssignPermissionToRoleAsync(Guid roleId, Guid permissionId);
+        Task<BaseResponse> AssignPermissionToUserAsync(Guid userId, Guid permissionId);
+        Task<List<RoleDto>> GetUserRolesAsync(Guid userId);
+        Task<List<RoleDto>> GetAllRolesAsync();
+        Task<List<PermissionDto>> GetAllPermissionsAsync();
+        // Thay đổi Role của một người dùng (chỉ giữ 1 role mới)
+        Task<BaseResponse> ChangeUserRoleAsync(Guid userId, Guid newRoleId);
+
     }
 }

@@ -33,7 +33,7 @@ namespace UserService.API.Services.Implementations
                     RoleType = request.RoleType,
                     LocationId = request.LocationId == Guid.Empty ? null : request.LocationId,
                     IsCompleted = false,
-
+                    Interests = request.
                     Phone = request.Phone,
                     Gender = request.Gender,
                     DOB = string.IsNullOrEmpty(request.DOB) ? null : DateTime.Parse(request.DOB),
@@ -80,7 +80,11 @@ namespace UserService.API.Services.Implementations
                 Address = user.Address,
                 OnboardingStatus = user.OnboardingStatus,
                 Note = user.Note,
-                UpdatedAt = user.UpdatedAt
+             Interests = user.Interests,
+             CvUrl = user.CvUrl,
+             Introduction = user.Introduction,
+             PersonalityTraits = user.PersonalityTraits,
+
             };
         }
 

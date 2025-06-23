@@ -47,6 +47,23 @@ namespace AuthService.API.Data
                 UserId = admin.UserId,
                 RoleId = adminRole.RoleId
             });
+          
+            var permissions = await context.Permissions.ToListAsync();
+
+            foreach (var permission in permissions)
+            {
+                var exists = await context.RolePermissions.AnyAsync(rp =>
+                    rp.RoleId == adminRole.RoleId && rp.PermissionId == permission.PermissionId);
+
+                if (!exists)
+                {
+                    await context.RolePermissions.AddAsync(new RolePermission
+                    {
+                        RoleId = adminRole.RoleId,
+                        PermissionId = permission.PermissionId
+                    });
+                }
+            }
 
             await context.SaveChangesAsync();
 

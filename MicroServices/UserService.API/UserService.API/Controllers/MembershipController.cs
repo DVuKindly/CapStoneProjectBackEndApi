@@ -5,7 +5,8 @@ using UserService.API.DTOs.Requests;
 using UserService.API.Services.Interfaces;
 
 [ApiController]
-[Route("api/membership")]
+[Route("api/user/memberships")]
+
 public class MembershipController : ControllerBase
 {
     private readonly IMembershipRequestService _membershipRequestService;

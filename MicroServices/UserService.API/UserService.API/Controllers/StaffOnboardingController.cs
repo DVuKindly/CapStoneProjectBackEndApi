@@ -6,8 +6,8 @@ using UserService.API.Services.Interfaces;
 
 namespace UserService.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/user/staff-onboarding")]
     [Authorize(Roles = "staff_onboarding")] 
     public class StaffOnboardingController : ControllerBase
     {

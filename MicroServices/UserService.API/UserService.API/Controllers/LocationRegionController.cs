@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using UserService.API.Data;
 
 [ApiController]
-[Route("api/locations")]
+[Route("api/user/locations")]
+
 public class LocationRegionController : ControllerBase
 {
     private readonly UserDbContext _db;
