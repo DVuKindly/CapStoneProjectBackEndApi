@@ -31,6 +31,7 @@ namespace UserService.API.Services.Interfaces
         /// </summary>
         Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId);
 
+
         /// <summary>
         /// Đánh dấu một yêu cầu đã thanh toán và xử lý quyền tương ứng.
         /// </summary>

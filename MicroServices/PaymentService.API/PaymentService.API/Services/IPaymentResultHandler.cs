@@ -1,5 +1,5 @@
-﻿// IPaymentResultHandler.cs
-using PaymentService.API.DTOs.Requests;
+﻿using System.Threading.Tasks;
+using SharedKernel.DTOsChung;
 
 namespace PaymentService.API.Services
 {

@@ -57,5 +57,19 @@ namespace MembershipService.API.Controllers
             var result = await _service.GetByIdsAsync(ids);
             return Ok(result);
         }
+
+
+
+
+
+        // vũ code 
+        [HttpGet("{id}/price")]
+        public async Task<IActionResult> GetBasicPlanPrice(Guid id)
+        {
+            var plan = await _service.GetByIdAsync(id);
+            if (plan == null) return NotFound();
+
+            return Ok(plan.Price); // ✅ trả về số trực tiếp
+        }
     }
 }

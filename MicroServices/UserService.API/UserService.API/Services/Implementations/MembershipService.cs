@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SharedKernel.DTOsChung.Request;
 using UserService.API.Data;
 using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
 using UserService.API.Services.Interfaces;
+
 
 namespace UserService.API.Services.Implementations
 {
@@ -10,11 +12,16 @@ namespace UserService.API.Services.Implementations
     {
         private readonly UserDbContext _db;
         private readonly IAuthServiceClient _authServiceClient;
+        private readonly IMembershipServiceClient _membershipServiceClient; // ✅ Thêm inject
 
-        public MembershipService(UserDbContext db, IAuthServiceClient authServiceClient)
+        public MembershipService(
+            UserDbContext db,
+            IAuthServiceClient authServiceClient,
+            IMembershipServiceClient membershipServiceClient) // ✅ Inject
         {
             _db = db;
             _authServiceClient = authServiceClient;
+            _membershipServiceClient = membershipServiceClient;
         }
 
         public async Task<BaseResponse> CreateMembershipAsync(CreateMembershipDto dto)
@@ -25,13 +32,13 @@ namespace UserService.API.Services.Implementations
                 AccountId = dto.AccountId,
                 PackageName = dto.PackageName,
                 PackageType = dto.PackageType,
+              
                 Amount = dto.Amount,
                 PaymentStatus = "Paid",
                 PaymentMethod = dto.PaymentMethod,
                 PurchasedAt = DateTime.UtcNow,
                 UsedForRoleUpgrade = dto.UsedForRoleUpgrade,
                 PlanSource = dto.PlanSource,
-
                 PackageDurationValue = dto.PackageDurationValue,
                 PackageDurationUnit = dto.PackageDurationUnit,
                 ExpireAt = AddDuration(DateTime.UtcNow, dto.PackageDurationValue, dto.PackageDurationUnit)
@@ -47,6 +54,43 @@ namespace UserService.API.Services.Implementations
             };
         }
 
+        public async Task<MembershipRequestSummaryDto?> GetMembershipSummaryAsync(Guid membershipId)
+        {
+            var membership = await _db.Memberships
+    .FirstOrDefaultAsync(x => x.Id == membershipId && x.PaymentStatus != "Paid");
+
+            if (membership == null)
+                return null;
+
+            return new MembershipRequestSummaryDto
+            {
+                MembershipRequestId = membership.Id, // Reuse same property
+                AccountId = membership.AccountId,
+                Amount = membership.Amount,
+                RequestedPackageName = membership.PackageName,
+                Status = "PendingPayment"
+            };
+        }
+
+
+        public async Task<bool> MarkMembershipAsPaidAsync(MarkPaidRequestDto dto)
+        {
+            var membership = await _db.Memberships.FirstOrDefaultAsync(x => x.Id == dto.RequestId);
+            if (membership == null) return false;
+
+            membership.PaymentMethod = dto.PaymentMethod;
+            membership.PaymentTransactionId = dto.PaymentTransactionId;
+            membership.PaymentNote = dto.PaymentNote;
+            membership.PaymentStatus = "Paid";
+            membership.PaymentTime = DateTime.UtcNow;
+
+            // ✅ Chưa tính hạn sử dụng → để null hoặc xử lý sau
+            // Có thể ghi log để theo dõi sau này cần update thêm
+            // membership.ExpireAt = null;
+
+            await _db.SaveChangesAsync();
+            return true;
+        }
 
         public async Task<List<MembershipResponseDto>> GetUserMembershipsAsync(Guid accountId)
         {
@@ -60,7 +104,6 @@ namespace UserService.API.Services.Implementations
                 var purchasedAt = m.PurchasedAt;
                 var expireAt = m.ExpireAt;
 
-              
                 if (expireAt == null && m.PackageDurationValue != null && !string.IsNullOrEmpty(m.PackageDurationUnit))
                 {
                     expireAt = AddDuration(purchasedAt, m.PackageDurationValue.Value, m.PackageDurationUnit!);
@@ -75,7 +118,7 @@ namespace UserService.API.Services.Implementations
                     PaymentStatus = m.PaymentStatus ?? "Pending",
                     PaymentMethod = m.PaymentMethod,
                     PurchasedAt = m.PurchasedAt,
-                    ExpireAt = expireAt ?? m.PurchasedAt, // fallback
+                    ExpireAt = expireAt ?? m.PurchasedAt,
                     PackageDurationValue = m.PackageDurationValue,
                     PackageDurationUnit = m.PackageDurationUnit,
                     IsActive = m.IsActive,
@@ -96,14 +139,10 @@ namespace UserService.API.Services.Implementations
             };
         }
 
-
-
-
         public async Task CheckAndDowngradeExpiredMembershipsAsync()
         {
             var now = DateTime.UtcNow;
 
-           
             var expired = await _db.Memberships
                 .Where(m => m.UsedForRoleUpgrade && m.ExpireAt.HasValue && m.ExpireAt < now)
                 .Include(m => m.UserProfile)
@@ -111,22 +150,14 @@ namespace UserService.API.Services.Implementations
 
             foreach (var m in expired)
             {
-              
-
                 if (m.UserProfile != null)
                 {
-                    m.UserProfile.RoleType = "user"; // Giảm xuống quyền thường
+                    m.UserProfile.RoleType = "user"; // downgrade
                     await _authServiceClient.DowngradeUserRoleAsync(m.AccountId);
                 }
-
-             
             }
 
             await _db.SaveChangesAsync();
         }
-
-
     }
-
-
 }

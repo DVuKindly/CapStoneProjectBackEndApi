@@ -25,6 +25,7 @@ namespace PaymentService.API.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExpireAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsWebhookHandled = table.Column<bool>(type: "bit", nullable: false),
                     WebhookHandledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsUserServiceUpdated = table.Column<bool>(type: "bit", nullable: false),
@@ -52,6 +53,9 @@ namespace PaymentService.API.Migrations
                     Gateway = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     GatewayResponse = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
+                    BankCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PayDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },

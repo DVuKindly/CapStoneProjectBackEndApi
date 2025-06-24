@@ -46,6 +46,8 @@ namespace PaymentService.API
                 client.BaseAddress = new Uri(baseUrl);
                 client.DefaultRequestHeaders.Add("X-Internal-Call", "true");
             });
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IHttpContextHelper, HttpContextHelper>();
 
 
             var app = builder.Build();

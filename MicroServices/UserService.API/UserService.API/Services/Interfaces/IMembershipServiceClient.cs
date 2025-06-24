@@ -9,8 +9,11 @@ namespace UserService.API.Services.Interfaces
 
         Task<List<BasicPlanResponse>> GetBasicPlansByIdsAsync(List<Guid> ids);
 
-
+        // ✅ Sửa kiểu trả về từ int ➜ decimal cho đúng kiểu Price/TotalPrice
+        Task<decimal> GetPlanPriceAsync(Guid planId, string planType);
 
         Task<ComboPlanDto?> GetComboPlanByIdAsync(Guid id);
+
+     
     }
 }

@@ -2,16 +2,20 @@
 using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
 using UserService.API.Services.Interfaces;
+using static System.Net.WebRequestMethods;
 
 public class MembershipServiceClient : IMembershipServiceClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<MembershipServiceClient> _logger;
+    private readonly HttpClient _http;
 
-    public MembershipServiceClient(HttpClient httpClient, ILogger<MembershipServiceClient> logger)
+
+    public MembershipServiceClient(HttpClient httpClient, ILogger<MembershipServiceClient> logger, HttpClient http)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _http = http;
     }
 
     public async Task<BasicPlanDto?> GetBasicPlanByIdAsync(Guid planId)
@@ -60,6 +64,23 @@ public class MembershipServiceClient : IMembershipServiceClient
         }
     }
 
+    public async Task<decimal> GetPlanPriceAsync(Guid planId, string planType)
+    {
+        var endpoint = planType.ToLower() switch
+        {
+            "basic" => $"/api/basicplans/{planId}/price",
+            "combo" => $"/api/comboplans/{planId}/price",
+            _ => throw new ArgumentException("Invalid plan type")
+        };
+
+        var response = await _httpClient.GetAsync(endpoint);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        var price = decimal.Parse(json); // hoặc dùng JsonSerializer
+
+        return price;
+    }
 
 
 

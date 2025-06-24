@@ -2,9 +2,14 @@
 {
     public class CreatePaymentRequestDto
     {
-        public Guid MembershipRequestId { get; set; }
-        public string PaymentMethod { get; set; } = "vnpay"; // or momo
-        public string? ReturnUrl { get; set; }
-    }
+       
+        public Guid RequestId { get; set; }
 
+      
+        public string PaymentMethod { get; set; } = "VNPAY";
+
+     
+        public string? ReturnUrl { get; set; }
+        public bool IsDirectMembership { get; set; } = false;
+    }
 }

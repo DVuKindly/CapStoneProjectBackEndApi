@@ -7,7 +7,8 @@ namespace PaymentService.API.Services
 {
     public interface IPaymentWebhookService
     {
-        // Xử lý webhook từ Momo và trả về kết quả chi tiết
         Task<WebhookResult> HandleMomoWebhookAsync(MomoWebhookDto dto);
+        Task<WebhookResult> HandleVnPayWebhookAsync(VnPayWebhookDto dto);
     }
+
 }

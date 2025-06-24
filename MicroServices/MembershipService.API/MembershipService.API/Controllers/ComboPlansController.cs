@@ -50,5 +50,18 @@ namespace MembershipService.API.Controllers
             var success = await _service.DeleteAsync(id);
             return success ? NoContent() : NotFound();
         }
+
+
+        //vũ code 
+        [HttpGet("{id}/price")]
+        public async Task<IActionResult> GetComboPlanPrice(Guid id)
+        {
+            var plan = await _service.GetByIdAsync(id);
+            if (plan == null) return NotFound();
+
+            return Ok(plan.TotalPrice);
+        }
+
+
     }
 }

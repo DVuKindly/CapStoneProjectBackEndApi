@@ -12,7 +12,7 @@ using PaymentService.API.Data;
 namespace PaymentService.API.Migrations
 {
     [DbContext(typeof(PaymentDbContext))]
-    [Migration("20250616114808_InitAuthDb")]
+    [Migration("20250624172153_InitAuthDb")]
     partial class InitAuthDb
     {
         /// <inheritdoc />
@@ -98,6 +98,9 @@ namespace PaymentService.API.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("WebhookHandledAt")
                         .HasColumnType("datetime2");
 
@@ -115,6 +118,12 @@ namespace PaymentService.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BankCode")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("ConfirmedAt")
                         .HasColumnType("datetime2");
 
@@ -129,6 +138,9 @@ namespace PaymentService.API.Migrations
                     b.Property<string>("GatewayResponse")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PayDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("PaymentRequestId")
                         .HasColumnType("uniqueidentifier");

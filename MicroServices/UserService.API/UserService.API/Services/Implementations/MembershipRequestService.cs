@@ -14,12 +14,14 @@ public class MembershipRequestService : IMembershipRequestService
     private readonly UserDbContext _db;
     private readonly IAuthServiceClient _authServiceClient;
     private readonly IMembershipServiceClient _membershipServiceClient;
+    private readonly IPaymentServiceClient _paymentServiceClient;
 
-    public MembershipRequestService(UserDbContext db , IAuthServiceClient authServiceClient, IMembershipServiceClient membershipServiceClient)
+    public MembershipRequestService(UserDbContext db , IAuthServiceClient authServiceClient, IMembershipServiceClient membershipServiceClient, IPaymentServiceClient paymentServiceClient)
     {
         _membershipServiceClient = membershipServiceClient;
         _db = db;
         _authServiceClient = authServiceClient;
+        _paymentServiceClient = paymentServiceClient;
     }
 
     public async Task<BaseResponse> ApproveMembershipRequestAsync(Guid staffAccountId, ApproveMembershipRequestDto dto)
@@ -255,11 +257,9 @@ public class MembershipRequestService : IMembershipRequestService
             return BaseResponse.Fail("Không tìm thấy hồ sơ người dùng.");
 
         if (!IsUserProfileCompleted(user))
-        {
             return BaseResponse.Fail("Vui lòng hoàn tất hồ sơ cá nhân trước khi gửi yêu cầu.");
-        }
 
-        // ✅ CASE 1: GÓI BASIC
+        // ✅ GÓI BASIC
         if (packageType == "basic")
         {
             var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
@@ -268,7 +268,13 @@ public class MembershipRequestService : IMembershipRequestService
 
             if (plan.VerifyBuy)
             {
-                // ✅ Mua trực tiếp (KHÔNG nâng role)
+
+                if (string.IsNullOrWhiteSpace(dto.RedirectUrl))
+                {
+                    return BaseResponse.Fail("Thiếu RedirectUrl để chuyển hướng sau thanh toán.");
+                }
+
+                // ✅ Mua trực tiếp → tạo Membership + gọi PaymentService tạo đơn thanh toán
                 var membership = new Membership
                 {
                     Id = Guid.NewGuid(),
@@ -280,30 +286,45 @@ public class MembershipRequestService : IMembershipRequestService
                     LocationId = plan.LocationId ?? Guid.Empty,
                     PurchasedAt = DateTime.UtcNow
                 };
+              
 
                 _db.Memberships.Add(membership);
                 await _db.SaveChangesAsync();
 
-                return BaseResponse.Ok("Gói Basic đã được ghi nhận thành công.", new
+                var paymentDto = new CreatePaymentRequestDto
+                {
+                    RequestId = membership.Id,
+                    AccountId = accountId,
+                    PackageId = plan.Id,
+                    Amount = plan.Price,
+                    PackageType = "basic",
+                    PaymentMethod = "VNPAY",
+                    RedirectUrl = dto.RedirectUrl
+                };
+
+                var paymentResponse = await _paymentServiceClient.CreatePaymentRequestAsync(paymentDto);
+                if (!paymentResponse.Success)
+                    return BaseResponse.Fail("Tạo thanh toán thất bại: " + paymentResponse.Message);
+
+                return BaseResponse.Ok("Gói Basic đã được ghi nhận và tạo thanh toán thành công.", new
                 {
                     IsDirectPurchase = true,
                     MembershipId = membership.Id,
                     PackageId = plan.Id,
                     PackageName = plan.Name,
                     Amount = plan.Price,
-                    LocationId = plan.LocationId
+                    LocationId = plan.LocationId,
+                    PaymentUrl = paymentResponse.Data // giả sử là URL từ PaymentService
                 });
             }
             else
             {
-                // ✅ Check nếu đã gửi request basic cho cùng gói này chưa
-                var hasPendingRequestForSamePlan = await _db.PendingMembershipRequests
-                    .AnyAsync(r => r.AccountId == accountId
-                                && r.PackageId == plan.Id
-                                && r.PackageType == "basic"
-                                && r.Status == "Pending");
+                // ❗ Cần duyệt → tạo PendingMembershipRequest
+                var hasPending = await _db.PendingMembershipRequests.AnyAsync(r =>
+                    r.AccountId == accountId && r.PackageId == plan.Id &&
+                    r.PackageType == "basic" && r.Status == "Pending");
 
-                if (hasPendingRequestForSamePlan)
+                if (hasPending)
                     return BaseResponse.Fail("Bạn đã gửi yêu cầu cho gói Basic này và đang chờ duyệt.");
 
                 var request = new PendingMembershipRequest
@@ -335,19 +356,14 @@ public class MembershipRequestService : IMembershipRequestService
             }
         }
 
-        // ✅ CASE 2: GÓI COMBO
+        // ✅ GÓI COMBO
         if (packageType == "combo")
         {
-            // ❌ Chỉ cho phép 1 request combo đang chờ
-            var existingComboRequest = await _db.PendingMembershipRequests
-                .FirstOrDefaultAsync(r => r.AccountId == accountId
-                                       && r.Status == "Pending"
-                                       && r.PackageType == "combo");
+            var existing = await _db.PendingMembershipRequests.FirstOrDefaultAsync(r =>
+                r.AccountId == accountId && r.Status == "Pending" && r.PackageType == "combo");
 
-            if (existingComboRequest != null)
-            {
+            if (existing != null)
                 return BaseResponse.Fail("Bạn đã gửi một yêu cầu Combo và đang chờ xét duyệt.");
-            }
 
             var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
             if (combo == null)
@@ -383,6 +399,9 @@ public class MembershipRequestService : IMembershipRequestService
 
         return BaseResponse.Fail("Xảy ra lỗi không xác định.");
     }
+
+
+
 
 
 
@@ -532,23 +551,60 @@ public class MembershipRequestService : IMembershipRequestService
 
     public async Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId)
     {
+        // 1️⃣ Ưu tiên tìm trong bảng PendingMembershipRequests
         var request = await _db.PendingMembershipRequests
-            .Include(r => r.UserProfile)
+            .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == requestId);
 
-        if (request == null || request.Status != "PendingPayment")
-            return null;
-
-        return new MembershipRequestSummaryDto
+        if (request != null)
         {
-            MembershipRequestId = request.Id,
-            AccountId = request.AccountId,
-            PackageId = request.PackageId,
-            RequestedPackageName = request.RequestedPackageName,
-            Amount = 0, // sẽ gọi từ MembershipPackageService để lấy
-            Status = request.Status
-        };
+            if (request.Status != "PendingPayment")
+                return null;
+
+            // ✅ Validate loại gói
+            var planType = request.PackageType?.ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(planType) || (planType != "basic" && planType != "combo"))
+                throw new ArgumentException($"Loại gói không hợp lệ: {request.PackageType}");
+
+            // ✅ Gọi MembershipService để lấy giá gói từ hệ thống gốc
+            decimal amount = await _membershipServiceClient.GetPlanPriceAsync(request.PackageId!.Value, planType);
+
+            return new MembershipRequestSummaryDto
+            {
+                MembershipRequestId = request.Id,
+                AccountId = request.AccountId,
+                PackageId = request.PackageId,
+                RequestedPackageName = request.RequestedPackageName,
+                Amount = amount,
+                Status = request.Status
+            };
+        }
+
+        // 2️⃣ Nếu không có request, thử tra trong bảng Memberships (trường hợp thanh toán trực tiếp)
+        var membership = await _db.Memberships
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == requestId);
+
+        if (membership != null)
+        {
+            return new MembershipRequestSummaryDto
+            {
+                MembershipRequestId = membership.Id,
+                AccountId = membership.AccountId,
+                PackageId = membership.PackageId,
+                RequestedPackageName = membership.PackageName,
+                Amount = membership.Amount,
+                Status = "PendingPayment" // gán mặc định để Payment xử lý
+            };
+        }
+
+        // 3️⃣ Không tìm thấy hợp lệ
+        return null;
     }
+
+
+
+
 
 
 

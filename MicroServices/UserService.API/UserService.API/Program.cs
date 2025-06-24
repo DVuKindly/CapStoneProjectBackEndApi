@@ -45,6 +45,8 @@ var membershipServiceUrl = builder.Configuration["Services:MembershipService"];
 builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
 {
     client.BaseAddress = new Uri(authServiceUrl);
+    //client.DefaultRequestHeaders.Add("X-Internal-Call", "true");
+
 });
 
 builder.Services.AddHttpClient<IPaymentServiceClient, PaymentServiceClient>(client =>
@@ -52,14 +54,14 @@ builder.Services.AddHttpClient<IPaymentServiceClient, PaymentServiceClient>(clie
     client.BaseAddress = new Uri(paymentServiceUrl);
 });
 
+
 builder.Services.AddHttpClient<IMembershipServiceClient, MembershipServiceClient>(client =>
 {
-    client.BaseAddress = new Uri(membershipServiceUrl); 
+    client.BaseAddress = new Uri(membershipServiceUrl);
+    //client.DefaultRequestHeaders.Add("X-Internal-Call", "true");
+
 });
-builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
-{
-    client.BaseAddress = new Uri("http://localhost:5000"); 
-});
+
 
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ICoachProfileService, CoachProfileService>();

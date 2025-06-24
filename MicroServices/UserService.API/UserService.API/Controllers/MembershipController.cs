@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using UserService.API.Data;
 using UserService.API.DTOs.Requests;
 using UserService.API.Services.Implementations;
 using UserService.API.Services.Interfaces;
@@ -12,11 +13,13 @@ public class MembershipController : ControllerBase
 {
     private readonly IMembershipRequestService _membershipRequestService;
     private readonly IMembershipService _membershipService;
+    private readonly UserDbContext _db;
 
-    public MembershipController(IMembershipRequestService membershipRequestService, IMembershipService membershipService)
+    public MembershipController(IMembershipRequestService membershipRequestService, IMembershipService membershipService, UserDbContext db )
     {
         _membershipRequestService = membershipRequestService;
         _membershipService = membershipService;
+        _db = db;
     }
 
     [HttpPost("requestMember")]
@@ -86,15 +89,30 @@ public class MembershipController : ControllerBase
         return Ok(result);
     }
 
-
-  
     [HttpGet("payment-summary/{requestId}")]
-    [AllowAnonymous] 
+    [AllowAnonymous]
     public async Task<IActionResult> GetMembershipRequestSummary(Guid requestId)
     {
-        var result = await _membershipRequestService.GetMembershipRequestSummaryAsync(requestId);
-        return result != null ? Ok(result) : NotFound("Không tìm thấy request hợp lệ hoặc không ở trạng thái chờ thanh toán.");
+        try
+        {
+            var result = await _membershipRequestService.GetMembershipRequestSummaryAsync(requestId);
+            if (result == null)
+                return NotFound("Không tìm thấy request hợp lệ hoặc không ở trạng thái chờ thanh toán.");
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            // Log lỗi nếu cần
+            Console.WriteLine("❌ Lỗi GetMembershipRequestSummary: " + ex.Message);
+            return StatusCode(500, new { message = "Đã xảy ra lỗi nội bộ khi xử lý yêu cầu thanh toán." });
+        }
     }
+
 
 
 
@@ -106,6 +124,36 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipRequestService.MarkRequestAsPaidAndApprovedAsync(dto);
         return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+
+    [HttpPost("mark-paid-membership")]
+    public async Task<IActionResult> MarkMembershipAsPaid([FromBody] MarkPaidRequestDto dto)
+    {
+        var result = await _membershipService.MarkMembershipAsPaidAsync(dto);
+        return result ? Ok("✅ Cập nhật thanh toán thành công.") : BadRequest("❌ Không tìm thấy bản ghi Membership.");
+    }
+    [HttpGet("summary-direct/{membershipId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetDirectMembershipSummary(Guid membershipId)
+    {
+        try
+        {
+            var result = await _membershipService.GetMembershipSummaryAsync(membershipId);
+            if (result == null)
+                return NotFound("Không tìm thấy Membership hoặc không ở trạng thái chờ thanh toán.");
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ Lỗi GetDirectMembershipSummary: " + ex.Message);
+            return StatusCode(500, new { message = "Đã xảy ra lỗi nội bộ khi xử lý yêu cầu thanh toán." });
+        }
     }
 
     [HttpGet("my-packages")]

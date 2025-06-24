@@ -7,7 +7,8 @@ namespace PaymentService.API.Entities
         public Guid Id { get; set; }
 
         [Required]
-        public string RequestCode { get; set; } = Guid.NewGuid().ToString("N"); // Unique
+        public string RequestCode { get; set; } = Guid.NewGuid().ToString("N")[..18];
+
 
         [Required]
         public Guid AccountId { get; set; }
@@ -27,6 +28,7 @@ namespace PaymentService.API.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? ExpireAt { get; set; }
         public DateTime? PaidAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
         // ✅ Real-time support
         public bool IsWebhookHandled { get; set; } = false; // Đã nhận & xử lý webhook
