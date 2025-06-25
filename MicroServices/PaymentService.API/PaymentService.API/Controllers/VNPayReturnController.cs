@@ -102,16 +102,16 @@ namespace PaymentService.API.Controllers
                     });
 
                     await _db.SaveChangesAsync();
-
-                    // Call UserService to mark request paid
                     var markPaidDto = new MarkPaidRequestDto
                     {
-                        RequestId = payment.MembershipRequestId,
+                        RequestId = payment.Id, // ✅ Đây mới là ID của PaymentRequest
+                        MembershipRequestId = payment.MembershipRequestId,
                         PaymentMethod = "VNPAY",
                         PaymentTransactionId = transactionNo ?? Guid.NewGuid().ToString(),
                         PaymentNote = "Auto updated via VNPay ReturnUrl",
                         PaymentProofUrl = null
                     };
+
 
                     try
                     {

@@ -92,7 +92,8 @@ namespace PaymentService.API.Services
                 RequestCode = txnRef,
                 Status = "Pending",
                 CreatedAt = DateTime.UtcNow,
-                ExpireAt = DateTime.UtcNow.AddMinutes(30)
+                ExpireAt = DateTime.UtcNow.AddMinutes(30),
+                IsDirectMembership = dto.IsDirectMembership
             };
 
             _db.PaymentRequests.Add(paymentRequest);

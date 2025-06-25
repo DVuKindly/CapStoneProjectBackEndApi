@@ -72,25 +72,80 @@ namespace UserService.API.Services.Implementations
             };
         }
 
-
         public async Task<bool> MarkMembershipAsPaidAsync(MarkPaidRequestDto dto)
         {
-            var membership = await _db.Memberships.FirstOrDefaultAsync(x => x.Id == dto.RequestId);
+            var membership = await _db.Memberships.FirstOrDefaultAsync(m => m.Id == dto.RequestId);
             if (membership == null) return false;
 
-            membership.PaymentMethod = dto.PaymentMethod;
+            // ✅ Cập nhật thông tin thanh toán
+            membership.PaymentMethod = dto.PaymentMethod ?? "Unknown";
             membership.PaymentTransactionId = dto.PaymentTransactionId;
-            membership.PaymentNote = dto.PaymentNote;
             membership.PaymentStatus = "Paid";
+            membership.PaymentNote = dto.PaymentNote;
             membership.PaymentTime = DateTime.UtcNow;
 
-            // ✅ Chưa tính hạn sử dụng → để null hoặc xử lý sau
-            // Có thể ghi log để theo dõi sau này cần update thêm
-            // membership.ExpireAt = null;
+            // ✅ Lấy thời hạn từ gói
+            if (membership.PackageType == "basic")
+            {
+                var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(membership.PackageId);
+                if (plan != null)
+                {
+                    membership.PackageDurationUnit = plan.PackageDurationUnit;
+                    membership.PackageDurationValue = plan.PackageDurationValue;
+
+                    if (!string.IsNullOrWhiteSpace(plan.PackageDurationUnit))
+                    {
+                        membership.ExpireAt = CalculateExpireDate(
+                            membership.PurchasedAt,
+                            plan.PackageDurationValue,
+                            plan.PackageDurationUnit
+                        );
+                    }
+
+                }
+            }
+
+            // ✅ Nếu là combo → nâng role
+            if (membership.UsedForRoleUpgrade)
+            {
+                var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == membership.AccountId);
+                if (user != null)
+                {
+                    user.RoleType = "member";
+
+                    try
+                    {
+                        var promoted = await _authServiceClient.PromoteUserToMemberAsync(user.AccountId);
+                        if (!promoted)
+                        {
+                            Console.WriteLine("❌ Đã thanh toán nhưng nâng role thất bại.");
+                            return false;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("🚨 Lỗi nâng role: " + ex.Message);
+                        return false;
+                    }
+                }
+            }
 
             await _db.SaveChangesAsync();
             return true;
         }
+
+        private DateTime CalculateExpireDate(DateTime start, int value, string unit)
+        {
+            return unit.ToLower() switch
+            {
+                "day" => start.AddDays(value),
+                "month" => start.AddMonths(value),
+                "year" => start.AddYears(value),
+                _ => start
+            };
+        }
+
+
 
         public async Task<List<MembershipResponseDto>> GetUserMembershipsAsync(Guid accountId)
         {

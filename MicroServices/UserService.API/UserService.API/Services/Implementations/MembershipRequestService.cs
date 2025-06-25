@@ -299,7 +299,8 @@ public class MembershipRequestService : IMembershipRequestService
                     Amount = plan.Price,
                     PackageType = "basic",
                     PaymentMethod = "VNPAY",
-                    RedirectUrl = dto.RedirectUrl
+                    RedirectUrl = dto.RedirectUrl,
+                     IsDirectMembership = true
                 };
 
                 var paymentResponse = await _paymentServiceClient.CreatePaymentRequestAsync(paymentDto);

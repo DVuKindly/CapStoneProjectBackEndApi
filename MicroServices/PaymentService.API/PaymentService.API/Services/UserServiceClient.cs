@@ -17,22 +17,41 @@ namespace PaymentService.API.Services
             _config = config;
         }
 
-    public async Task<bool> NotifyPaymentSuccessAsync(Guid membershipRequestId)
-{
-    var response = await _httpClient.PostAsJsonAsync("/bff/api/user/memberships/mark-paid", new MarkPaidRequestDto
-    {
-        MembershipRequestId = membershipRequestId
-    });
-    return response.IsSuccessStatusCode;
-}
+        public async Task<bool> NotifyPaymentSuccessAsync(Guid paymentRequestId, Guid? membershipRequestId = null, bool? isDirectMembership = null)
+        {
+            var dto = new MarkPaidRequestDto
+            {
+                RequestId = paymentRequestId,
+                MembershipRequestId = membershipRequestId,
+                IsDirectMembership = isDirectMembership
+            };
+
+            return await MarkMembershipRequestAsPaidAsync(dto);
+        }
 
 
-       
+
+
+
+
         public async Task<bool> MarkMembershipRequestAsPaidAsync(MarkPaidRequestDto dto)
         {
             var baseUrl = _config["UserService:BaseUrl"];
-            var response = await _httpClient.PostAsJsonAsync($"{baseUrl}/api/user/memberships/mark-paid", dto);
+
+            // Auto detect nếu chưa có
+            if (dto.IsDirectMembership == null)
+            {
+                Console.WriteLine("⚠️ IsDirectMembership chưa được truyền – cần xử lý tự động từ DB ở ngoài");
+                return false; // hoặc throw exception tùy logic
+            }
+
+            var endpoint = dto.IsDirectMembership == true
+                ? "/api/user/memberships/mark-paid-membership"
+                : "/api/user/memberships/mark-paid";
+
+            var response = await _httpClient.PostAsJsonAsync($"{baseUrl}{endpoint}", dto);
             return response.IsSuccessStatusCode;
         }
+
     }
 }

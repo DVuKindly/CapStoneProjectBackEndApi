@@ -21,6 +21,8 @@ namespace PaymentService.API.Entities
 
         [Required]
         public string PaymentMethod { get; set; } = "momo"; // momo | vnpay
+                                                           
+        public bool IsDirectMembership { get; set; } = false;
 
         public string Status { get; set; } = "Pending";
         // Possible values: Pending, Paid, Failed, Expired

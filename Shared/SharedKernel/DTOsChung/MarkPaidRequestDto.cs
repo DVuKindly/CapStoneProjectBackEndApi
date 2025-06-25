@@ -19,7 +19,8 @@
         public string? FullName { get; set; }
 
         public string Source { get; set; } = "PendingMembershipRequest"; // hoặc "Membership"
-        public bool IsDirectMembership { get; set; }
+        public bool? IsDirectMembership { get; set; }
+
 
     }
 }
