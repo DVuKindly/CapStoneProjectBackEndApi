@@ -259,15 +259,43 @@ public class MembershipRequestService : IMembershipRequestService
         if (!IsUserProfileCompleted(user))
             return BaseResponse.Fail("Vui lòng hoàn tất hồ sơ cá nhân trước khi gửi yêu cầu.");
 
+        // Kiểm tra tồn tại yêu cầu cũ cho cùng package
+        var existingRequest = await _db.PendingMembershipRequests
+            .Where(r => r.AccountId == accountId &&
+                        r.PackageId == dto.PackageId &&
+                        (r.Status == "Pending" || r.Status == "PendingPayment" || r.Status == "Completed"))
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (existingRequest != null)
+        {
+            if (existingRequest.Status == "Completed" || existingRequest.Status == "Pending")
+                return BaseResponse.Fail("Bạn đã gửi hoặc đã mua gói này rồi. Không thể gửi lại yêu cầu.");
+
+            if (existingRequest.Status == "PendingPayment")
+            {
+                var elapsed = DateTime.UtcNow - existingRequest.CreatedAt;
+                if (elapsed.TotalMinutes < 15)
+                {
+                    return BaseResponse.Fail("Bạn đã tạo yêu cầu mua gói này và chưa thanh toán. Vui lòng hoàn tất thanh toán hoặc đợi 15 phút để gửi lại.");
+                }
+                else
+                {
+                    _db.PendingMembershipRequests.Remove(existingRequest);
+                    await _db.SaveChangesAsync();
+                }
+            }
+        }
+
+        // Gói BASIC
         if (packageType == "basic")
         {
             var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
             if (plan == null)
                 return BaseResponse.Fail("Không tìm thấy gói Basic bạn đã chọn.");
 
-            if (plan.VerifyBuy)
+            if (plan.VerifyBuy) // Mua trực tiếp
             {
-                // Bỏ qua duyệt staff, tạo yêu cầu với trạng thái PendingPayment luôn
                 var request = new PendingMembershipRequest
                 {
                     Id = Guid.NewGuid(),
@@ -281,7 +309,7 @@ public class MembershipRequestService : IMembershipRequestService
                     Introduction = user.Introduction,
                     CvUrl = user.CvUrl,
                     MessageToStaff = dto.MessageToStaff,
-                    Status = "PendingPayment", // Trạng thái chuyển thẳng sang pending thanh toán
+                    Status = "PendingPayment",
                     CreatedAt = DateTime.UtcNow,
                     PackageType = "basic"
                 };
@@ -290,9 +318,7 @@ public class MembershipRequestService : IMembershipRequestService
                 await _db.SaveChangesAsync();
 
                 if (string.IsNullOrWhiteSpace(dto.RedirectUrl))
-                {
                     return BaseResponse.Fail("Thiếu RedirectUrl để chuyển hướng sau thanh toán.");
-                }
 
                 var paymentDto = new CreatePaymentRequestDto
                 {
@@ -311,21 +337,13 @@ public class MembershipRequestService : IMembershipRequestService
 
                 return BaseResponse.Ok("Yêu cầu đã được tạo và chuyển sang thanh toán.", new
                 {
-                    IsDirectPurchase = false,
+                    IsDirectPurchase = true,
                     RequestId = request.Id,
                     PaymentUrl = paymentResponse.Data
                 });
             }
-            else
+            else // Cần duyệt thủ công
             {
-                // Gói basic cần duyệt staff, trạng thái vẫn Pending
-                var hasPending = await _db.PendingMembershipRequests.AnyAsync(r =>
-                    r.AccountId == accountId && r.PackageId == plan.Id &&
-                    r.PackageType == "basic" && r.Status == "Pending");
-
-                if (hasPending)
-                    return BaseResponse.Fail("Bạn đã gửi yêu cầu cho gói Basic này và đang chờ duyệt.");
-
                 var request = new PendingMembershipRequest
                 {
                     Id = Guid.NewGuid(),
@@ -347,7 +365,7 @@ public class MembershipRequestService : IMembershipRequestService
                 _db.PendingMembershipRequests.Add(request);
                 await _db.SaveChangesAsync();
 
-                return BaseResponse.Ok("Yêu cầu của bạn đã được gửi. Vui lòng chờ đội ngũ xét duyệt.", new
+                return BaseResponse.Ok("Yêu cầu của bạn đã được gửi. Vui lòng chờ xét duyệt.", new
                 {
                     IsDirectPurchase = false,
                     RequestId = request.Id
@@ -355,15 +373,9 @@ public class MembershipRequestService : IMembershipRequestService
             }
         }
 
-        // Combo thì giữ nguyên luồng duyệt như hiện tại
+        // Gói COMBO
         if (packageType == "combo")
         {
-            var existing = await _db.PendingMembershipRequests.FirstOrDefaultAsync(r =>
-                r.AccountId == accountId && r.Status == "Pending" && r.PackageType == "combo");
-
-            if (existing != null)
-                return BaseResponse.Fail("Bạn đã gửi một yêu cầu Combo và đang chờ xét duyệt.");
-
             var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
             if (combo == null)
                 return BaseResponse.Fail("Không tìm thấy gói Combo bạn đã chọn.");
@@ -398,6 +410,8 @@ public class MembershipRequestService : IMembershipRequestService
 
         return BaseResponse.Fail("Xảy ra lỗi không xác định.");
     }
+
+
 
 
 
