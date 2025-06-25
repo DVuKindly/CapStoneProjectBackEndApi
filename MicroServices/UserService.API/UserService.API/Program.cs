@@ -42,12 +42,13 @@ var paymentServiceUrl = builder.Configuration["Services:PaymentService"];
 var membershipServiceUrl = builder.Configuration["Services:MembershipService"];
 
 
+
+var bffUrl = builder.Configuration["Services:BffService"]; // Ví dụ config BFF url
 builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
 {
-    client.BaseAddress = new Uri(authServiceUrl);
-    //client.DefaultRequestHeaders.Add("X-Internal-Call", "true");
-
+    client.BaseAddress = new Uri(bffUrl); // Set thành BFF URL
 });
+
 
 builder.Services.AddHttpClient<IPaymentServiceClient, PaymentServiceClient>(client =>
 {

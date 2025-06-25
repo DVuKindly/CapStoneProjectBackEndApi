@@ -119,6 +119,22 @@ namespace UserService.API.Controllers
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return Guid.TryParse(claim, out var id) ? id : Guid.Empty;
         }
+        [HttpPut("update-status")]
+        public async Task<IActionResult> UpdateStatus([FromBody] UpdateUserProfileStatusDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var accountId = GetAccountIdFromToken();
+            if (accountId == Guid.Empty) return Unauthorized();
+
+            // gọi service update trạng thái
+            var result = await _userProfileService.UpdateStatusAsync(accountId, dto);
+            if (result.Success)
+                return Ok(result);
+            else
+                return BadRequest(result);
+        }
 
 
     }

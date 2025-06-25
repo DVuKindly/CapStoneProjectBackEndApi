@@ -67,6 +67,8 @@ namespace PaymentService.API.Services
             var isSuccess = dto.vnp_ResponseCode == "00";
             request.Status = isSuccess ? "Paid" : "Failed";
             request.PaidAt = DateTime.UtcNow;
+          
+
             request.IsWebhookHandled = true;
             request.WebhookHandledAt = DateTime.UtcNow;
 
@@ -88,12 +90,19 @@ namespace PaymentService.API.Services
             {
                 var markPaidDto = new MarkPaidRequestDto
                 {
-                    RequestId = request.MembershipRequestId,
+                    RequestId = request.Id, // PaymentRequest.Id mới đúng
+                    MembershipRequestId = request.MembershipRequestId,
+                 
                     PaymentMethod = "VNPAY",
                     PaymentTransactionId = dto.vnp_TransactionNo,
                     PaymentNote = "Auto updated via VNPAY",
                     PaymentProofUrl = null
                 };
+
+
+
+                await _resultHandler.HandleSuccessfulPaymentAsync(markPaidDto);
+
 
                 try
                 {

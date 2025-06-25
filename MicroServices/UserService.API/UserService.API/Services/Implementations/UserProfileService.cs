@@ -151,10 +151,35 @@ namespace UserService.API.Services.Implementations
             };
         }
 
+        public async Task<BaseResponse> UpdateStatusAsync(Guid accountId, UpdateUserProfileStatusDto dto)
+        {
+            try
+            {
+                var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
 
+                if (user == null)
+                    return new BaseResponse { Success = false, Message = "Không tìm thấy hồ sơ người dùng." };
 
+             
+                user.OnboardingStatus = "ApprovedMember";
 
+              
+                if (user.RoleType?.ToLower() != "member")
+                {
+                    user.RoleType = "member";
+                }
 
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _db.SaveChangesAsync();
+
+                return new BaseResponse { Success = true, Message = "Cập nhật trạng thái hồ sơ thành công." };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse { Success = false, Message = $"Lỗi khi cập nhật trạng thái hồ sơ: {ex.Message}" };
+            }
+        }
 
     }
 }

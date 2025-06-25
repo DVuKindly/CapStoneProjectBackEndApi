@@ -1,7 +1,9 @@
-﻿using System.Net.Http.Json;
-using PaymentService.API.DTOs.Requests;
-using PaymentService.API.Services.Interfaces;
+﻿using System;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using PaymentService.API.Services.Interfaces;
 using SharedKernel.DTOsChung;
 
 namespace PaymentService.API.Services
@@ -17,41 +19,40 @@ namespace PaymentService.API.Services
             _config = config;
         }
 
-        public async Task<bool> NotifyPaymentSuccessAsync(Guid paymentRequestId, Guid? membershipRequestId = null, bool? isDirectMembership = null)
+  
+        public async Task<bool> NotifyPaymentSuccessAsync(Guid paymentRequestId, Guid? membershipRequestId = null)
         {
             var dto = new MarkPaidRequestDto
             {
                 RequestId = paymentRequestId,
                 MembershipRequestId = membershipRequestId,
-                IsDirectMembership = isDirectMembership
+               
             };
 
             return await MarkMembershipRequestAsPaidAsync(dto);
         }
 
-
-
-
-
-
         public async Task<bool> MarkMembershipRequestAsPaidAsync(MarkPaidRequestDto dto)
         {
             var baseUrl = _config["UserService:BaseUrl"];
+            var endpoint = "/api/user/memberships/mark-paid"; 
 
-            // Auto detect nếu chưa có
-            if (dto.IsDirectMembership == null)
+            try
             {
-                Console.WriteLine("⚠️ IsDirectMembership chưa được truyền – cần xử lý tự động từ DB ở ngoài");
-                return false; // hoặc throw exception tùy logic
+                var response = await _httpClient.PostAsJsonAsync($"{baseUrl}{endpoint}", dto);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"⚠️ Gọi API {endpoint} thất bại: {response.StatusCode}");
+                    return false;
+                }
+
+                return true;
             }
-
-            var endpoint = dto.IsDirectMembership == true
-                ? "/api/user/memberships/mark-paid-membership"
-                : "/api/user/memberships/mark-paid";
-
-            var response = await _httpClient.PostAsJsonAsync($"{baseUrl}{endpoint}", dto);
-            return response.IsSuccessStatusCode;
+            catch (Exception ex)
+            {
+                Console.WriteLine("⚠️ Exception khi gọi API UserService: " + ex.Message);
+                return false;
+            }
         }
-
     }
 }

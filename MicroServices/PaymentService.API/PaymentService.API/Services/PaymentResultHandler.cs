@@ -5,9 +5,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using PaymentService.API.DTOs.Requests;
-using SharedKernel.DTOsChung;
 using PaymentService.API.Data;
-using Microsoft.EntityFrameworkCore;
+using SharedKernel.DTOsChung;
 
 namespace PaymentService.API.Services
 {
@@ -39,34 +38,35 @@ namespace PaymentService.API.Services
                 return;
             }
 
-            // ✅ Tự động xác định IsDirectMembership nếu null
-            if (dto.IsDirectMembership == null)
-            {
-
-                var isDirect = await _db.PaymentRequests
-    .Where(p => p.Id == dto.RequestId) // 👈 KHÔNG phải MembershipRequestId!
-    .Select(p => p.IsDirectMembership)
-    .FirstOrDefaultAsync();
-
-
-
-
-                dto.IsDirectMembership = isDirect;
-
-                Console.WriteLine($"🔍 Auto-detected IsDirectMembership = {isDirect}");
-            }
-
-            // ✅ Chọn endpoint phù hợp
-            var endpoint = dto.IsDirectMembership == true
-                ? $"{userServiceUrl.TrimEnd('/')}/api/user/memberships/mark-paid-membership"
-                : $"{userServiceUrl.TrimEnd('/')}/api/user/memberships/mark-paid";
+            // Luôn gọi endpoint /api/user/memberships/mark-paid
+            var endpoint = $"{userServiceUrl.TrimEnd('/')}/api/user/memberships/mark-paid";
 
             Console.WriteLine($"📤 Gửi cập nhật thanh toán đến: {endpoint}");
-            Console.WriteLine($"📝 RequestId = {dto.RequestId}, IsDirect = {dto.IsDirectMembership}");
+            Console.WriteLine($"📝 RequestId = {dto.RequestId}");
 
             try
             {
-                var json = JsonSerializer.Serialize(dto);
+                // Bỏ IsDirectMembership khỏi dto khi gửi đi nếu có
+                var options = new JsonSerializerOptions
+                {
+                    IgnoreNullValues = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                // Tạo một đối tượng mới bỏ IsDirectMembership
+                var dtoToSend = new
+                {
+                    requestId = dto.RequestId,
+                    membershipRequestId = dto.MembershipRequestId,
+                    paymentTransactionId = dto.PaymentTransactionId,
+                    paymentMethod = dto.PaymentMethod,
+                    paymentNote = dto.PaymentNote,
+                    paymentProofUrl = dto.PaymentProofUrl,
+                    fullName = dto.FullName,
+                    source = dto.Source
+                };
+
+                var json = JsonSerializer.Serialize(dtoToSend, options);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(endpoint, content);

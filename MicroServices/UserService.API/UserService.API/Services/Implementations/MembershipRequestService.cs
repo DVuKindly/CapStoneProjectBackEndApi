@@ -259,7 +259,6 @@ public class MembershipRequestService : IMembershipRequestService
         if (!IsUserProfileCompleted(user))
             return BaseResponse.Fail("Vui lòng hoàn tất hồ sơ cá nhân trước khi gửi yêu cầu.");
 
-        // ✅ GÓI BASIC
         if (packageType == "basic")
         {
             var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
@@ -268,59 +267,58 @@ public class MembershipRequestService : IMembershipRequestService
 
             if (plan.VerifyBuy)
             {
+                // Bỏ qua duyệt staff, tạo yêu cầu với trạng thái PendingPayment luôn
+                var request = new PendingMembershipRequest
+                {
+                    Id = Guid.NewGuid(),
+                    AccountId = accountId,
+                    PackageId = plan.Id,
+                    RequestedPackageName = plan.Name,
+                    Amount = plan.Price,
+                    LocationId = plan.LocationId ?? Guid.Empty,
+                    Interests = user.Interests,
+                    PersonalityTraits = user.PersonalityTraits,
+                    Introduction = user.Introduction,
+                    CvUrl = user.CvUrl,
+                    MessageToStaff = dto.MessageToStaff,
+                    Status = "PendingPayment", // Trạng thái chuyển thẳng sang pending thanh toán
+                    CreatedAt = DateTime.UtcNow,
+                    PackageType = "basic"
+                };
+
+                _db.PendingMembershipRequests.Add(request);
+                await _db.SaveChangesAsync();
 
                 if (string.IsNullOrWhiteSpace(dto.RedirectUrl))
                 {
                     return BaseResponse.Fail("Thiếu RedirectUrl để chuyển hướng sau thanh toán.");
                 }
 
-                // ✅ Mua trực tiếp → tạo Membership + gọi PaymentService tạo đơn thanh toán
-                var membership = new Membership
-                {
-                    Id = Guid.NewGuid(),
-                    AccountId = accountId,
-                    PackageId = plan.Id,
-                    PackageType = "basic",
-                    PackageName = plan.Name ?? "Gói không tên",
-                    Amount = plan.Price,
-                    LocationId = plan.LocationId ?? Guid.Empty,
-                    PurchasedAt = DateTime.UtcNow
-                };
-              
-
-                _db.Memberships.Add(membership);
-                await _db.SaveChangesAsync();
-
                 var paymentDto = new CreatePaymentRequestDto
                 {
-                    RequestId = membership.Id,
+                    RequestId = request.Id,
                     AccountId = accountId,
                     PackageId = plan.Id,
                     Amount = plan.Price,
                     PackageType = "basic",
                     PaymentMethod = "VNPAY",
                     RedirectUrl = dto.RedirectUrl,
-                     IsDirectMembership = true
                 };
 
                 var paymentResponse = await _paymentServiceClient.CreatePaymentRequestAsync(paymentDto);
                 if (!paymentResponse.Success)
                     return BaseResponse.Fail("Tạo thanh toán thất bại: " + paymentResponse.Message);
 
-                return BaseResponse.Ok("Gói Basic đã được ghi nhận và tạo thanh toán thành công.", new
+                return BaseResponse.Ok("Yêu cầu đã được tạo và chuyển sang thanh toán.", new
                 {
-                    IsDirectPurchase = true,
-                    MembershipId = membership.Id,
-                    PackageId = plan.Id,
-                    PackageName = plan.Name,
-                    Amount = plan.Price,
-                    LocationId = plan.LocationId,
-                    PaymentUrl = paymentResponse.Data // giả sử là URL từ PaymentService
+                    IsDirectPurchase = false,
+                    RequestId = request.Id,
+                    PaymentUrl = paymentResponse.Data
                 });
             }
             else
             {
-                // ❗ Cần duyệt → tạo PendingMembershipRequest
+                // Gói basic cần duyệt staff, trạng thái vẫn Pending
                 var hasPending = await _db.PendingMembershipRequests.AnyAsync(r =>
                     r.AccountId == accountId && r.PackageId == plan.Id &&
                     r.PackageType == "basic" && r.Status == "Pending");
@@ -357,7 +355,7 @@ public class MembershipRequestService : IMembershipRequestService
             }
         }
 
-        // ✅ GÓI COMBO
+        // Combo thì giữ nguyên luồng duyệt như hiện tại
         if (packageType == "combo")
         {
             var existing = await _db.PendingMembershipRequests.FirstOrDefaultAsync(r =>
@@ -400,6 +398,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         return BaseResponse.Fail("Xảy ra lỗi không xác định.");
     }
+
 
 
 
@@ -628,7 +627,7 @@ public class MembershipRequestService : IMembershipRequestService
         if (request.Status == "Completed")
             return BaseResponse.Fail("Yêu cầu đã được xử lý trước đó.");
 
-        // ✅ Cập nhật thông tin thanh toán
+        // Cập nhật thông tin thanh toán
         request.PaymentStatus = "Paid";
         request.PaymentMethod = dto.PaymentMethod ?? "Unknown";
         request.PaymentTransactionId = dto.PaymentTransactionId;
@@ -636,10 +635,35 @@ public class MembershipRequestService : IMembershipRequestService
         request.PaymentNote = dto.PaymentNote;
         request.Status = "Completed";
 
-        // ✅ Đánh dấu hồ sơ đã được duyệt nếu có UserProfile
+        // Cập nhật trạng thái onboarding bất kể trạng thái cũ là gì, chuyển sang "ApprovedMember"
         if (request.UserProfile != null)
         {
-            request.UserProfile.OnboardingStatus = "Approved";
+            request.UserProfile.OnboardingStatus = "ApprovedMember";
+
+            // Kiểm tra role hiện tại, nếu chưa phải member thì nâng role
+            if (request.UserProfile.RoleType != "member")
+            {
+                request.UserProfile.RoleType = "member";
+
+                try
+                {
+                    var promoted = await _authServiceClient.PromoteUserToMemberAsync(request.AccountId);
+                    if (!promoted)
+                    {
+                        // Log cảnh báo, không fail request
+                        Console.WriteLine("⚠️ Đã xác nhận thanh toán. Tuy nhiên không thể nâng vai trò. Vui lòng liên hệ hỗ trợ.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"🚨 Lỗi khi nâng vai trò: {ex.Message}");
+                }
+            }
+            else
+            {
+                // Nếu user đã là member rồi thì không nâng nữa
+                Console.WriteLine("✅ User đã là member, bỏ qua nâng role.");
+            }
         }
 
         var membership = new Membership
@@ -654,7 +678,7 @@ public class MembershipRequestService : IMembershipRequestService
             PurchasedAt = DateTime.UtcNow,
             UsedForRoleUpgrade = request.PackageType?.ToLower() == "combo",
 
-            // ✅ BỔ SUNG THÔNG TIN THANH TOÁN
+            // Thông tin thanh toán
             PaymentMethod = request.PaymentMethod,
             PaymentStatus = request.PaymentStatus,
             PaymentNote = request.PaymentNote,
@@ -662,13 +686,12 @@ public class MembershipRequestService : IMembershipRequestService
             PaymentTransactionId = request.PaymentTransactionId,
         };
 
-        // ✅ Lấy thông tin thời hạn từ gói (basic hoặc combo)
+        // Lấy thông tin thời hạn từ gói (basic hoặc combo)
         if (membership.PackageType == "basic")
         {
             var basicPlan = await _membershipServiceClient.GetBasicPlanByIdAsync(membership.PackageId);
             if (basicPlan != null)
             {
-
                 membership.PackageDurationValue = basicPlan.PackageDurationValue;
                 membership.PackageDurationUnit = basicPlan.PackageDurationUnit;
             }
@@ -683,7 +706,7 @@ public class MembershipRequestService : IMembershipRequestService
             }
         }
 
-        // ✅ Tính ExpireAt
+        // Tính ngày hết hạn
         if (membership.PackageDurationValue.HasValue && !string.IsNullOrEmpty(membership.PackageDurationUnit))
         {
             membership.ExpireAt = CalculateExpireDate(membership.PurchasedAt,
@@ -693,26 +716,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         _db.Memberships.Add(membership);
 
-        // ✅ Nếu là combo thì nâng role
-        if (membership.UsedForRoleUpgrade && request.UserProfile != null)
-        {
-            request.UserProfile.RoleType = "member";
-
-            try
-            {
-                var promoted = await _authServiceClient.PromoteUserToMemberAsync(request.AccountId);
-                if (!promoted)
-                {
-                    return BaseResponse.Fail("Đã xác nhận thanh toán. Tuy nhiên không thể nâng vai trò. Vui lòng liên hệ hỗ trợ.");
-                }
-            }
-            catch (Exception ex)
-            {
-                return BaseResponse.Fail($"Lỗi khi nâng vai trò: {ex.Message}");
-            }
-        }
-
-        // ✅ Lưu thay đổi
+        // Lưu các thay đổi
         await _db.SaveChangesAsync();
 
         return BaseResponse.Ok("Đã xác nhận thanh toán và cập nhật thành công.", new
@@ -723,6 +727,7 @@ public class MembershipRequestService : IMembershipRequestService
             Upgraded = membership.UsedForRoleUpgrade
         });
     }
+
 
 
     private DateTime CalculateExpireDate(DateTime start, int value, string unit)

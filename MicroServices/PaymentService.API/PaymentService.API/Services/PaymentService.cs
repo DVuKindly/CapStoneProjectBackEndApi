@@ -38,16 +38,12 @@ namespace PaymentService.API.Services
 
             try
             {
-                if (dto.IsDirectMembership)
-                {
-                    var summaryUrl = $"{userServiceBaseUrl}/api/user/memberships/summary-direct/{dto.RequestId}";
-                    summary = await _httpClient.GetFromJsonAsync<SharedDto>(summaryUrl);
-                }
-                else
-                {
-                    var summaryUrl = $"{userServiceBaseUrl}/api/user/memberships/payment-summary/{dto.RequestId}";
-                    summary = await _httpClient.GetFromJsonAsync<SharedDto>(summaryUrl);
-                }
+                // Gọi API tóm tắt theo IsDirectMembership
+                var summaryUrl = dto.IsDirectMembership
+                    ? $"{userServiceBaseUrl}/api/user/memberships/summary-direct/{dto.RequestId}"
+                    : $"{userServiceBaseUrl}/api/user/memberships/payment-summary/{dto.RequestId}";
+
+                summary = await _httpClient.GetFromJsonAsync<SharedDto>(summaryUrl);
             }
             catch (Exception ex)
             {
@@ -82,10 +78,14 @@ namespace PaymentService.API.Services
                 ? dto.ReturnUrl
                 : _config["VNPay:ReturnUrl"] ?? throw new InvalidOperationException("Thiếu cấu hình VNPay:ReturnUrl");
 
+
+            // Khi tạo payment request
+            bool isDirect = !summary.IsCombo; // combo => IsDirectMembership = false, basic => true
+
             var paymentRequest = new PaymentRequest
             {
                 AccountId = summary.AccountId,
-                MembershipRequestId = summary.MembershipRequestId, // Dù là Membership hay Request, vẫn gán vào đây
+                MembershipRequestId = summary.MembershipRequestId, // ID của PendingMembershipRequest hoặc Membership
                 Amount = summary.Amount,
                 PaymentMethod = dto.PaymentMethod,
                 ReturnUrl = returnUrl,
@@ -93,8 +93,10 @@ namespace PaymentService.API.Services
                 Status = "Pending",
                 CreatedAt = DateTime.UtcNow,
                 ExpireAt = DateTime.UtcNow.AddMinutes(30),
-                IsDirectMembership = dto.IsDirectMembership
+                IsDirectMembership = isDirect
             };
+
+
 
             _db.PaymentRequests.Add(paymentRequest);
             await _db.SaveChangesAsync();
@@ -136,6 +138,8 @@ namespace PaymentService.API.Services
                 }
             };
         }
+
+
 
 
 

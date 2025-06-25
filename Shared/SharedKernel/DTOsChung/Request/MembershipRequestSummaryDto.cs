@@ -14,5 +14,7 @@ namespace SharedKernel.DTOsChung.Request
         public string? RequestedPackageName { get; set; }
         public decimal Amount { get; set; }
         public string Status { get; set; } = null!;
+        public bool IsCombo { get; set; } // ✅ true nếu lấy từ bảng ComboPlans
+
     }
 }
