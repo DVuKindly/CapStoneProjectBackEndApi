@@ -130,8 +130,9 @@ public class MembershipController : ControllerBase
     [HttpPost("mark-paid-membership")]
     public async Task<IActionResult> MarkMembershipAsPaid([FromBody] MarkPaidRequestDto dto)
     {
-        var result = await _membershipService.MarkMembershipAsPaidAsync(dto);
-        return result ? Ok("✅ Cập nhật thanh toán thành công.") : BadRequest("❌ Không tìm thấy bản ghi Membership.");
+        var result = await _membershipService.MarkRequestAsPaidAndApprovedAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+
     }
     [HttpGet("summary-direct/{membershipId}")]
     [AllowAnonymous]

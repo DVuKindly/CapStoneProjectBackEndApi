@@ -8,7 +8,7 @@
 
         public string Name { get; set; } = string.Empty;
 
-        public string? Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         public decimal Price { get; set; }
 
@@ -16,12 +16,12 @@
 
         public int PackageDurationId { get; set; }
 
-        public string? PackageDurationName { get; set; }
+        public string PackageDurationName { get; set; } = string.Empty;
 
         public Guid LocationId { get; set; }
 
-        public string? LocationName { get; set; }
+        public string LocationName { get; set; } = string.Empty;
 
-        public List<Guid> NextUServiceIds { get; set; } = new(); // Tránh null exception khi deserialize
+        public List<Guid> NextUServiceIds { get; set; } = new(); 
     }
 }

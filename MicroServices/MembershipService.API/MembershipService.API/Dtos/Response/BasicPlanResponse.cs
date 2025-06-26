@@ -21,7 +21,19 @@
         public Guid LocationId { get; set; }
 
         public string? LocationName { get; set; }
+        public string? DurationDescription { get; set; }
 
-        public List<Guid> NextUServiceIds { get; set; } = new(); 
+        public List<Guid> NextUServiceIds { get; set; } = new();
+
+
+      
+        public int PackageDurationValue { get; set; }
+
+       
+        public string PackageDurationUnit { get; set; } = string.Empty;
+
+      
+        public string PlanSource { get; set; } = "basic";
+
     }
 }

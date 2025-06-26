@@ -46,7 +46,7 @@ var membershipServiceUrl = builder.Configuration["Services:MembershipService"];
 var bffUrl = builder.Configuration["Services:BffService"]; // Ví dụ config BFF url
 builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
 {
-    client.BaseAddress = new Uri(bffUrl); // Set thành BFF URL
+    client.BaseAddress = new Uri(bffUrl);
 });
 
 

@@ -37,21 +37,29 @@ namespace MembershipService.API.Controllers
         {
             var success = await _service.DeleteAsync(id);
             return success ? NoContent() : NotFound();
-            => Ok(await _service.DeleteAsync(id));
+   
         }
 
 
         //vũ code 
         [HttpGet("{id}/price")]
-        public async Task<IActionResult> GetComboPlanPrice(Guid id)
+        public async Task<IActionResult> GetComboPlanPrice(Guid id) 
         {
             var plan = await _service.GetByIdAsync(id);
             if (plan == null) return NotFound();
 
             return Ok(plan.TotalPrice);
         }
+        [HttpGet("{id}/duration")]
+        public async Task<IActionResult> GetPlanDuration(Guid id)
+        {
+            var duration = await _service.GetPlanDurationAsync(id);
+            if (duration == null)
+                return NotFound("Không tìm thấy thời hạn gói.");
+
+            return Ok(duration); // trả trực tiếp DurationDto
+        }
 
 
-            
     }
 }
