@@ -12,8 +12,9 @@ namespace MembershipService.API.Services.Implementations
 {
     public class BasicPlanService : IBasicPlanService
     {
-        private readonly IBasicPlanRepository _packageRepo;
-        private readonly IBasicPlanServiceRepository _serviceRepo;
+        private readonly IBasicPlanRepository _basicPlanRepo;
+        private readonly IBasicPlanServiceRepository _basicPlanServiceRepo;
+        private readonly IComboPlanDurationRepository _durationRepo;
         private readonly IMapper _mapper;
         private readonly MembershipDbContext _db;
         public BasicPlanService(
@@ -21,51 +22,116 @@ namespace MembershipService.API.Services.Implementations
             IBasicPlanRepository packageRepo,
             IBasicPlanServiceRepository serviceRepo,
             IMapper mapper)
+        private readonly MembershipDbContext _context;
+
+        public BasicPlanService(IBasicPlanRepository basicPlanRepo, IBasicPlanServiceRepository basicPlanServiceRepo, IComboPlanDurationRepository durationRepo, IMapper mapper, MembershipDbContext context)
         {
-            _packageRepo = packageRepo;
-            _serviceRepo = serviceRepo;
+            _basicPlanRepo = basicPlanRepo;
+            _basicPlanServiceRepo = basicPlanServiceRepo;
+            _durationRepo = durationRepo;
             _mapper = mapper;
             _db = db;
+            _context = context;
         }
 
-        public async Task<BasicPlanResponse> CreateAsync(BasicPlanCreateRequest request)
+        public async Task<BasicPlanResponseDto> CreateAsync(CreateBasicPlanRequest request)
         {
-            // Ánh xạ DTO sang Entity
             var entity = _mapper.Map<BasicPlan>(request);
+            entity.Id = Guid.NewGuid();
 
-            // Tạo bản ghi BasicPlan
-            var createdPackage = await _packageRepo.CreateAsync(entity);
+            // Create BasicPlan
+            var result = await _basicPlanRepo.AddAsync(entity);
 
-            // Tạo các bản ghi liên kết dịch vụ
-            var services = request.NextUServiceIds.Select(serviceId => new Entity
+            // Add BasicPlanServices
+            var serviceEntities = request.ServiceIds.Select(sid => new Entity
             {
-                BasicPlanId = createdPackage.Id,
-                NextUServiceId = serviceId
+                BasicPlanId = result.Id,
+                NextUServiceId = sid
             }).ToList();
 
-            await _serviceRepo.AddRangeAsync(services);
+            await _basicPlanServiceRepo.AddRangeAsync(serviceEntities);
 
-            // Gắn lại danh sách dịch vụ vào entity để ánh xạ phản hồi chính xác
-            createdPackage.BasicPlanServices = services;
+            // Add Durations
+            var durationEntities = request.PackageDurations.Select(pd => new ComboPlanDuration
+            {
+                Id = Guid.NewGuid(),
+                BasicPlanId = result.Id,
+                ComboPlanId = null,
+                PackageDurationId = pd.DurationId,
+                DiscountDurationRate = pd.DiscountRate
+            }).ToList();
 
-            // Load thêm liên kết (PackageDuration, Location) nếu cần
-            createdPackage.PackageDuration = entity.PackageDuration;
-            createdPackage.Location = entity.Location;
+            await _durationRepo.AddRangeAsync(durationEntities);
 
-            // Ánh xạ sang DTO phản hồi
-            var result = _mapper.Map<BasicPlanResponse>(createdPackage);
-            result.NextUServiceIds = request.NextUServiceIds;
-
-            return result;
+            return await GetByIdAsync(result.Id);
         }
 
-
-        public async Task<BasicPlanResponse?> GetByIdAsync(Guid id)
+        public async Task<BasicPlanResponseDto> UpdateAsync(Guid id, UpdateBasicPlanRequest request)
         {
-            var entity = await _packageRepo.GetByIdAsync(id);
+            var entity = await _basicPlanRepo.GetByIdAsync(id);
+            if (entity == null) throw new Exception("BasicPlan not found");
+
+            _mapper.Map(request, entity);
+            await _basicPlanRepo.UpdateAsync(entity);
+
+            // Update BasicPlanServices
+            var existingServices = await _basicPlanServiceRepo.GetByPackageIdAsync(id);
+            var existingServiceIds = existingServices.Select(s => s.NextUServiceId).ToList();
+            var newServiceIds = request.ServiceIds;
+
+            var toAdd = newServiceIds.Except(existingServiceIds).ToList();
+            var toRemove = existingServiceIds.Except(newServiceIds).ToList();
+
+            if (toRemove.Any())
+            {
+                var removeEntities = existingServices.Where(x => toRemove.Contains(x.NextUServiceId)).ToList();
+                _context.BasicPlanServices.RemoveRange(removeEntities); // nếu cần xử lý logic nội bộ thì move vào repo
+            }
+
+            var addEntities = toAdd.Select(sid => new Entity
+            {
+                BasicPlanId = id,
+                NextUServiceId = sid
+            });
+
+            await _basicPlanServiceRepo.AddRangeAsync(addEntities);
+
+            // Update Durations (xóa hết rồi thêm lại)
+            await _durationRepo.RemoveByBasicPlanIdAsync(id);
+
+            var newDurations = request.PackageDurations.Select(pd => new ComboPlanDuration
+            {
+                Id = Guid.NewGuid(),
+                BasicPlanId = id,
+                PackageDurationId = pd.DurationId,
+                DiscountDurationRate = pd.DiscountRate
+            }).ToList();
+
+            await _durationRepo.AddRangeAsync(newDurations);
+
+            return await GetByIdAsync(id);
+        }
+
+        public async Task<BasicPlanResponseDto> GetByIdAsync(Guid id)
+        {
+            var entity = await _basicPlanRepo.GetByIdAsync(id);
             if (entity == null) return null;
 
-            return new BasicPlanResponse
+            var dto = _mapper.Map<BasicPlanResponseDto>(entity);
+            dto.ServiceIds = entity.BasicPlanServices?.Select(x => x.NextUServiceId).ToList() ?? new();
+            dto.PackageDurations = entity.ComboPlanDurations?.Select(x => new PackageDurationDto
+            {
+                DurationId = x.PackageDurationId,
+                DiscountRate = x.DiscountDurationRate
+            }).ToList() ?? new();
+
+            return dto;
+        }
+
+        public async Task<List<BasicPlanResponseDto>> GetAllAsync()
+        {
+            var list = await _basicPlanRepo.GetAllAsync();
+            return list.Select(entity => new BasicPlanResponseDto
             {
                 Id = entity.Id,
                 Code = entity.Code,
@@ -73,60 +139,20 @@ namespace MembershipService.API.Services.Implementations
                 Description = entity.Description,
                 Price = entity.Price,
                 VerifyBuy = entity.VerifyBuy,
-                PackageDurationId = entity.PackageDurationId,
-                PackageDurationName = entity.PackageDuration?.Description,
-                LocationId = entity.LocationId ?? Guid.Empty,
-                LocationName = entity.Location?.Name,
-                NextUServiceIds = entity.BasicPlanServices.Select(x => x.NextUServiceId).ToList()
-            };
-        }
-
-        public async Task<List<BasicPlanResponse>> GetAllAsync()
-        {
-            var packages = await _packageRepo.GetAllAsync();
-            return packages.Select(pkg => new BasicPlanResponse
-            {
-                Id = pkg.Id,
-                Code = pkg.Code,
-                Name = pkg.Name,
-                Description = pkg.Description,
-                Price = pkg.Price,
-                VerifyBuy = pkg.VerifyBuy,
-                PackageDurationId = pkg.PackageDurationId,
-                PackageDurationName = pkg.PackageDuration?.Description,
-                LocationId = pkg.LocationId ?? Guid.Empty,
-                LocationName = pkg.Location?.Name,
-                NextUServiceIds = pkg.BasicPlanServices.Select(x => x.NextUServiceId).ToList()
+                PlanCategoryId = entity.PlanCategoryId,
+                LocationId = entity.LocationId,
+                ServiceIds = entity.BasicPlanServices?.Select(x => x.NextUServiceId).ToList() ?? new(),
+                PackageDurations = entity.ComboPlanDurations?.Select(x => new PackageDurationDto
+                {
+                    DurationId = x.PackageDurationId,
+                    DiscountRate = x.DiscountDurationRate
+                }).ToList() ?? new()
             }).ToList();
-        }
-
-        public async Task<bool> UpdateAsync(Guid id, BasicPackageUpdateRequest request)
-        {
-            var entity = await _packageRepo.GetByIdAsync(id);
-            if (entity == null) return false;
-
-            _mapper.Map(request, entity);
-            await _packageRepo.UpdateAsync(entity);
-
-            await _serviceRepo.DeleteByPackageIdAsync(id);
-            var newServices = request.NextUServiceIds.Select(x => new Entity
-            {
-                BasicPlanId = id,
-                NextUServiceId = x
-            });
-            await _serviceRepo.AddRangeAsync(newServices);
-
-            return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            var entity = await _packageRepo.GetByIdAsync(id);
-            if (entity == null) return false;
-
-            await _serviceRepo.DeleteByPackageIdAsync(id);
-            await _packageRepo.DeleteAsync(entity);
-            return true;
+            return await _basicPlanRepo.DeleteAsync(id);
         }
 
 

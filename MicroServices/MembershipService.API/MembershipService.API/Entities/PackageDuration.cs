@@ -12,7 +12,7 @@ namespace MembershipService.API.Entities
 
         public string? Description { get; set; }
 
-        
-        public ICollection<BasicPlan> BasicPlans { get; set; }
+        public ICollection<ComboPlanDuration> ComboPlanDurations { get; set; }
+
     }
 }

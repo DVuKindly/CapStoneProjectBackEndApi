@@ -44,11 +44,14 @@ builder.Services.AddScoped<IBasicPlanRepository, BasicPlanRepository>();
 builder.Services.AddScoped<IBasicPlanServiceRepository, BasicPlanServiceRepository>();
 builder.Services.AddScoped<IBasicPlanService, BasicPlanService>();
 builder.Services.AddAutoMapper(typeof(BasicPackageProfile).Assembly);
+// ??ng ký DI cho ComboPlanDuration
+builder.Services.AddScoped<IComboPlanDurationRepository, ComboPlanDurationRepository>();
 // ??ng ký DI cho ComboPlan
+builder.Services.AddScoped<IComboPlanBasicRepository, ComboPlanBasicRepository>();
 builder.Services.AddScoped<IComboPlanRepository, ComboPlanRepository>();
-builder.Services.AddScoped<IComboPlanServiceRepository, ComboPlanServiceRepository>();
 builder.Services.AddScoped<IComboPlanService, ComboPlanService>();
 builder.Services.AddAutoMapper(typeof(ComboPlanProfile).Assembly);
+
 
 
 

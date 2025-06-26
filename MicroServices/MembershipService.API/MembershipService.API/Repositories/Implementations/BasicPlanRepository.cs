@@ -14,41 +14,48 @@ namespace MembershipService.API.Repositories.Implementations
             _context = context;
         }
 
-        public async Task<BasicPlan> CreateAsync(BasicPlan package)
+        public async Task<BasicPlan> AddAsync(BasicPlan entity)
         {
-            _context.BasicPlans.Add(package);
+            _context.BasicPlans.Add(entity);
             await _context.SaveChangesAsync();
-            return package;
+            return entity;
         }
 
-        public async Task<BasicPlan?> GetByIdAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            return await _context.BasicPlans
-                .Include(x => x.BasicPlanServices)
-                .Include(x => x.PackageDuration)
-                .Include(x => x.Location)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var entity = await _context.BasicPlans.FindAsync(id);
+            if (entity == null) return false;
+
+            _context.BasicPlans.Remove(entity);
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<List<BasicPlan>> GetAllAsync()
         {
             return await _context.BasicPlans
                 .Include(x => x.BasicPlanServices)
-                .Include(x => x.PackageDuration)
+                .Include(x => x.ComboPlanDurations)
                 .Include(x => x.Location)
+                .Include(x => x.PlanCategory)
                 .ToListAsync();
         }
 
-        public async Task UpdateAsync(BasicPlan package)
+        public async Task<BasicPlan> GetByIdAsync(Guid id)
         {
-            _context.BasicPlans.Update(package);
-            await _context.SaveChangesAsync();
+            return await _context.BasicPlans
+                .Include(x => x.BasicPlanServices)
+                .Include(x => x.ComboPlanDurations)
+                .Include(x => x.Location)
+                .Include(x => x.PlanCategory)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task DeleteAsync(BasicPlan package)
+        public async Task<BasicPlan> UpdateAsync(BasicPlan entity)
         {
-            _context.BasicPlans.Remove(package);
+            _context.BasicPlans.Update(entity);
             await _context.SaveChangesAsync();
+            return entity;
         }
 
     }

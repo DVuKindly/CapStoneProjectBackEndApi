@@ -1,124 +1,89 @@
 ﻿using AutoMapper;
+using MembershipService.API.Data;
 using MembershipService.API.Dtos.Request;
 using MembershipService.API.Dtos.Response;
 using MembershipService.API.Entities;
 using MembershipService.API.Repositories.Interfaces;
 using MembershipService.API.Services.Interfaces;
-using Entity = MembershipService.API.Entities.ComboPlanService;
+using Microsoft.EntityFrameworkCore;
 namespace MembershipService.API.Services.Implementations
 {
     public class ComboPlanService : IComboPlanService
     {
-        private readonly IComboPlanRepository _comboRepo;
-        private readonly IComboPlanServiceRepository _serviceRepo;
+        private readonly IComboPlanRepository _planRepo;
+        private readonly IComboPlanBasicRepository _basicRepo;
+        private readonly IComboPlanDurationRepository _durationRepo;
         private readonly IMapper _mapper;
+        private readonly MembershipDbContext _context;
 
-        public ComboPlanService(IComboPlanRepository comboRepo, IComboPlanServiceRepository serviceRepo, IMapper mapper)
+        public ComboPlanService(IComboPlanRepository planRepo, IComboPlanBasicRepository basicRepo, IComboPlanDurationRepository durationRepo, IMapper mapper, MembershipDbContext context)
         {
-            _comboRepo = comboRepo;
-            _serviceRepo = serviceRepo;
+            _planRepo = planRepo;
+            _basicRepo = basicRepo;
+            _durationRepo = durationRepo;
             _mapper = mapper;
+            _context = context;
         }
 
-        public async Task<ComboPlanResponse> CreateAsync(ComboPlanCreateRequest request)
+        public async Task<ComboPlanResponseDto> CreateAsync(CreateComboPlanRequest request)
         {
             var entity = _mapper.Map<ComboPlan>(request);
+            var result = await _planRepo.AddAsync(entity);
 
-            var createdComboPlan = await _comboRepo.CreateAsync(entity);
+            await _basicRepo.AddRangeAsync(request.BasicPlanIds
+                .Select(id => new ComboPlanBasic { ComboPlanId = result.Id, BasicPlanId = id }));
 
-            var services = request.NextUServiceIds.Select(serviceId => new Entity
-            {
-                ComboPlanId = createdComboPlan.Id,
-                NextUServiceId = serviceId
-            }).ToList();
+            await _durationRepo.AddRangeAsync(request.PackageDurations
+                .Select(d => new ComboPlanDuration
+                {
+                    PackageDurationId = d.DurationId,
+                    DiscountDurationRate = d.DiscountRate,
+                    ComboPlanId = result.Id
+                }).ToList());
 
-            await _serviceRepo.AddRangeAsync(services);
-
-            // Gắn lại danh sách dịch vụ vào entity để ánh xạ phản hồi chính xác
-            createdComboPlan.ComboPlanServices = services;
-
-            // Load thêm liên kết (PackageDuration, Location) nếu cần
-            createdComboPlan.BasicPlan = entity.BasicPlan;
-            createdComboPlan.PackageLevel = entity.PackageLevel;
-            createdComboPlan.Location = entity.Location;
-
-            // Ánh xạ sang DTO phản hồi
-            var result = _mapper.Map<ComboPlanResponse>(createdComboPlan);
-            result.NextUServiceIds = request.NextUServiceIds;
-
-            return result;
-
+            return _mapper.Map<ComboPlanResponseDto>(result);
         }
 
-        public async Task<List<ComboPlanResponse>> GetAllAsync()
+        public async Task<ComboPlanResponseDto> GetByIdAsync(Guid id)
         {
-            var comboPlans = await _comboRepo.GetAllAsync();
-            return comboPlans.Select(cbp => new ComboPlanResponse
-            {
-                Id = cbp.Id,
-                Code = cbp.Code,
-                Name = cbp.Name,
-                TotalPrice = cbp.TotalPrice,
-                DiscountRate = cbp.DiscountRate,
-                PackageLevelId = cbp.PackageLevelId,
-                PackageLevelName = cbp.PackageLevel?.Name,
-                LocationId = cbp.LocationId ?? Guid.Empty,
-                LocationName = cbp.Location?.Name,
-                BasicPlanId = cbp.BasicPlanId,
-                BasicPlanName = cbp.BasicPlan?.Name,
-                NextUServiceIds = cbp.ComboPlanServices.Select(x => x.NextUServiceId).ToList()
-            }).ToList();
+            var entity = await _planRepo.GetByIdAsync(id);
+            return _mapper.Map<ComboPlanResponseDto>(entity);
         }
 
-        public async Task<ComboPlanResponse?> GetByIdAsync(Guid id)
+        public async Task<List<ComboPlanResponseDto>> GetAllAsync()
         {
-            var entity = await _comboRepo.GetByIdAsync(id);
-            if (entity == null) return null;
-
-            return new ComboPlanResponse
-            {
-                Id = entity.Id,
-                Code = entity.Code,
-                Name = entity.Name,
-                TotalPrice = entity.TotalPrice,
-                DiscountRate = entity.DiscountRate,
-                PackageLevelId = entity.PackageLevelId,
-                PackageLevelName = entity.PackageLevel?.Name,
-                LocationId = entity.LocationId ?? Guid.Empty,
-                LocationName = entity.Location?.Name,
-                BasicPlanId = entity.BasicPlanId,
-                BasicPlanName = entity.BasicPlan?.Name,
-                NextUServiceIds = entity.ComboPlanServices.Select(x => x.NextUServiceId).ToList()
-            };
+            var list = await _planRepo.GetAllAsync();
+            return _mapper.Map<List<ComboPlanResponseDto>>(list);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ComboPlanUpdateRequest request)
+        public async Task<ComboPlanResponseDto> UpdateAsync(Guid id, UpdateComboPlanRequest request)
         {
-            var entity = await _comboRepo.GetByIdAsync(id);
-            if (entity == null) return false;
-
+            var entity = await _planRepo.GetByIdAsync(id);
             _mapper.Map(request, entity);
-            await _comboRepo.UpdateAsync(entity);
 
-            await _serviceRepo.DeleteByPackageIdAsync(id);
-            var newServices = request.NextUServiceIds.Select(x => new Entity
-            {
-                ComboPlanId = id,
-                NextUServiceId = x
-            });
-            await _serviceRepo.AddRangeAsync(newServices);
+            var oldBasicIds = entity.ComboPlanBasics.Select(x => x.BasicPlanId).ToHashSet();
+            var newBasicIds = request.BasicPlanIds.ToHashSet();
 
-            return true;
+            var toRemove = entity.ComboPlanBasics.Where(x => !newBasicIds.Contains(x.BasicPlanId)).ToList();
+            var toAdd = newBasicIds.Except(oldBasicIds)
+                .Select(id => new ComboPlanBasic { ComboPlanId = id, BasicPlanId = id });
+
+            _context.ComboPlanBasics.RemoveRange(toRemove);
+            await _basicRepo.AddRangeAsync(toAdd);
+
+            await _durationRepo.RemoveByComboPlanIdAsync(id);
+            await _durationRepo.AddRangeAsync(request.PackageDurations
+                .Select(d => new ComboPlanDuration
+                {
+                    PackageDurationId = d.DurationId,
+                    DiscountDurationRate = d.DiscountRate,
+                    ComboPlanId = id
+                }).ToList());
+
+            var updated = await _planRepo.UpdateAsync(entity);
+            return _mapper.Map<ComboPlanResponseDto>(updated);
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            var entity = await _comboRepo.GetByIdAsync(id);
-            if (entity == null) return false;
-
-            await _serviceRepo.DeleteByPackageIdAsync(id);
-            await _comboRepo.DeleteAsync(entity);
-            return true;
-        }
+        public async Task<bool> DeleteAsync(Guid id) => await _planRepo.DeleteAsync(id);
     }
 }

@@ -5,10 +5,10 @@ namespace MembershipService.API.Services.Interfaces
 {
     public interface IBasicPlanService
     {
-        Task<BasicPlanResponse> CreateAsync(BasicPlanCreateRequest request);
-        Task<BasicPlanResponse?> GetByIdAsync(Guid id);
-        Task<List<BasicPlanResponse>> GetAllAsync();
-        Task<bool> UpdateAsync(Guid id, BasicPackageUpdateRequest request);
+        Task<BasicPlanResponseDto> CreateAsync(CreateBasicPlanRequest request);
+        Task<BasicPlanResponseDto> UpdateAsync(Guid id, UpdateBasicPlanRequest request);
+        Task<BasicPlanResponseDto> GetByIdAsync(Guid id);
+        Task<List<BasicPlanResponseDto>> GetAllAsync();
         Task<bool> DeleteAsync(Guid id);
 
 

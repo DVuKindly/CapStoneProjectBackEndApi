@@ -4,6 +4,7 @@ using MembershipService.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MembershipService.API.Migrations
 {
     [DbContext(typeof(MembershipDbContext))]
-    partial class MembershipDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250626034131_add_membership_booking_edit_comboPlan")]
+    partial class add_membership_booking_edit_comboPlan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -428,29 +431,6 @@ namespace MembershipService.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Locations");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
-                            Code = "HN",
-                            Description = "Khu vực miền Bắc",
-                            Name = "Hà Nội"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
-                            Code = "DN",
-                            Description = "Khu vực miền Trung",
-                            Name = "Đà Nẵng"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
-                            Code = "HP",
-                            Description = "Hải Phòng",
-                            Name = "Hải Phòng"
-                        });
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Media", b =>

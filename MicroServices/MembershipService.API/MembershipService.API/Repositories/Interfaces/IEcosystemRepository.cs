@@ -10,5 +10,6 @@ namespace MembershipService.API.Repositories.Interfaces
         Task UpdateAsync(Ecosystem ecosystem);
         Task DeleteAsync(Ecosystem ecosystem);
         Task<bool> ExistsAsync(Guid id);
+
     }
 }

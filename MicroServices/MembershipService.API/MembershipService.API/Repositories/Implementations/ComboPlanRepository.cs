@@ -14,41 +14,47 @@ namespace MembershipService.API.Repositories.Implementations
             _context = context;
         }
 
-        public async Task<ComboPlan> CreateAsync(ComboPlan comboPlan)
+        public async Task<ComboPlan> AddAsync(ComboPlan entity)
         {
-            _context.ComboPlans.Add(comboPlan);
+            _context.ComboPlans.Add(entity);
             await _context.SaveChangesAsync();
-            return comboPlan;
+            return entity;
         }
 
-        public async Task<ComboPlan?> GetByIdAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            return await _context.ComboPlans
-                .Include(x => x.ComboPlanServices)
-                .Include(x => x.PackageLevel)
-                .Include(x => x.Location)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var entity = await _context.ComboPlans.FindAsync(id);
+            if (entity == null) return false;
+            _context.ComboPlans.Remove(entity);
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<List<ComboPlan>> GetAllAsync()
         {
-            return await  _context.ComboPlans
-                .Include(x => x.ComboPlanServices)
-                .Include(x => x.PackageLevel)
+            return await _context.ComboPlans
+                .Include(x => x.ComboPlanBasics)
+                .Include(x => x.ComboPlanDurations)
                 .Include(x => x.Location)
-                .ToListAsync(); 
+                .Include(x => x.PackageLevel)
+                .ToListAsync();
         }
 
-        public async Task UpdateAsync(ComboPlan comboPlan)
+        public async Task<ComboPlan> GetByIdAsync(Guid id)
         {
-            _context.ComboPlans.Update(comboPlan);
-            await _context.SaveChangesAsync();
+            return await _context.ComboPlans
+                .Include(x => x.ComboPlanBasics)
+                .Include(x => x.ComboPlanDurations)
+                .Include(x => x.Location)
+                .Include(x => x.PackageLevel)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task DeleteAsync(ComboPlan comboPlan)
+        public async Task<ComboPlan> UpdateAsync(ComboPlan entity)
         {
-            _context.ComboPlans.Remove(comboPlan);
+            _context.ComboPlans.Update(entity);
             await _context.SaveChangesAsync();
+            return entity;
         }
 
     }
