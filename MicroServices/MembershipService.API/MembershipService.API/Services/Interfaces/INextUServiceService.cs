@@ -1,5 +1,7 @@
-﻿using MembershipService.API.Dtos.Response;
-using static MembershipService.API.Dtos.Request.NextUServiceRequestDto;
+﻿using MembershipService.API.Dtos.Request;
+using MembershipService.API.Dtos.Response;
+using MembershipService.API.Enums;
+using static MembershipService.API.Dtos.Request.CreateNextUServiceRequest;
 
 namespace MembershipService.API.Services.Interfaces
 {
@@ -10,5 +12,7 @@ namespace MembershipService.API.Services.Interfaces
         Task<List<NextUServiceResponseDto>> GetAllAsync();
         Task<NextUServiceResponseDto> UpdateAsync(Guid id, UpdateNextUServiceRequest request);
         Task<bool> DeleteAsync(Guid id);
+        Task<List<NextUServiceResponseDto>> GetByServiceTypeAsync(ServiceType type);
+        Task<List<NextUServiceResponseDto>> GetByBasicPlanIdAsync(Guid basicPlanId);
     }
 }

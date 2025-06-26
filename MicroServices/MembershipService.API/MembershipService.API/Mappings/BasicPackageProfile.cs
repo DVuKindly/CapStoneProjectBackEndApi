@@ -9,13 +9,13 @@ namespace MembershipService.API.Mappings
     {
         public BasicPackageProfile()
         {
-            CreateMap<BasicPlanCreateRequest, BasicPlan>();
-            CreateMap<BasicPackageUpdateRequest, BasicPlan>();
+            CreateMap<CreateBasicPlanRequest, BasicPlan>();
+            CreateMap<UpdateBasicPlanRequest, BasicPlan>();
 
-            CreateMap<BasicPlan, BasicPlanResponse>()
-                .ForMember(dest => dest.NextUServiceIds, opt => opt.Ignore())
-                .ForMember(dest => dest.PackageDurationName, opt => opt.MapFrom(src => src.PackageDuration.Description))
-                .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location.Name));
+            CreateMap<BasicPlan, BasicPlanResponseDto>()
+                .ForMember(dest => dest.ServiceIds, opt => opt.Ignore())
+                .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location.Name))
+                .ForMember(dest => dest.PlanCategoryName, opt => opt.MapFrom(src => src.PlanCategory.Name));
         }
     }
 }

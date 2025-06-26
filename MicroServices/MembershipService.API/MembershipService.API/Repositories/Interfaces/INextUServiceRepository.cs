@@ -1,4 +1,5 @@
 ﻿using MembershipService.API.Entities;
+using MembershipService.API.Enums;
 
 namespace MembershipService.API.Repositories.Interfaces
 {
@@ -9,6 +10,6 @@ namespace MembershipService.API.Repositories.Interfaces
         Task<List<NextUService>> GetAllAsync();
         Task<NextUService> UpdateAsync(NextUService service);
         Task<bool> DeleteAsync(Guid id);
-        Task<Ecosystem> GetEcosystemByIdAsync(Guid id);
+        Task<List<NextUService>> GetByServiceTypeAsync(ServiceType type);
     }
 }

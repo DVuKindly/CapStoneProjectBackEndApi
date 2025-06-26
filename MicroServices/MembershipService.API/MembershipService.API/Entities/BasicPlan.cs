@@ -11,13 +11,18 @@ namespace MembershipService.API.Entities
         public decimal Price { get; set; }
         public bool VerifyBuy { get; set; }
 
-        public int PackageDurationId { get; set; }
-        public PackageDuration PackageDuration { get; set; }
+        public Guid PlanCategoryId { get; set; } 
+        public PlanCategory PlanCategory { get; set; }
+        
         public Guid? LocationId { get; set; }
         public Location? Location { get; set; } = null!;
 
-        public ICollection<Media> MediaGallery { get; set; }
-        public ICollection<ComboPlan> ComboPlans { get; set; }
         public ICollection<BasicPlanService> BasicPlanServices { get; set; }
+        public ICollection<ComboPlanBasic> ComboPlanBasics { get; set; }
+        public ICollection<Membership> Memberships { get; set; }
+        public ICollection<MembershipHistory> MembershipHistories { get; set; }
+        public ICollection<ComboPlanDuration> ComboPlanDurations { get; set; }
+
+
     }
 }

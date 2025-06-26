@@ -1,4 +1,5 @@
 ﻿using MembershipService.API.Entities;
+using MembershipService.API.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 
 namespace MembershipService.API.Data
@@ -11,17 +12,21 @@ namespace MembershipService.API.Data
         // DbSets
         public DbSet<Ecosystem> Ecosystems { get; set; }
         public DbSet<NextUService> NextUServices { get; set; }
+        public DbSet<AccommodationOption> AccommodationOptions { get; set; }
+        public DbSet<RoomInstance> Rooms { get; set; }
+        public DbSet<Booking> Bookings { get; set; }
+        public DbSet<EntitlementRule> EntitlementRules { get; set; }
         public DbSet<Media> MediaGallery { get; set; }
         public DbSet<PackageDuration> PackageDurations { get; set; }
+        public DbSet<ComboPlanDuration> ComboPlanDurations { get; set; }
+        public DbSet<PlanCategory> PlanCategories { get; set; }
         public DbSet<BasicPlan> BasicPlans { get; set; }
-        public DbSet<BasicPlanService> BasicPlanServices { get; set; }
+        public DbSet<Entities.BasicPlanService> BasicPlanServices { get; set; }
         public DbSet<ComboPlan> ComboPlans { get; set; }
-        public DbSet<ComboPlanService> ComboPlanServices { get; set; }
-        //public DbSet<ServicePricing> ServicePricings { get; set; }
+        public DbSet<ComboPlanBasic> ComboPlanBasics { get; set; }
         public DbSet<Location> Locations { get; set; }
         public DbSet<PackageLevel> PackageLevels { get; set; }
-        
-        //public DbSet<Membership> Memberships { get; set; }
+        public DbSet<Entities.Membership> Memberships { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -63,32 +68,74 @@ namespace MembershipService.API.Data
                 .HasForeignKey(s => s.LocationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // PackageDuration - BasicPlan
+            // PlanCategory - BasicPlan
             modelBuilder.Entity<BasicPlan>()
-                .HasOne(s => s.PackageDuration)
+                .HasOne(s => s.PlanCategory)
                 .WithMany(e => e.BasicPlans)
+                .HasForeignKey(s => s.PlanCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // PackageDuration - ComboPlanDuration
+            modelBuilder.Entity<ComboPlanDuration>()
+                .HasOne(s => s.PackageDuration)
+                .WithMany(e => e.ComboPlanDurations)
                 .HasForeignKey(s => s.PackageDurationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // BasicPlan - ComboPlan
-            modelBuilder.Entity<ComboPlan>()
+            // BasicPlan - Membership
+            modelBuilder.Entity<Membership>()
                 .HasOne(s => s.BasicPlan)
-                .WithMany(e => e.ComboPlans)
+                .WithMany(e => e.Memberships)
                 .HasForeignKey(s => s.BasicPlanId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ComboPlan - ComboPlanService
-            modelBuilder.Entity<ComboPlanService>()
+            // BasicPlan - MembershipHistory
+            modelBuilder.Entity<MembershipHistory>()
+                .HasOne(s => s.BasicPlan)
+                .WithMany(e => e.MembershipHistories)
+                .HasForeignKey(s => s.BasicPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BasicPlan - ComboPlanBasic
+            modelBuilder.Entity<ComboPlanBasic>()
+                .HasOne(s => s.BasicPlan)
+                .WithMany(e => e.ComboPlanBasics)
+                .HasForeignKey(s => s.BasicPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BasicPlan - ComboPlanDuration
+            modelBuilder.Entity<ComboPlanDuration>()
+                .HasOne(s => s.BasicPlan)
+                .WithMany(e => e.ComboPlanDurations)
+                .HasForeignKey(s => s.BasicPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ComboPlan - Membership
+            modelBuilder.Entity<Membership>()
                 .HasOne(s => s.ComboPlan)
-                .WithMany(e => e.ComboPlanServices)
+                .WithMany(e => e.Memberships)
                 .HasForeignKey(s => s.ComboPlanId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // NextUService - ComboPlanService
-            modelBuilder.Entity<ComboPlanService>()
-                .HasOne(s => s.NextUService)
-                .WithMany(e => e.ComboPlanServices)
-                .HasForeignKey(s => s.NextUServiceId)
+            // ComboPlan - Membership
+            modelBuilder.Entity<MembershipHistory>()
+                .HasOne(s => s.ComboPlan)
+                .WithMany(e => e.MembershipHistories)
+                .HasForeignKey(s => s.ComboPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ComboPlan - ComboPlanBasic
+            modelBuilder.Entity<ComboPlanBasic>()
+                .HasOne(s => s.ComboPlan)
+                .WithMany(e => e.ComboPlanBasics)
+                .HasForeignKey(s => s.ComboPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ComboPlan - ComboPlanDuration
+            modelBuilder.Entity<ComboPlanDuration>()
+                .HasOne(s => s.ComboPlan)
+                .WithMany(e => e.ComboPlanDurations)
+                .HasForeignKey(s => s.ComboPlanId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // PackageLevel - ComboPlan
@@ -102,25 +149,39 @@ namespace MembershipService.API.Data
             modelBuilder.Entity<Media>()
                 .HasOne(s => s.NextUService)
                 .WithMany(e => e.MediaGallery)
-                .HasForeignKey(s => s.NexUServiceId)
+                .HasForeignKey(s => s.NextUServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // BasicPlan - Media
-            modelBuilder.Entity<Media>()
-                .HasOne(s => s.BasicPlan)
-                .WithMany(e => e.MediaGallery)
-                .HasForeignKey(s => s.BasicPlanId)
+            // NextUService - AccommodationOption
+            modelBuilder.Entity<AccommodationOption>()
+                .HasOne(s => s.NextUService)
+                .WithMany(e => e.AccommodationOptions)
+                .HasForeignKey(s => s.NextUServiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // AccommodationOption - RoomInstance
+            modelBuilder.Entity<RoomInstance>()
+                .HasOne(s => s.AccommodationOption)
+                .WithMany(e => e.Rooms)
+                .HasForeignKey(s => s.AccommodationOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // NextUService - EntitlementRule
+            modelBuilder.Entity<EntitlementRule>()
+                .HasOne(s => s.NextUService)
+                .WithMany(e => e.EntitlementRules)
+                .HasForeignKey(s => s.NextUServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // BasicPlan - BasicPlanService
-            modelBuilder.Entity<BasicPlanService>()
+            modelBuilder.Entity<Entities.BasicPlanService>()
                 .HasOne(s => s.BasicPlan)
                 .WithMany(e => e.BasicPlanServices)
                 .HasForeignKey(s => s.BasicPlanId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // NextUService - BasicPlanService
-            modelBuilder.Entity<BasicPlanService>()
+            modelBuilder.Entity<Entities.BasicPlanService>()
                 .HasOne(s => s.NextUService)
                 .WithMany(e => e.BasicPlanServices)
                 .HasForeignKey(s => s.NextUServiceId)

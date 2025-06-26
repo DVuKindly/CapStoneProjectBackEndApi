@@ -8,8 +8,9 @@ namespace MembershipService.API.Entities
         public string Code { get; set; }
         public string Name { get; set; }
         public decimal TotalPrice { get; set; }
-        public float DiscountRate { get; set; }
+        public decimal DiscountRate { get; set; }
         public bool IsSuggested { get; set; }
+        public bool VerifyBuy { get; set; }
 
         public Guid? LocationId { get; set; }
         public Location? Location { get; set; } = null!;
@@ -17,9 +18,11 @@ namespace MembershipService.API.Entities
         public Guid PackageLevelId { get; set; }
         public PackageLevel PackageLevel { get; set; }
 
-        public Guid BasicPlanId { get; set; }
-        public BasicPlan BasicPlan { get; set; }
 
-        public ICollection<ComboPlanService> ComboPlanServices { get; set; }
+        public ICollection<ComboPlanBasic> ComboPlanBasics { get; set; }
+        public ICollection<Membership> Memberships { get; set; }
+        public ICollection<MembershipHistory> MembershipHistories { get; set; }
+        public ICollection<ComboPlanDuration> ComboPlanDurations { get; set; }
+
     }
 }

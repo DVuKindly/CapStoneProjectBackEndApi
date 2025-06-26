@@ -1,7 +1,10 @@
-﻿using MembershipService.API.Services.Interfaces;
+﻿using MembershipService.API.Dtos.Request;
+using MembershipService.API.Dtos.Response;
+using MembershipService.API.Enums;
+using MembershipService.API.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using static MembershipService.API.Dtos.Request.NextUServiceRequestDto;
+using static MembershipService.API.Dtos.Request.CreateNextUServiceRequest;
 
 namespace MembershipService.API.Controllers
 {
@@ -17,40 +20,64 @@ namespace MembershipService.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateNextUServiceRequest request)
+        public async Task<ActionResult<NextUServiceResponseDto>> Create([FromBody] CreateNextUServiceRequest request)
         {
             var result = await _service.CreateAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<ActionResult<NextUServiceResponseDto>> GetById(Guid id)
         {
             var result = await _service.GetByIdAsync(id);
-            if (result == null) return NotFound();
+            if (result == null)
+                return NotFound();
             return Ok(result);
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<ActionResult<List<NextUServiceResponseDto>>> GetAll()
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateNextUServiceRequest request)
+        [HttpGet("by-type")]
+        public async Task<ActionResult<List<NextUServiceResponseDto>>> GetByServiceType([FromQuery] ServiceType type)
         {
-            var result = await _service.UpdateAsync(id, request);
+            var result = await _service.GetByServiceTypeAsync(type);
             return Ok(result);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        [HttpGet("by-basic-plan/{basicPlanId}")]
+        public async Task<ActionResult<List<NextUServiceResponseDto>>> GetByBasicPlanId(Guid basicPlanId)
         {
-            var result = await _service.DeleteAsync(id);
-            if (!result) return NotFound();
+            var result = await _service.GetByBasicPlanIdAsync(basicPlanId);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<NextUServiceResponseDto>> Update(Guid id, [FromBody] UpdateNextUServiceRequest request)
+        {
+            try
+            {
+                var result = await _service.UpdateAsync(id, request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Delete(Guid id)
+        {
+            var success = await _service.DeleteAsync(id);
+            if (!success)
+                return NotFound();
             return NoContent();
         }
+
     }
 }

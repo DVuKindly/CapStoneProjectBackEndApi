@@ -17,14 +17,22 @@ namespace MembershipService.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] BasicPlanCreateRequest request)
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateBasicPlanRequest request)
         {
             var result = await _service.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBasicPlanRequest request)
+        {
+            var result = await _service.UpdateAsync(id, request);
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> Get(Guid id)
         {
             var result = await _service.GetByIdAsync(id);
             return result == null ? NotFound() : Ok(result);
@@ -35,13 +43,6 @@ namespace MembershipService.API.Controllers
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] BasicPackageUpdateRequest request)
-        {
-            var success = await _service.UpdateAsync(id, request);
-            return success ? NoContent() : NotFound();
         }
 
         [HttpDelete("{id}")]

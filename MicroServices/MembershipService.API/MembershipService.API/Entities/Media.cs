@@ -9,11 +9,10 @@ namespace MembershipService.API.Entities
         public string Type { get; set; }          // "image", "video"
         public string? Description { get; set; }
 
-        public Guid? NexUServiceId { get; set; }
+        public Guid? NextUServiceId { get; set; }
         public NextUService? NextUService { get; set; }
 
-        public Guid? BasicPlanId { get; set; }
-        public BasicPlan? BasicPlan { get; set; }
+        
     }
 
 }

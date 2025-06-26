@@ -1,117 +1,87 @@
-﻿using MembershipService.API.Dtos.Response;
+﻿using AutoMapper;
+using Azure.Core;
+using MembershipService.API.Dtos.Request;
+using MembershipService.API.Dtos.Response;
 using MembershipService.API.Entities;
+using MembershipService.API.Enums;
 using MembershipService.API.Repositories.Interfaces;
 using MembershipService.API.Services.Interfaces;
 using Sprache;
-using static MembershipService.API.Dtos.Request.NextUServiceRequestDto;
+using static MembershipService.API.Dtos.Request.CreateNextUServiceRequest;
 
 namespace MembershipService.API.Services.Implementations
 {
     public class NextUServiceService : INextUServiceService
     {
-        private readonly INextUServiceRepository _repository;
+        private readonly INextUServiceRepository _repositoryNextUSer;
+        private readonly IEcosystemRepository _repositoryEco;
+        private readonly IBasicPlanRepository _repositoryBasic;
+        private readonly IMapper _mapper;
 
-        public NextUServiceService(INextUServiceRepository repository)
+        public NextUServiceService(INextUServiceRepository repositoryNextUSer, IEcosystemRepository repositoryEco, IBasicPlanRepository repositoryBasic, IMapper mapper)
         {
-            _repository = repository;
+            _repositoryNextUSer = repositoryNextUSer;
+            _repositoryEco = repositoryEco;
+            _repositoryBasic = repositoryBasic;
+            _mapper = mapper;
         }
 
         public async Task<NextUServiceResponseDto> CreateAsync(CreateNextUServiceRequest request)
         {
-            var ecosystem = await _repository.GetEcosystemByIdAsync(request.EcosystemId);
-            if (ecosystem == null) throw new Exception("Ecosystem not found");
-
-            var service = new NextUService
-            {
-                Id = Guid.NewGuid(),
-                Name = request.Name,
-                UnitType = request.UnitType,
-                EcosystemId = request.EcosystemId,
-                LocationId = request.LocationId,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "system"
-            };
-
-            var result = await _repository.AddAsync(service);
-
-            return new NextUServiceResponseDto
-            {
-                Id = result.Id,
-                Name = result.Name,
-                UnitType = result.UnitType,
-                EcosystemId = result.EcosystemId,
-                EcosystemName = ecosystem.Name,
-                LocationId = result.LocationId.GetValueOrDefault(),
-                LocationName = result.Location?.Name ?? ""
-            };
-        }
-
-
-        public async Task<NextUServiceResponseDto> GetByIdAsync(Guid id)
-        {
-            var result = await _repository.GetByIdAsync(id);
-            if (result == null) return null;
-
-            return new NextUServiceResponseDto
-            {
-                Id = result.Id,
-                Name = result.Name,
-                UnitType = result.UnitType,
-                EcosystemId = result.EcosystemId,
-                EcosystemName = result.Ecosystem?.Name,
-                LocationId = result.LocationId.GetValueOrDefault(),
-                LocationName = result.Location?.Name ?? "",
-                MediaGalleryId = result.MediaGallery?.Select(m => m.Id).ToList() ?? new List<Guid>()
-            };
-        }
-
-        public async Task<List<NextUServiceResponseDto>> GetAllAsync()
-        {
-            var data = await _repository.GetAllAsync();
-            return data.Select(x => new NextUServiceResponseDto
-            {
-                Id = x.Id,
-                Name = x.Name,
-                UnitType = x.UnitType,
-                EcosystemId = x.EcosystemId,
-                EcosystemName = x.Ecosystem?.Name,
-                LocationId = x.LocationId.GetValueOrDefault(),
-                LocationName = x.Location?.Name ?? "",
-                MediaGalleryId = x.MediaGallery?.Select(m => m.Id).ToList() ?? new List<Guid>()
-            }).ToList();
-        }
-
-
-        public async Task<NextUServiceResponseDto> UpdateAsync(Guid id, UpdateNextUServiceRequest request)
-        {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null) throw new Exception("Service not found");
-
-            existing.Name = request.Name;
-            existing.UnitType = request.UnitType;
-            existing.EcosystemId = request.EcosystemId;
-            existing.LocationId = request.LocationId;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            var result = await _repository.UpdateAsync(existing);
-            var ecosystem = await _repository.GetEcosystemByIdAsync(result.EcosystemId);
-
-            return new NextUServiceResponseDto
-            {
-                Id = result.Id,
-                Name = result.Name,
-                UnitType = result.UnitType,
-                EcosystemId = result.EcosystemId,
-                EcosystemName = ecosystem?.Name,
-                LocationId = result.LocationId.GetValueOrDefault(),
-                LocationName = result.Location?.Name ?? ""
-            };
+            var entity = _mapper.Map<NextUService>(request);
+            var result = await _repositoryNextUSer.AddAsync(entity);
+            return _mapper.Map<NextUServiceResponseDto>(result);
         }
 
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            return await _repository.DeleteAsync(id);
+            return await _repositoryNextUSer.DeleteAsync(id);
+        }
+
+        public async Task<List<NextUServiceResponseDto>> GetAllAsync()
+        {
+            var result = await _repositoryNextUSer.GetAllAsync();
+            return _mapper.Map<List<NextUServiceResponseDto>>(result);
+        }
+
+        public async Task<NextUServiceResponseDto> GetByIdAsync(Guid id)
+        {
+            var result = await _repositoryNextUSer.GetByIdAsync(id);
+            return _mapper.Map<NextUServiceResponseDto>(result);
+        }
+
+        public async Task<List<NextUServiceResponseDto>> GetByServiceTypeAsync(ServiceType type)
+        {
+            var result = await _repositoryNextUSer.GetByServiceTypeAsync(type);
+            return _mapper.Map<List<NextUServiceResponseDto>>(result);
+        }
+
+        public async Task<List<NextUServiceResponseDto>> GetByBasicPlanIdAsync(Guid basicPlanId)
+        {
+            var allServices = await _repositoryNextUSer.GetAllAsync();
+            var basicPlan = await _repositoryBasic.GetByIdAsync(basicPlanId); 
+
+            var relatedServiceIds = basicPlan.BasicPlanServices?.Select(bps => bps.NextUServiceId).ToHashSet() ?? new HashSet<Guid>();
+
+            var result = allServices
+                .Where(s => relatedServiceIds.Contains(s.Id))
+                .ToList();
+
+            return _mapper.Map<List<NextUServiceResponseDto>>(result);
+        }
+
+
+
+        public async Task<NextUServiceResponseDto> UpdateAsync(Guid id, UpdateNextUServiceRequest request)
+        {
+            var entity = await _repositoryNextUSer.GetByIdAsync(id);
+            if (entity == null) throw new Exception("NextUService not found");
+
+            _mapper.Map(request, entity);
+            var updated = await _repositoryNextUSer.UpdateAsync(entity);
+            return _mapper.Map<NextUServiceResponseDto>(updated);
         }
     }
 }
+

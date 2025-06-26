@@ -1,5 +1,6 @@
 ﻿using MembershipService.API.Data;
 using MembershipService.API.Entities;
+using MembershipService.API.Enums;
 using MembershipService.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,7 @@ namespace MembershipService.API.Repositories.Implementations
                 .Include(x => x.Ecosystem)
                 .Include(x => x.Location)
                 .Include(x => x.MediaGallery)
+                .Include(x => x.BasicPlanServices)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
@@ -55,9 +57,20 @@ namespace MembershipService.API.Repositories.Implementations
             return true;
         }
 
-        public async Task<Ecosystem> GetEcosystemByIdAsync(Guid id)
+        public async Task<List<NextUService>> GetByServiceTypeAsync(ServiceType type)
         {
-            return await _context.Ecosystems.FindAsync(id);
+            return await _context.NextUServices
+                .Where(x => x.ServiceType == type)
+                .Include(x => x.Ecosystem)
+                .Include(x => x.Location)
+                .Include(x => x.MediaGallery)
+                .ToListAsync();
         }
+
+
+        //public async Task<Ecosystem> GetEcosystemByIdAsync(Guid id)
+        //{
+        //    return await _context.Ecosystems.FindAsync(id);
+        //}
     }
 }

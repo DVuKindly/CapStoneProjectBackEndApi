@@ -17,38 +17,23 @@ namespace MembershipService.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] ComboPlanCreateRequest request)
-        {
-            var result = await _service.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-        }
+        public async Task<IActionResult> Create([FromBody] CreateComboPlanRequest request)
+    => Ok(await _service.CreateAsync(request));
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
-        {
-            var result = await _service.GetByIdAsync(id);
-            return result == null ? NotFound() : Ok(result);
-        }
+            => Ok(await _service.GetByIdAsync(id));
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
-        {
-            var result = await _service.GetAllAsync();
-            return Ok(result);
-        }
+            => Ok(await _service.GetAllAsync());
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] ComboPlanUpdateRequest request)
-        {
-            var success = await _service.UpdateAsync(id, request);
-            return success ? NoContent() : NotFound();
-        }
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateComboPlanRequest request)
+            => Ok(await _service.UpdateAsync(id, request));
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
-        {
-            var success = await _service.DeleteAsync(id);
-            return success ? NoContent() : NotFound();
-        }
+            => Ok(await _service.DeleteAsync(id));
     }
 }
