@@ -37,7 +37,6 @@ namespace MembershipService.API.Controllers
         {
             var success = await _service.DeleteAsync(id);
             return success ? NoContent() : NotFound();
-            => Ok(await _service.DeleteAsync(id));
         }
 
 

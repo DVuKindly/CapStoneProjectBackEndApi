@@ -16,12 +16,6 @@ namespace MembershipService.API.Services.Implementations
         private readonly IBasicPlanServiceRepository _basicPlanServiceRepo;
         private readonly IComboPlanDurationRepository _durationRepo;
         private readonly IMapper _mapper;
-        private readonly MembershipDbContext _db;
-        public BasicPlanService(
-            MembershipDbContext db,
-            IBasicPlanRepository packageRepo,
-            IBasicPlanServiceRepository serviceRepo,
-            IMapper mapper)
         private readonly MembershipDbContext _context;
 
         public BasicPlanService(IBasicPlanRepository basicPlanRepo, IBasicPlanServiceRepository basicPlanServiceRepo, IComboPlanDurationRepository durationRepo, IMapper mapper, MembershipDbContext context)
@@ -30,7 +24,6 @@ namespace MembershipService.API.Services.Implementations
             _basicPlanServiceRepo = basicPlanServiceRepo;
             _durationRepo = durationRepo;
             _mapper = mapper;
-            _db = db;
             _context = context;
         }
 
@@ -162,7 +155,7 @@ namespace MembershipService.API.Services.Implementations
             if (ids == null || ids.Count == 0)
                 return new List<BasicPlanResponse>();
 
-            var plans = await _db.BasicPlans
+            var plans = await _context.BasicPlans
                 .Where(p => ids.Contains(p.Id))
                 .ToListAsync();
 
