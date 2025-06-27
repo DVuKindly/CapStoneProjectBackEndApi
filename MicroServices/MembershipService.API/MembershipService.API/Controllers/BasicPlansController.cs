@@ -3,6 +3,7 @@ using MembershipService.API.Dtos.Response;
 using MembershipService.API.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Numerics;
 
 namespace MembershipService.API.Controllers
 {
@@ -61,16 +62,27 @@ namespace MembershipService.API.Controllers
 
 
 
-
-
-        // vũ code 
+        // vũ code
         [HttpGet("{id}/price")]
-        public async Task<IActionResult> GetBasicPlanPrice(Guid id)
+        public async Task<IActionResult> GetComboPlanPrice(Guid id)
         {
-            var plan = await _service.GetByIdAsync(id);
-            if (plan == null) return NotFound();
+            var plan = await _service.GetByIdAsync(id); 
+            if (plan == null)
+                return NotFound("Không tìm thấy gói .");
 
-            return Ok(plan.Price); // ✅ trả về số trực tiếp
+            return Ok(plan.Price); 
         }
+        [HttpGet("{id}/duration")]
+        public async Task<IActionResult> GetPlanDuration(Guid id)
+        {
+            var duration = await _service.GetPlanDurationAsync(id);
+            if (duration == null)
+                return NotFound("Không tìm thấy thời hạn gói.");
+
+            return Ok(duration); // trả trực tiếp DurationDto
+        }
+
+
+
     }
 }

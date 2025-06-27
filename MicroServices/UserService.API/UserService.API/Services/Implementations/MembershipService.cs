@@ -5,19 +5,18 @@ using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
 using UserService.API.Services.Interfaces;
 
-
 namespace UserService.API.Services.Implementations
 {
     public class MembershipService : IMembershipService
     {
         private readonly UserDbContext _db;
         private readonly IAuthServiceClient _authServiceClient;
-        private readonly IMembershipServiceClient _membershipServiceClient; // ✅ Thêm inject
+        private readonly IMembershipServiceClient _membershipServiceClient;
 
         public MembershipService(
             UserDbContext db,
             IAuthServiceClient authServiceClient,
-            IMembershipServiceClient membershipServiceClient) // ✅ Inject
+            IMembershipServiceClient membershipServiceClient)
         {
             _db = db;
             _authServiceClient = authServiceClient;
@@ -26,45 +25,43 @@ namespace UserService.API.Services.Implementations
 
         public async Task<BaseResponse> CreateMembershipAsync(CreateMembershipDto dto)
         {
+            var now = DateTime.UtcNow;
+            var expireAt = AddDuration(now, dto.PackageDurationValue, dto.PackageDurationUnit);
+
             var membership = new Membership
             {
                 Id = Guid.NewGuid(),
                 AccountId = dto.AccountId,
                 PackageName = dto.PackageName,
                 PackageType = dto.PackageType,
-              
+                PackageId = dto.PackageId,
                 Amount = dto.Amount,
                 PaymentStatus = "Paid",
                 PaymentMethod = dto.PaymentMethod,
-                PurchasedAt = DateTime.UtcNow,
+                PurchasedAt = now,
                 UsedForRoleUpgrade = dto.UsedForRoleUpgrade,
                 PlanSource = dto.PlanSource,
                 PackageDurationValue = dto.PackageDurationValue,
                 PackageDurationUnit = dto.PackageDurationUnit,
-                ExpireAt = AddDuration(DateTime.UtcNow, dto.PackageDurationValue, dto.PackageDurationUnit)
+                ExpireAt = expireAt
             };
 
             await _db.Memberships.AddAsync(membership);
             await _db.SaveChangesAsync();
 
-            return new BaseResponse
-            {
-                Success = true,
-                Message = "Membership created successfully"
-            };
+            return BaseResponse.Ok("Membership created successfully", membership.Id);
         }
 
         public async Task<MembershipRequestSummaryDto?> GetMembershipSummaryAsync(Guid membershipId)
         {
             var membership = await _db.Memberships
-    .FirstOrDefaultAsync(x => x.Id == membershipId && x.PaymentStatus != "Paid");
+                .FirstOrDefaultAsync(x => x.Id == membershipId && x.PaymentStatus != "Paid");
 
-            if (membership == null)
-                return null;
+            if (membership == null) return null;
 
             return new MembershipRequestSummaryDto
             {
-                MembershipRequestId = membership.Id, // Reuse same property
+                MembershipRequestId = membership.Id,
                 AccountId = membership.AccountId,
                 Amount = membership.Amount,
                 RequestedPackageName = membership.PackageName,
@@ -72,40 +69,44 @@ namespace UserService.API.Services.Implementations
             };
         }
 
-        public async Task<bool> MarkMembershipAsPaidAsync(MarkPaidRequestDto dto)
+        public async Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(MarkPaidRequestDto dto)
         {
+            if (dto == null || dto.RequestId == Guid.Empty)
+                return BaseResponse.Fail("Request không hợp lệ.");
+
             var membership = await _db.Memberships.FirstOrDefaultAsync(m => m.Id == dto.RequestId);
-            if (membership == null) return false;
+            if (membership == null)
+                return BaseResponse.Fail("Không tìm thấy membership.");
+
+            var now = DateTime.UtcNow;
 
             // ✅ Cập nhật thông tin thanh toán
-            membership.PaymentMethod = dto.PaymentMethod ?? "Unknown";
             membership.PaymentTransactionId = dto.PaymentTransactionId;
-            membership.PaymentStatus = "Paid";
+            membership.PaymentMethod = dto.PaymentMethod ?? "Unknown";
             membership.PaymentNote = dto.PaymentNote;
-            membership.PaymentTime = DateTime.UtcNow;
+            membership.PaymentStatus = "Paid";
+            membership.PaymentTime = now;
+            membership.PurchasedAt = now;
 
-            // ✅ Lấy thời hạn từ gói
-            if (membership.PackageType == "basic")
+            // ✅ Gọi MembershipService để lấy thời hạn gói
+            if (membership.PackageType?.ToLower() == "basic" && membership.PackageId != Guid.Empty)
             {
-                var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(membership.PackageId);
-                if (plan != null)
+                var duration = await _membershipServiceClient.GetPlanDurationAsync(membership.PackageId, "basic");
+
+                if (duration != null && !string.IsNullOrWhiteSpace(duration.Unit))
                 {
-                    membership.PackageDurationUnit = plan.PackageDurationUnit;
-                    membership.PackageDurationValue = plan.PackageDurationValue;
-
-                    if (!string.IsNullOrWhiteSpace(plan.PackageDurationUnit))
-                    {
-                        membership.ExpireAt = CalculateExpireDate(
-                            membership.PurchasedAt,
-                            plan.PackageDurationValue,
-                            plan.PackageDurationUnit
-                        );
-                    }
-
+                    membership.PackageDurationValue = duration.Value;
+                    membership.PackageDurationUnit = duration.Unit;
+                    membership.PlanSource = "basic";
+                    membership.ExpireAt = AddDuration(now, duration.Value, duration.Unit);
+                }
+                else
+                {
+                    return BaseResponse.Fail("Không lấy được thời hạn gói từ MembershipService.");
                 }
             }
 
-            // ✅ Nếu là combo → nâng role
+            // ✅ Nâng cấp role nếu có flag
             if (membership.UsedForRoleUpgrade)
             {
                 var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == membership.AccountId);
@@ -117,34 +118,18 @@ namespace UserService.API.Services.Implementations
                     {
                         var promoted = await _authServiceClient.PromoteUserToMemberAsync(user.AccountId);
                         if (!promoted)
-                        {
-                            Console.WriteLine("❌ Đã thanh toán nhưng nâng role thất bại.");
-                            return false;
-                        }
+                            return BaseResponse.Fail("Đã thanh toán nhưng nâng role thất bại.");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("🚨 Lỗi nâng role: " + ex.Message);
-                        return false;
+                        return BaseResponse.Fail("Lỗi khi gọi AuthService: " + ex.Message);
                     }
                 }
             }
 
             await _db.SaveChangesAsync();
-            return true;
+            return BaseResponse.Ok("✅ Xác nhận thanh toán thành công.");
         }
-
-        private DateTime CalculateExpireDate(DateTime start, int value, string unit)
-        {
-            return unit.ToLower() switch
-            {
-                "day" => start.AddDays(value),
-                "month" => start.AddMonths(value),
-                "year" => start.AddYears(value),
-                _ => start
-            };
-        }
-
 
 
         public async Task<List<MembershipResponseDto>> GetUserMembershipsAsync(Guid accountId)
@@ -156,13 +141,9 @@ namespace UserService.API.Services.Implementations
 
             return memberships.Select(m =>
             {
-                var purchasedAt = m.PurchasedAt;
-                var expireAt = m.ExpireAt;
-
-                if (expireAt == null && m.PackageDurationValue != null && !string.IsNullOrEmpty(m.PackageDurationUnit))
-                {
-                    expireAt = AddDuration(purchasedAt, m.PackageDurationValue.Value, m.PackageDurationUnit!);
-                }
+                var expireAt = m.ExpireAt ?? (m.PackageDurationValue.HasValue && !string.IsNullOrWhiteSpace(m.PackageDurationUnit)
+                    ? AddDuration(m.PurchasedAt, m.PackageDurationValue.Value, m.PackageDurationUnit)
+                    : m.PurchasedAt);
 
                 return new MembershipResponseDto
                 {
@@ -173,7 +154,7 @@ namespace UserService.API.Services.Implementations
                     PaymentStatus = m.PaymentStatus ?? "Pending",
                     PaymentMethod = m.PaymentMethod,
                     PurchasedAt = m.PurchasedAt,
-                    ExpireAt = expireAt ?? m.PurchasedAt,
+                    ExpireAt = expireAt,
                     PackageDurationValue = m.PackageDurationValue,
                     PackageDurationUnit = m.PackageDurationUnit,
                     IsActive = m.IsActive,
@@ -181,17 +162,6 @@ namespace UserService.API.Services.Implementations
                     PlanSource = m.PlanSource
                 };
             }).ToList();
-        }
-
-        private DateTime AddDuration(DateTime start, int value, string unit)
-        {
-            return unit.ToLower() switch
-            {
-                "day" => start.AddDays(value),
-                "month" => start.AddMonths(value),
-                "year" => start.AddYears(value),
-                _ => start
-            };
         }
 
         public async Task CheckAndDowngradeExpiredMembershipsAsync()
@@ -207,12 +177,29 @@ namespace UserService.API.Services.Implementations
             {
                 if (m.UserProfile != null)
                 {
-                    m.UserProfile.RoleType = "user"; // downgrade
+                    m.UserProfile.RoleType = "user";
                     await _authServiceClient.DowngradeUserRoleAsync(m.AccountId);
                 }
             }
 
             await _db.SaveChangesAsync();
+        }
+
+        public async Task<DurationDto?> GetPlanDurationAsync(Guid planId, string planType)
+        {
+            return await _membershipServiceClient.GetPlanDurationAsync(planId, planType);
+        }
+
+        private DateTime AddDuration(DateTime start, int value, string unit)
+        {
+            return unit.ToLower() switch
+            {
+                "day" => start.AddDays(value),
+                "week" => start.AddDays(7 * value),
+                "month" => start.AddMonths(value),
+                "year" => start.AddYears(value),
+                _ => start
+            };
         }
     }
 }

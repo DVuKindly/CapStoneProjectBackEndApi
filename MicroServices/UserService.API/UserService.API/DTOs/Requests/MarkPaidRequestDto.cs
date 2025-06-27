@@ -2,14 +2,16 @@
 {
     public class MarkPaidRequestDto
     {
-        public Guid RequestId { get; set; } // Id của PendingMembershipRequests (combo)
-        public Guid? MembershipRequestId { get; set; } // Dùng cho basic (có thể null combo)
-        public bool? IsDirectMembership { get; set; } // false = combo
+        public Guid RequestId { get; set; } // Chính là Id của Membership hoặc PendingMembershipRequest
+        public Guid? MembershipRequestId { get; set; } // Reserved - nếu cần mapping thêm
+        public bool? IsDirectMembership { get; set; } // true: mua trực tiếp (BasicPlan), false: combo (cần nâng role)
         public string? PaymentMethod { get; set; }
         public string? PaymentTransactionId { get; set; }
         public string? PaymentNote { get; set; }
         public string? PaymentProofUrl { get; set; }
+        public DateTime? PaidTime { get; set; }
     }
+
 
 
 }

@@ -59,6 +59,11 @@ public class PendingMembershipRequest
     [MaxLength(100)]
     public string? PaymentTransactionId { get; set; }
     public string PackageType { get; set; } = null!;
+    public int? PackageDurationValue { get; set; }
+
+    [MaxLength(50)]
+    public string? PackageDurationUnit { get; set; }
+    public DateTime? ExpireAt { get; set; }  // thêm mới
 
 
     [MaxLength(1000)]

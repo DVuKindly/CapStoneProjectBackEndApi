@@ -10,5 +10,8 @@ namespace MembershipService.API.Services.Interfaces
         Task<List<ComboPlanResponseDto>> GetAllAsync();
         Task<ComboPlanResponseDto> UpdateAsync(Guid id, UpdateComboPlanRequest request);
         Task<bool> DeleteAsync(Guid id);
+        //vũ code 
+        Task<DurationDto?> GetPlanDurationAsync(Guid planId);
+
     }
 }

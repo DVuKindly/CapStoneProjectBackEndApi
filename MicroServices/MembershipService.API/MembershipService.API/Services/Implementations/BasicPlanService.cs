@@ -17,6 +17,8 @@ namespace MembershipService.API.Services.Implementations
         private readonly IComboPlanDurationRepository _durationRepo;
         private readonly IMapper _mapper;
         private readonly MembershipDbContext _context;
+     
+ 
 
         public BasicPlanService(IBasicPlanRepository basicPlanRepo, IBasicPlanServiceRepository basicPlanServiceRepo, IComboPlanDurationRepository durationRepo, IMapper mapper, MembershipDbContext context)
         {
@@ -24,6 +26,7 @@ namespace MembershipService.API.Services.Implementations
             _basicPlanServiceRepo = basicPlanServiceRepo;
             _durationRepo = durationRepo;
             _mapper = mapper;
+        
             _context = context;
         }
 
@@ -157,19 +160,69 @@ namespace MembershipService.API.Services.Implementations
 
             var plans = await _context.BasicPlans
                 .Where(p => ids.Contains(p.Id))
+                .Include(p => p.Location)
+                .Include(p => p.ComboPlanDurations)
+                    .ThenInclude(d => d.PackageDuration)
                 .ToListAsync();
 
-            return plans.Select(p => new BasicPlanResponse
+            var result = plans.Select(p =>
             {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                LocationId = p.LocationId.Value,
+                var firstDuration = p.ComboPlanDurations?
+                    .Where(d => d.PackageDuration != null)
+                    .OrderBy(d => d.PackageDuration.Value)
+                    .FirstOrDefault();
 
-                LocationName = p.Name,
-                
+                return new BasicPlanResponse
+                {
+                    Id = p.Id,
+                    Code = p.Code ?? string.Empty,
+                    Name = p.Name ?? string.Empty,
+                    Description = p.Description ?? string.Empty,
+                    Price = p.Price, // ✅ bắt buộc phải có giá trị
+                    LocationId = p.LocationId ?? Guid.Empty,
+                    LocationName = p.Location?.Name ?? "Không xác định",
+                    PackageDurationValue = firstDuration?.PackageDuration?.Value ?? 0,
+                    PackageDurationUnit = firstDuration?.PackageDuration?.Unit.ToString() ?? string.Empty,
+                    DurationDescription = firstDuration?.PackageDuration?.Description ?? string.Empty,
+                    PlanSource = "basic"
+                };
             }).ToList();
+
+            return result;
         }
+
+        //vũ code 
+        public async Task<DurationDto?> GetPlanDurationAsync(Guid planId)
+        {
+            var plan = await _context.BasicPlans
+                .Where(p => p.Id == planId)
+                .Include(p => p.ComboPlanDurations)
+                    .ThenInclude(d => d.PackageDuration)
+                .FirstOrDefaultAsync();
+
+            var duration = plan?.ComboPlanDurations?
+                .Where(d => d.PackageDuration != null)
+                .OrderBy(d => d.PackageDuration.Value)
+                .FirstOrDefault();
+
+            if (duration == null || duration.PackageDuration == null)
+                return null;
+
+            return new DurationDto
+            {
+                Value = duration.PackageDuration.Value,
+                Unit = duration.PackageDuration.Unit.ToString()
+            };
+        }
+
+       
+
+
+
+
+
+
+
+
     }
 }

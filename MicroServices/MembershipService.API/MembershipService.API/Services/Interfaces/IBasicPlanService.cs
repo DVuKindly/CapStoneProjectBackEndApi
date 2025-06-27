@@ -14,5 +14,7 @@ namespace MembershipService.API.Services.Interfaces
 
         // vũ code
         Task<List<BasicPlanResponse>> GetByIdsAsync(List<Guid> ids);
+        Task<DurationDto?> GetPlanDurationAsync(Guid planId);
+
     }
 }

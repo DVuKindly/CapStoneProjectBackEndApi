@@ -84,6 +84,32 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<ComboPlanResponseDto>(updated);
         }
 
+
+        //vũ code
+        public async Task<DurationDto?> GetPlanDurationAsync(Guid planId)
+        {
+            var plan = await _context.ComboPlans
+                .Where(p => p.Id == planId)
+                .Include(p => p.ComboPlanDurations)
+                    .ThenInclude(d => d.PackageDuration)
+                .FirstOrDefaultAsync();
+
+            var duration = plan?.ComboPlanDurations?
+                .Where(d => d.PackageDuration != null)
+                .OrderBy(d => d.PackageDuration.Value) // Ưu tiên thời hạn nhỏ nhất hoặc bạn có thể dùng logic khác
+                .FirstOrDefault();
+
+            if (duration == null || duration.PackageDuration == null)
+                return null;
+
+            return new DurationDto
+            {
+                Value = duration.PackageDuration.Value,
+                Unit = duration.PackageDuration.Unit.ToString()
+            };
+        }
+
+
         public async Task<bool> DeleteAsync(Guid id) => await _planRepo.DeleteAsync(id);
     }
 }
