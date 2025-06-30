@@ -34,7 +34,6 @@ namespace MembershipService.API.Repositories.Implementations
         public async Task<List<BasicPlan>> GetAllAsync()
         {
             return await _context.BasicPlans
-                .Include(x => x.BasicPlanServices)
                 .Include(x => x.ComboPlanDurations)
                 .Include(x => x.Location)
                 .Include(x => x.PlanCategory)
@@ -44,7 +43,6 @@ namespace MembershipService.API.Repositories.Implementations
         public async Task<BasicPlan> GetByIdAsync(Guid id)
         {
             return await _context.BasicPlans
-                .Include(x => x.BasicPlanServices)
                 .Include(x => x.ComboPlanDurations)
                 .Include(x => x.Location)
                 .Include(x => x.PlanCategory)

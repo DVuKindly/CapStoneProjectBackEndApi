@@ -21,7 +21,8 @@ namespace MembershipService.API.Data
         public DbSet<ComboPlanDuration> ComboPlanDurations { get; set; }
         public DbSet<PlanCategory> PlanCategories { get; set; }
         public DbSet<BasicPlan> BasicPlans { get; set; }
-        public DbSet<Entities.BasicPlanService> BasicPlanServices { get; set; }
+        public DbSet<BasicPlanEntitlement> BasicPlanEntitlements { get; set; }
+        public DbSet<BasicPlanRoom> BasicPlanRooms { get; set; }
         public DbSet<ComboPlan> ComboPlans { get; set; }
         public DbSet<ComboPlanBasic> ComboPlanBasics { get; set; }
         public DbSet<Location> Locations { get; set; }
@@ -110,6 +111,20 @@ namespace MembershipService.API.Data
                 .HasForeignKey(s => s.BasicPlanId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // BasicPlan - BasicPlanRoom
+            modelBuilder.Entity<BasicPlanRoom>()
+                .HasOne(s => s.BasicPlan)
+                .WithMany(e => e.BasicPlanRooms)
+                .HasForeignKey(s => s.BasicPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BasicPlan - BasicPlanEntitlement
+            modelBuilder.Entity<BasicPlanEntitlement>()
+                .HasOne(s => s.BasicPlan)
+                .WithMany(e => e.BasicPlanEntitlements)
+                .HasForeignKey(s => s.BasicPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ComboPlan - Membership
             modelBuilder.Entity<Membership>()
                 .HasOne(s => s.ComboPlan)
@@ -173,19 +188,14 @@ namespace MembershipService.API.Data
                 .HasForeignKey(s => s.NextUServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // BasicPlan - BasicPlanService
-            modelBuilder.Entity<Entities.BasicPlanService>()
-                .HasOne(s => s.BasicPlan)
-                .WithMany(e => e.BasicPlanServices)
-                .HasForeignKey(s => s.BasicPlanId)
-                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<AccommodationOption>()
+                .Property(x => x.PricePerNight)
+                .HasColumnType("decimal(18,4)");
 
-            // NextUService - BasicPlanService
-            modelBuilder.Entity<Entities.BasicPlanService>()
-                .HasOne(s => s.NextUService)
-                .WithMany(e => e.BasicPlanServices)
-                .HasForeignKey(s => s.NextUServiceId)
-                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<BasicPlanRoom>()
+                .Property(x => x.TotalPrice)
+                .HasColumnType("decimal(18,4)");
+
 
             base.OnModelCreating(modelBuilder);
 

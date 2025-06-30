@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MembershipService.API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitAuthDb : Migration
+    public partial class add_relationship_basicPlan_RoomNEntitlements : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -212,7 +212,7 @@ namespace MembershipService.API.Migrations
                     RoomType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     QuantityAvailable = table.Column<int>(type: "int", nullable: false),
                     Capacity = table.Column<int>(type: "int", nullable: false),
-                    PricePerNight = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PricePerNight = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -276,35 +276,6 @@ namespace MembershipService.API.Migrations
                     table.PrimaryKey("PK_MediaGallery", x => x.Id);
                     table.ForeignKey(
                         name: "FK_MediaGallery_NextUServices_NextUServiceId",
-                        column: x => x.NextUServiceId,
-                        principalTable: "NextUServices",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "BasicPlanServices",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BasicPlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    NextUServiceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BasicPlanServices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_BasicPlanServices_BasicPlans_BasicPlanId",
-                        column: x => x.BasicPlanId,
-                        principalTable: "BasicPlans",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_BasicPlanServices_NextUServices_NextUServiceId",
                         column: x => x.NextUServiceId,
                         principalTable: "NextUServices",
                         principalColumn: "Id",
@@ -476,6 +447,61 @@ namespace MembershipService.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BasicPlanEntitlements",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BasicPlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EntitlementRuleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BasicPlanEntitlements", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BasicPlanEntitlements_BasicPlans_BasicPlanId",
+                        column: x => x.BasicPlanId,
+                        principalTable: "BasicPlans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_BasicPlanEntitlements_EntitlementRules_EntitlementRuleId",
+                        column: x => x.EntitlementRuleId,
+                        principalTable: "EntitlementRules",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BasicPlanRooms",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BasicPlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RoomInstanceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    NightsIncluded = table.Column<int>(type: "int", nullable: false),
+                    CustomPricePerNight = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    TotalPrice = table.Column<decimal>(type: "decimal(18,4)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BasicPlanRooms", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BasicPlanRooms_BasicPlans_BasicPlanId",
+                        column: x => x.BasicPlanId,
+                        principalTable: "BasicPlans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_BasicPlanRooms_Rooms_RoomInstanceId",
+                        column: x => x.RoomInstanceId,
+                        principalTable: "Rooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Bookings",
                 columns: table => new
                 {
@@ -518,6 +544,26 @@ namespace MembershipService.API.Migrations
                 column: "NextUServiceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_BasicPlanEntitlements_BasicPlanId",
+                table: "BasicPlanEntitlements",
+                column: "BasicPlanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BasicPlanEntitlements_EntitlementRuleId",
+                table: "BasicPlanEntitlements",
+                column: "EntitlementRuleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BasicPlanRooms_BasicPlanId",
+                table: "BasicPlanRooms",
+                column: "BasicPlanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BasicPlanRooms_RoomInstanceId",
+                table: "BasicPlanRooms",
+                column: "RoomInstanceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_BasicPlans_LocationId",
                 table: "BasicPlans",
                 column: "LocationId");
@@ -526,16 +572,6 @@ namespace MembershipService.API.Migrations
                 name: "IX_BasicPlans_PlanCategoryId",
                 table: "BasicPlans",
                 column: "PlanCategoryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BasicPlanServices_BasicPlanId",
-                table: "BasicPlanServices",
-                column: "BasicPlanId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BasicPlanServices_NextUServiceId",
-                table: "BasicPlanServices",
-                column: "NextUServiceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Bookings_RoomInstanceId",
@@ -627,7 +663,10 @@ namespace MembershipService.API.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "BasicPlanServices");
+                name: "BasicPlanEntitlements");
+
+            migrationBuilder.DropTable(
+                name: "BasicPlanRooms");
 
             migrationBuilder.DropTable(
                 name: "Bookings");
@@ -639,9 +678,6 @@ namespace MembershipService.API.Migrations
                 name: "ComboPlanDurations");
 
             migrationBuilder.DropTable(
-                name: "EntitlementRules");
-
-            migrationBuilder.DropTable(
                 name: "MediaGallery");
 
             migrationBuilder.DropTable(
@@ -649,6 +685,9 @@ namespace MembershipService.API.Migrations
 
             migrationBuilder.DropTable(
                 name: "Memberships");
+
+            migrationBuilder.DropTable(
+                name: "EntitlementRules");
 
             migrationBuilder.DropTable(
                 name: "Rooms");

@@ -17,7 +17,8 @@ namespace MembershipService.API.Entities
         public Guid? LocationId { get; set; }
         public Location? Location { get; set; } = null!;
 
-        public ICollection<BasicPlanService> BasicPlanServices { get; set; }
+        public ICollection<BasicPlanEntitlement> BasicPlanEntitlements { get; set; }
+        public ICollection<BasicPlanRoom> BasicPlanRooms { get; set; }
         public ICollection<ComboPlanBasic> ComboPlanBasics { get; set; }
         public ICollection<Membership> Memberships { get; set; }
         public ICollection<MembershipHistory> MembershipHistories { get; set; }

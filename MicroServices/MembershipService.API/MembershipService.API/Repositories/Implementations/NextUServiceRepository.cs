@@ -28,7 +28,6 @@ namespace MembershipService.API.Repositories.Implementations
                 .Include(x => x.Ecosystem)
                 .Include(x => x.Location)
                 .Include(x => x.MediaGallery)
-                .Include(x => x.BasicPlanServices)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
