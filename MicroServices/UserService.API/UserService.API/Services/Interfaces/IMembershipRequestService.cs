@@ -49,6 +49,7 @@ namespace UserService.API.Services.Interfaces
         /// </summary>
         Task<List<PendingMembershipRequestDto>> GetRequestHistoryAsync(Guid accountId);
 
+        Task<List<PendingMembershipRequestDto>> GetAllRequestsForStaffLocationAsync(Guid staffAccountId);
 
 
 

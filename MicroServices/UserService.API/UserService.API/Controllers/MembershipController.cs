@@ -166,6 +166,15 @@ public class MembershipController : ControllerBase
         return Ok(result);
     }
 
+    
+    [HttpGet("all-requests-membership")]
+    [Authorize(Roles = "staff_onboarding")]
+    public async Task<IActionResult> GetAllRequestsInStaffLocation()
+    {
+        var staffId = GetAccountIdFromToken();
+        var result = await _membershipRequestService.GetAllRequestsForStaffLocationAsync(staffId);
+        return Ok(result);
+    }
 
     private Guid GetAccountId()
     {

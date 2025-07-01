@@ -8,8 +8,8 @@
         // Gói đã yêu cầu
         public string? RequestedPackageName { get; set; }
         public string? PackageType { get; set; } // basic / combo
-        public decimal Amount { get; set; }
-
+        public decimal? Amount { get; set; }
+        public DateTime? ExpireAt {  get; set; }
         // Trạng thái yêu cầu & thanh toán
         public string? Status { get; set; }
         public string? PaymentStatus { get; set; } // Paid / Unpaid

@@ -8,6 +8,7 @@
         public Guid? LocationId { get; set; }
         public int PackageDurationValue { get; set; }
         public string PackageDurationUnit { get; set; } = string.Empty;
+        public string LocationName { get; set; }    
 
     }
 

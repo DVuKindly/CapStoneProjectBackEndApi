@@ -56,9 +56,11 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            // ⚠️ Query user and include their roles
-            var user = await _userRepository.GetByEmailWithRoleAsync(request.Email);
+            // ✅ Trim và chuẩn hoá email
+            request.Email = request.Email.Trim().ToLower();
 
+            // ⚠️ Query user và include roles/permissions
+            var user = await _userRepository.GetByEmailWithRoleAsync(request.Email);
             if (user == null)
             {
                 return new AuthResponse
@@ -68,6 +70,7 @@ namespace AuthService.API.Services
                 };
             }
 
+            // ✅ Kiểm tra email đã xác minh chưa
             if (!user.EmailVerified)
             {
                 return new AuthResponse
@@ -77,16 +80,7 @@ namespace AuthService.API.Services
                 };
             }
 
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-            if (result == PasswordVerificationResult.Failed)
-            {
-                return new AuthResponse
-                {
-                    Success = false,
-                    Message = AuthMessages.LoginFailed
-                };
-            }
-
+            // ✅ Kiểm tra tài khoản có đang bị khoá không
             if (user.IsLocked)
             {
                 return new AuthResponse
@@ -96,22 +90,44 @@ namespace AuthService.API.Services
                 };
             }
 
-            // ✅ Generate tokens
+            // ✅ So sánh mật khẩu
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                user.LoginAttempt++;
+
+                if (user.LoginAttempt >= 5)
+                {
+                    user.IsLocked = true;
+                }
+
+                await _userRepository.SaveChangesAsync();
+
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = AuthMessages.LoginFailed
+                };
+            }
+
+         
+            user.LoginAttempt = 0;
+            user.IsLocked = false;
+
+        
             var permissionKeys = user.UserRoles
-     .SelectMany(ur => ur.Role.RolePermissions)
-     .Select(rp => rp.Permission.PermissionKey)
-     .Distinct()
-     .ToList();
+                .SelectMany(ur => ur.Role.RolePermissions)
+                .Select(rp => rp.Permission.PermissionKey)
+                .Distinct()
+                .ToList();
 
             var accessToken = _tokenService.GenerateAccessToken(user, permissionKeys);
-
             var refreshToken = _tokenService.GenerateRefreshToken();
             var idToken = _tokenService.GenerateIdToken(user);
 
-            // ✅ Update refresh token info
+           
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveChangesAsync();
 
@@ -132,19 +148,20 @@ namespace AuthService.API.Services
             };
         }
 
+
         public async Task<BaseResponse> ChangeUserRoleAsync(Guid userId, Guid newRoleId)
         {
             var user = await _userRepository.GetUserWithRolesByAccountIdAsync(userId);
             if (user == null)
                 return new BaseResponse(false, "User not found");
 
-            // Xoá toàn bộ role cũ
+           
             foreach (var oldRole in user.UserRoles)
             {
                 await _userRepository.RemoveUserRoleAsync(user.UserId, oldRole.RoleId);
             }
 
-            // Gán role mới
+          
             var newUserRole = new UserRole
             {
                 UserId = userId,
@@ -165,7 +182,7 @@ namespace AuthService.API.Services
                 .Include(u => u.UserRoles).ThenInclude(r => r.Role)
                 .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
 
-            // ❌ Nếu không tìm thấy hoặc token hết hạn
+          
             if (user == null || user.RefreshTokenExpiry < DateTime.UtcNow)
             {
                 return new AuthResponse
@@ -175,12 +192,12 @@ namespace AuthService.API.Services
                 };
             }
 
-            // ✅ Ngăn dùng lại token cũ bằng cách xóa
+           
             user.RefreshToken = null;
             user.RefreshTokenExpiry = null;
             await _context.SaveChangesAsync();
 
-            // ✅ Sinh token mới
+         
             var permissionKeys = user.UserRoles
        .SelectMany(ur => ur.Role.RolePermissions)
        .Select(rp => rp.Permission.PermissionKey)
@@ -380,6 +397,36 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
+            // Trim username and validate
+            request.UserName = request.UserName.Trim();
+
+            if (!StringValidator.IsValidUsername(request.UserName))
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Invalid username format. Username must be 6-20 characters, only letters, numbers, or underscores."
+                };
+            }
+
+            if (StringValidator.IsNumericOnly(request.UserName))
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Username cannot be only numbers."
+                };
+            }
+
+            if (!StringValidator.IsValidPassword(request.Password))
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Invalid password format. Password must be 6-20 characters, contain at least one letter and one number, and must not contain spaces."
+                };
+            }
+
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
@@ -387,6 +434,16 @@ namespace AuthService.API.Services
                 {
                     Success = false,
                     Message = AuthMessages.EmailAlreadyExists
+                };
+            }
+
+            var existingUsername = await _context.AuthUsers.AnyAsync(u => u.UserName == request.UserName);
+            if (existingUsername)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Username already taken"
                 };
             }
 
@@ -415,13 +472,13 @@ namespace AuthService.API.Services
             }
 
             user.UserRoles = new List<UserRole>
-    {
-        new UserRole
-        {
-            UserId = user.UserId,
-            RoleId = role.RoleId
-        }
-    };
+            {
+                new UserRole
+                {
+                    UserId = user.UserId,
+                    RoleId = role.RoleId
+                }
+            };
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();

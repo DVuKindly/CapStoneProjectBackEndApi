@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UserService.API.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPackageTypeToMembershipsAndRequests : Migration
+    public partial class AddPackageDurationToPendingRequests : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -176,9 +176,18 @@ namespace UserService.API.Migrations
                     PackageType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PackageName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PurchasedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PaymentStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PackageDurationValue = table.Column<int>(type: "int", nullable: true),
+                    PackageDurationUnit = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PaymentTransactionId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PaymentTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PaymentNote = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UsedForRoleUpgrade = table.Column<bool>(type: "bit", nullable: false),
-                    PurchasedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpireAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PlanSource = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -258,6 +267,9 @@ namespace UserService.API.Migrations
                     PaymentTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PaymentTransactionId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     PackageType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PackageDurationValue = table.Column<int>(type: "int", nullable: true),
+                    PackageDurationUnit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ExpireAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PaymentNote = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     PaymentProofUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     LocationRegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -351,19 +363,12 @@ namespace UserService.API.Migrations
                 columns: new[] { "Id", "CreatedAt", "Description", "Name" },
                 values: new object[,]
                 {
+                    { new Guid("10000000-0000-0000-0000-000000000001"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Hà Nội", "Hà Nội" },
+                    { new Guid("10000000-0000-0000-0000-000000000002"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Hải Phòng", "Hải Phòng" },
+                    { new Guid("10000000-0000-0000-0000-000000000003"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Đà Nẵng", "Đà Nẵng" },
                     { new Guid("5a418674-9e47-4d19-b827-1e8e2b25c324"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Hải Phòng", "Hải Phòng" },
                     { new Guid("9f38b827-4e1a-4a6e-b8c5-5ff6b759a2a1"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Hà Nội", "Hà Nội" },
                     { new Guid("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Đà Nẵng", "Đà Nẵng" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "LocationMappings",
-                columns: new[] { "Id", "CreatedAt", "LocationRegionId", "MembershipLocationId", "RegionName" },
-                values: new object[,]
-                {
-                    { new Guid("aaaa1111-0000-0000-0000-000000000001"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("9f38b827-4e1a-4a6e-b8c5-5ff6b759a2a1"), new Guid("10000000-0000-0000-0000-000000000001"), "Hà Nội" },
-                    { new Guid("aaaa1111-0000-0000-0000-000000000002"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("5a418674-9e47-4d19-b827-1e8e2b25c324"), new Guid("10000000-0000-0000-0000-000000000002"), "Hải Phòng" },
-                    { new Guid("aaaa1111-0000-0000-0000-000000000003"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"), new Guid("10000000-0000-0000-0000-000000000003"), "Đà Nẵng" }
                 });
 
             migrationBuilder.CreateIndex(
