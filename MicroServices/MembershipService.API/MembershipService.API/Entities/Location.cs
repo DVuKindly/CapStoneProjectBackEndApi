@@ -13,5 +13,6 @@ namespace MembershipService.API.Entities
         public ICollection<BasicPlan>? BasicPlans { get; set; }
         public ICollection<ComboPlan>? ComboPlans { get; set; }
         public ICollection<NextUService>? NextUServices { get; set; }
+        public ICollection<AccommodationOption> AccommodationOptions { get; set; }
     }
 }

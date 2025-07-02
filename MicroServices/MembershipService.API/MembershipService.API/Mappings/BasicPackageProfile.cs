@@ -15,7 +15,7 @@ namespace MembershipService.API.Mappings
             CreateMap<BasicPlan, BasicPlanResponseDto>()
                 .ForMember(dest => dest.ServiceIds, opt => opt.Ignore())
                 .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location.Name))
-                .ForMember(dest => dest.PlanCategoryName, opt => opt.MapFrom(src => src.PlanCategory.Name));
+                .ForMember(dest => dest.PlanCategoryName, opt => opt.MapFrom(src => src.BasicPlanType.Name));
         }
     }
 }

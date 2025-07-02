@@ -36,7 +36,7 @@ namespace MembershipService.API.Repositories.Implementations
             return await _context.BasicPlans
                 .Include(x => x.ComboPlanDurations)
                 .Include(x => x.Location)
-                .Include(x => x.PlanCategory)
+                .Include(x => x.BasicPlanType)
                 .ToListAsync();
         }
 
@@ -45,7 +45,7 @@ namespace MembershipService.API.Repositories.Implementations
             return await _context.BasicPlans
                 .Include(x => x.ComboPlanDurations)
                 .Include(x => x.Location)
-                .Include(x => x.PlanCategory)
+                .Include(x => x.BasicPlanType)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 

@@ -12,7 +12,9 @@ namespace MembershipService.API.Entities
         public Guid? NextUServiceId { get; set; }
         public NextUService? NextUService { get; set; }
 
-        
+        public Guid AccommodationOptionId { get; set; }
+        public AccommodationOption AccommodationOption { get; set; }
+
     }
 
 }

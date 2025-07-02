@@ -11,9 +11,11 @@ namespace MembershipService.API.Entities
         public AccommodationOption AccommodationOption { get; set; }
 
         public string RoomCode { get; set; } = null!;
+        public string RoomName { get; set; }
+
         public RoomStatus Status { get; set; } = RoomStatus.Available;
-        public string? Description { get; set; }
-        public string? Floor { get; set; }
+        public string? DescriptionDetails { get; set; }
+        public Floor Floor { get; set; }
 
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
