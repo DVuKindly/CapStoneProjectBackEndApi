@@ -54,10 +54,12 @@ builder.Services.AddAutoMapper(typeof(ComboPlanProfile).Assembly);
 builder.Services.AddScoped<IAccommodationOptionRepository, AccommodationOptionRepository>();
 builder.Services.AddScoped<IAccommodationOptionService, AccommodationOptionService>();
 builder.Services.AddAutoMapper(typeof(AccommodationOptionProfile).Assembly);
-// ??ng ký DI cho AccommodationOption
+// ??ng ký DI cho RoomInstance
 builder.Services.AddScoped<IRoomInstanceRepository, RoomInstanceRepository>();
 builder.Services.AddScoped<IRoomInstanceService, RoomInstanceService>();
 builder.Services.AddAutoMapper(typeof(RoomInstanceProfile).Assembly);
+// ??ng ký DI cho BasicPlanRoom
+builder.Services.AddScoped<IBasicPlanRoomRepository, BasicPlanRoomRepository>();
 
 
 

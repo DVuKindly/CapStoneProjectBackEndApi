@@ -21,6 +21,9 @@ namespace MembershipService.API.Data
         public DbSet<ComboPlanDuration> ComboPlanDurations { get; set; }
         public DbSet<BasicPlanType> BasicPlanTypes { get; set; }
         public DbSet<BasicPlan> BasicPlans { get; set; }
+        public DbSet<BasicPlanCategory> BasicPlanCategories { get; set; }
+        public DbSet<BasicPlanLevel> BasicPlanLevels { get; set; }
+        public DbSet<PlanTargetAudience> PlanTargetAudiences { get; set; }
         public DbSet<BasicPlanEntitlement> BasicPlanEntitlements { get; set; }
         public DbSet<BasicPlanRoom> BasicPlanRooms { get; set; }
         public DbSet<ComboPlan> ComboPlans { get; set; }
@@ -76,11 +79,46 @@ namespace MembershipService.API.Data
                 .HasForeignKey(s => s.LocationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // PlanCategory - BasicPlan
+            // BasicPlanType - BasicPlanCategory
+            modelBuilder.Entity<BasicPlanCategory>()
+                .HasOne(s => s.BasicPlanType)
+                .WithMany(e => e.BasicPlanCategories)
+                .HasForeignKey(s => s.BasicPlanTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BasicPlanType - BasicPlanLevel
+            modelBuilder.Entity<BasicPlanLevel>()
+                .HasOne(s => s.BasicPlanType)
+                .WithMany(e => e.BasicPlanLevels)
+                .HasForeignKey(s => s.BasicPlanTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BasicPlanType - BasicPlan
             modelBuilder.Entity<BasicPlan>()
                 .HasOne(s => s.BasicPlanType)
                 .WithMany(e => e.BasicPlans)
                 .HasForeignKey(s => s.BasicPlanTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BasicPlanCategory - BasicPlan
+            modelBuilder.Entity<BasicPlan>()
+                .HasOne(s => s.BasicPlanCategory)
+                .WithMany(e => e.BasicPlans)
+                .HasForeignKey(s => s.BasicPlanCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BasicPlanLevel - BasicPlan
+            modelBuilder.Entity<BasicPlan>()
+                .HasOne(s => s.BasicPlanLevel)
+                .WithMany(e => e.BasicPlans)
+                .HasForeignKey(s => s.PlanLevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // PlanTargetAudience - BasicPlan
+            modelBuilder.Entity<BasicPlan>()
+                .HasOne(s => s.PlanTargetAudience)
+                .WithMany(e => e.BasicPlans)
+                .HasForeignKey(s => s.TargetAudienceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // PackageDuration - ComboPlanDuration

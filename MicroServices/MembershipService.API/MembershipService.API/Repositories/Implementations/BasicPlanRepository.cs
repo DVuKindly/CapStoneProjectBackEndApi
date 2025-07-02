@@ -35,8 +35,12 @@ namespace MembershipService.API.Repositories.Implementations
         {
             return await _context.BasicPlans
                 .Include(x => x.ComboPlanDurations)
+                .Include(x => x.BasicPlanRooms)
                 .Include(x => x.Location)
                 .Include(x => x.BasicPlanType)
+                .Include(x => x.BasicPlanCategory)
+                .Include(x => x.BasicPlanLevel)
+                .Include(x => x.PlanTargetAudience)
                 .ToListAsync();
         }
 
@@ -44,8 +48,12 @@ namespace MembershipService.API.Repositories.Implementations
         {
             return await _context.BasicPlans
                 .Include(x => x.ComboPlanDurations)
+                .Include(x => x.BasicPlanRooms)
                 .Include(x => x.Location)
                 .Include(x => x.BasicPlanType)
+                .Include(x => x.BasicPlanCategory)
+                .Include(x => x.BasicPlanLevel)
+                .Include(x => x.PlanTargetAudience)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 

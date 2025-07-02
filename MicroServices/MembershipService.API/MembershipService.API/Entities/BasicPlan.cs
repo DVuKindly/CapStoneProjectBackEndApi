@@ -11,9 +11,18 @@ namespace MembershipService.API.Entities
         public decimal Price { get; set; }
         public bool VerifyBuy { get; set; }
 
-        public Guid BasicPlanTypeId { get; set; } 
+        public Guid BasicPlanTypeId { get; set; }
         public BasicPlanType BasicPlanType { get; set; }
-        
+
+        public int BasicPlanCategoryId { get; set; }
+        public BasicPlanCategory BasicPlanCategory { get; set; }
+
+        public int PlanLevelId { get; set; }
+        public BasicPlanLevel BasicPlanLevel { get; set; }
+
+        public int TargetAudienceId { get; set; }
+        public PlanTargetAudience PlanTargetAudience { get; set; }
+
         public Guid? LocationId { get; set; }
         public Location? Location { get; set; } = null!;
 

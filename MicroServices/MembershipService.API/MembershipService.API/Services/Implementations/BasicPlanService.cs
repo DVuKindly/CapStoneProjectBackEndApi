@@ -13,23 +13,60 @@ namespace MembershipService.API.Services.Implementations
     {
         private readonly IBasicPlanRepository _basicPlanRepo;
         private readonly IComboPlanDurationRepository _durationRepo;
+        private readonly IBasicPlanRoomRepository _basicPlanRoomRepo;
         private readonly IMapper _mapper;
         private readonly MembershipDbContext _context;
-     
- 
 
-        public BasicPlanService(IBasicPlanRepository basicPlanRepo, IComboPlanDurationRepository durationRepo, IMapper mapper, MembershipDbContext context)
+        public BasicPlanService(
+            IBasicPlanRepository basicPlanRepo,
+            IComboPlanDurationRepository durationRepo,
+            IBasicPlanRoomRepository basicPlanRoomRepo,
+            IMapper mapper,
+            MembershipDbContext context)
         {
             _basicPlanRepo = basicPlanRepo;
             _durationRepo = durationRepo;
+            _basicPlanRoomRepo = basicPlanRoomRepo;
             _mapper = mapper;
-        
             _context = context;
         }
 
-        public Task<BasicPlanResponseDto> CreateAsync(CreateBasicPlanRequest request)
+        public async Task<BasicPlanResponseDto> CreateAsync(CreateBasicPlanRequest request)
         {
-            throw new NotImplementedException();
+            var basicPlan = _mapper.Map<BasicPlan>(request);
+            basicPlan.Code = Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
+
+            var createdPlan = await _basicPlanRepo.AddAsync(basicPlan);
+
+            return _mapper.Map<BasicPlanResponseDto>(createdPlan);
+        }
+
+        public async Task<BasicPlanResponseDto> UpdateAsync(Guid id, UpdateBasicPlanRequest request)
+        {
+            var existingPlan = await _basicPlanRepo.GetByIdAsync(id);
+            if (existingPlan == null) throw new Exception("BasicPlan not found");
+
+            existingPlan.Name = request.Name;
+            existingPlan.Description = request.Description;
+            existingPlan.VerifyBuy = request.VerifyBuy;
+            existingPlan.BasicPlanCategoryId = request.BasicPlanCategoryId;
+            existingPlan.PlanLevelId = request.PlanLevelId;
+            existingPlan.TargetAudienceId = request.TargetAudienceId;
+
+            var updated = await _basicPlanRepo.UpdateAsync(existingPlan);
+            return _mapper.Map<BasicPlanResponseDto>(updated);
+        }
+
+        public async Task<BasicPlanResponseDto> GetByIdAsync(Guid id)
+        {
+            var plan = await _basicPlanRepo.GetByIdAsync(id);
+            return _mapper.Map<BasicPlanResponseDto>(plan);
+        }
+
+        public async Task<List<BasicPlanResponseDto>> GetAllAsync()
+        {
+            var plans = await _basicPlanRepo.GetAllAsync();
+            return _mapper.Map<List<BasicPlanResponseDto>>(plans);
         }
 
         public async Task<bool> DeleteAsync(Guid id)
@@ -37,18 +74,6 @@ namespace MembershipService.API.Services.Implementations
             return await _basicPlanRepo.DeleteAsync(id);
         }
 
-        public Task<List<BasicPlanResponseDto>> GetAllAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<BasicPlanResponseDto> GetByIdAsync(Guid id)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        //vũ code
         public async Task<List<BasicPlanResponse>> GetByIdsAsync(List<Guid> ids)
         {
             if (ids == null || ids.Count == 0)
@@ -74,7 +99,7 @@ namespace MembershipService.API.Services.Implementations
                     Code = p.Code ?? string.Empty,
                     Name = p.Name ?? string.Empty,
                     Description = p.Description ?? string.Empty,
-                    Price = p.Price, // ✅ bắt buộc phải có giá trị
+                    Price = p.Price,
                     LocationId = p.LocationId ?? Guid.Empty,
                     LocationName = p.Location?.Name ?? "Không xác định",
                     PackageDurationValue = firstDuration?.PackageDuration?.Value ?? 0,
@@ -87,7 +112,30 @@ namespace MembershipService.API.Services.Implementations
             return result;
         }
 
-        //vũ code 
+        public async Task<decimal> CalculateDynamicPriceFromRoomIdsAsync(List<Guid> roomIds)
+        {
+            if (roomIds == null || !roomIds.Any())
+                return 0;
+
+            var rooms = await _context.Rooms
+                .Where(r => roomIds.Contains(r.Id))
+                .Include(r => r.AccommodationOption) // ✅ cần Include để lấy PricePerNight
+                .ToListAsync();
+
+            decimal total = 0;
+
+            foreach (var room in rooms)
+            {
+                var defaultPrice = room.AccommodationOption?.PricePerNight ?? 0;
+
+                // Nếu BasicPlanRoom có CustomPrice thì lấy từ đó (giả sử bạn truyền vào NightsIncluded hoặc customPrice sau này)
+                total += defaultPrice;
+            }
+
+            return total;
+        }
+
+
         public async Task<DurationDto?> GetPlanDurationAsync(Guid planId)
         {
             var plan = await _context.BasicPlans
@@ -109,11 +157,6 @@ namespace MembershipService.API.Services.Implementations
                 Value = duration.PackageDuration.Value,
                 Unit = duration.PackageDuration.Unit.ToString()
             };
-        }
-
-        public Task<BasicPlanResponseDto> UpdateAsync(Guid id, UpdateBasicPlanRequest request)
-        {
-            throw new NotImplementedException();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using MembershipService.API.Dtos.Request;
 using MembershipService.API.Dtos.Response;
+using MembershipService.API.Services.Implementations;
 using MembershipService.API.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +19,6 @@ namespace MembershipService.API.Controllers
             _service = service;
         }
 
-        [HttpPost]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateBasicPlanRequest request)
         {
@@ -59,6 +59,14 @@ namespace MembershipService.API.Controllers
             var result = await _service.GetByIdsAsync(ids);
             return Ok(result);
         }
+
+        [HttpPost("calculate-dynamic-price")]
+        public async Task<IActionResult> CalculateDynamicPrice([FromBody] List<Guid> roomIds)
+        {
+            var totalPrice = await _service.CalculateDynamicPriceFromRoomIdsAsync(roomIds);
+            return Ok(new { totalPrice });
+        }
+
 
 
 
