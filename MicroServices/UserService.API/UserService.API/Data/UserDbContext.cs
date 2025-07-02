@@ -90,34 +90,7 @@ namespace UserService.API.Data
             modelBuilder.Entity<UserProfile>().Property(p => p.PersonalityTraits).HasMaxLength(1000);
             modelBuilder.Entity<UserProfile>().Property(p => p.Introduction).HasMaxLength(2000);
             modelBuilder.Entity<UserProfile>().Property(p => p.CvUrl).HasMaxLength(500);
-
-            // ✅ Seed LocationRegion
-            modelBuilder.Entity<LocationRegion>().HasData(
-                new LocationRegion
-                {
-                    Id = Guid.Parse("9f38b827-4e1a-4a6e-b8c5-5ff6b759a2a1"),
-                    Name = "Hà Nội",
-                    Description = "Khu vực Hà Nội",
-                    CreatedAt = new DateTime(2024, 1, 1)
-                },
-                new LocationRegion
-                {
-                    Id = Guid.Parse("5a418674-9e47-4d19-b827-1e8e2b25c324"),
-                    Name = "Hải Phòng",
-                    Description = "Khu vực Hải Phòng",
-                    CreatedAt = new DateTime(2024, 1, 1)
-                },
-                new LocationRegion
-                {
-                    Id = Guid.Parse("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"),
-                    Name = "Đà Nẵng",
-                    Description = "Khu vực Đà Nẵng",
-                    CreatedAt = new DateTime(2024, 1, 1)
-                }
-            );
-
-           
-            modelBuilder.Entity<LocationRegion>().HasData(
+             modelBuilder.Entity<LocationRegion>().HasData(
                 new LocationRegion
                 {
                     Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),

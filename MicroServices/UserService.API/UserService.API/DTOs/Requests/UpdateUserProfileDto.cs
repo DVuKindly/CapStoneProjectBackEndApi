@@ -5,44 +5,43 @@ namespace UserService.API.DTOs.Requests
 {
     public class UpdateUserProfileDto
     {
-        [Required(ErrorMessage = "FullName là bắt buộc.")]
-        [StringLength(100, MinimumLength = 3, ErrorMessage = "FullName phải từ {2} đến {1} ký tự.")]
+        [Required(ErrorMessage = "Full name is required.")]
+        [StringLength(30, MinimumLength = 2, ErrorMessage = "Full name must be between {2} and {1} characters.")]
         public string FullName { get; set; } = null!;
 
-        [Phone(ErrorMessage = "Phone không đúng định dạng.")]
-        [StringLength(15, ErrorMessage = "Phone tối đa {1} ký tự.")]
+        [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and contain exactly 10 digits.")]
         public string? Phone { get; set; }
 
-        [RegularExpression("^(Male|Female|Other)$", ErrorMessage = "Gender phải là 'Male', 'Female' hoặc 'Other'.")]
+        [RegularExpression("^(Male|Female|Other)$", ErrorMessage = "Gender must be 'Male', 'Female' or 'Other'.")]
         public string? Gender { get; set; }
 
-        [DataType(DataType.Date, ErrorMessage = "DOB phải là ngày hợp lệ.")]
+        [DataType(DataType.Date, ErrorMessage = "Date of birth must be a valid date.")]
         public DateTime? DOB { get; set; }
 
-        [Url(ErrorMessage = "AvatarUrl phải là một URL hợp lệ.")]
-        [StringLength(500, ErrorMessage = "AvatarUrl tối đa {1} ký tự.")]
+        [Url(ErrorMessage = "Avatar URL must be a valid URL.")]
+        [MaxLength(500, ErrorMessage = "Avatar URL must not exceed {1} characters.")]
         public string? AvatarUrl { get; set; }
 
-        [StringLength(500, ErrorMessage = "SocialLinks tối đa {1} ký tự.")]
+        [MaxLength(500, ErrorMessage = "Social links must not exceed {1} characters.")]
         public string? SocialLinks { get; set; }
 
-        [StringLength(255, ErrorMessage = "Address tối đa {1} ký tự.")]
+        [MaxLength(255, ErrorMessage = "Address must not exceed {1} characters.")]
         public string? Address { get; set; }
 
-        [StringLength(1000, ErrorMessage = "Sở thích tối đa {1} ký tự.")]
+        [MaxLength(1000, ErrorMessage = "Interests must not exceed {1} characters.")]
         public string? Interests { get; set; }
 
-        [StringLength(1000, ErrorMessage = "Tính cách tối đa {1} ký tự.")]
+        [MaxLength(1000, ErrorMessage = "Personality traits must not exceed {1} characters.")]
         public string? PersonalityTraits { get; set; }
 
-        [StringLength(2000, ErrorMessage = "Giới thiệu bản thân tối đa {1} ký tự.")]
+        [MaxLength(2000, ErrorMessage = "Introduction must not exceed {1} characters.")]
         public string? Introduction { get; set; }
 
-        [Url(ErrorMessage = "CvUrl phải là một URL hợp lệ.")]
-        [StringLength(500, ErrorMessage = "CvUrl tối đa {1} ký tự.")]
+        [Url(ErrorMessage = "CV URL must be a valid URL.")]
+        [MaxLength(500, ErrorMessage = "CV URL must not exceed {1} characters.")]
         public string? CvUrl { get; set; }
 
-        [StringLength(1000, ErrorMessage = "Ghi chú tối đa {1} ký tự.")]
+        [MaxLength(1000, ErrorMessage = "Note must not exceed {1} characters.")]
         public string? Note { get; set; }
     }
 }

@@ -56,10 +56,8 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            // ✅ Trim và chuẩn hoá email
             request.Email = request.Email.Trim().ToLower();
 
-            // ⚠️ Query user và include roles/permissions
             var user = await _userRepository.GetByEmailWithRoleAsync(request.Email);
             if (user == null)
             {
@@ -70,7 +68,6 @@ namespace AuthService.API.Services
                 };
             }
 
-            // ✅ Kiểm tra email đã xác minh chưa
             if (!user.EmailVerified)
             {
                 return new AuthResponse
@@ -80,7 +77,6 @@ namespace AuthService.API.Services
                 };
             }
 
-            // ✅ Kiểm tra tài khoản có đang bị khoá không
             if (user.IsLocked)
             {
                 return new AuthResponse
@@ -90,7 +86,6 @@ namespace AuthService.API.Services
                 };
             }
 
-            // ✅ So sánh mật khẩu
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
             if (result == PasswordVerificationResult.Failed)
             {
@@ -110,11 +105,9 @@ namespace AuthService.API.Services
                 };
             }
 
-         
             user.LoginAttempt = 0;
             user.IsLocked = false;
 
-        
             var permissionKeys = user.UserRoles
                 .SelectMany(ur => ur.Role.RolePermissions)
                 .Select(rp => rp.Permission.PermissionKey)
@@ -125,18 +118,24 @@ namespace AuthService.API.Services
             var refreshToken = _tokenService.GenerateRefreshToken();
             var idToken = _tokenService.GenerateIdToken(user);
 
-           
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveChangesAsync();
 
             var roleKey = user.UserRoles?.FirstOrDefault()?.Role?.RoleKey;
+            string? locationName = null;
+
+            if (user.LocationId.HasValue)
+            {
+                locationName = await _userServiceClient.GetLocationNameAsync(user.LocationId.Value);
+            }
 
             return new AuthResponse
             {
                 UserId = user.UserId,
                 LocationId = user.LocationId,
+                LocationName = locationName,
                 Success = true,
                 Message = AuthMessages.LoginSuccess,
                 Email = user.Email,
@@ -147,6 +146,7 @@ namespace AuthService.API.Services
                 Role = roleKey
             };
         }
+
 
 
         public async Task<BaseResponse> ChangeUserRoleAsync(Guid userId, Guid newRoleId)

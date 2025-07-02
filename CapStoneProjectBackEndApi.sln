@@ -37,7 +37,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisSidecar.API", "RedisSi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shared.RedisProxy", "Shared.RedisProxy\Shared.RedisProxy.csproj", "{8EA60724-8D04-4A6D-AAC7-8CCE2F8A6F91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaymentService.API", "MicroServices\PaymentService.API\PaymentService.API\PaymentService.API.csproj", "{5E581957-9E6F-4209-8DA3-FF97E97EABB9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PaymentService.API", "MicroServices\PaymentService.API\PaymentService.API\PaymentService.API.csproj", "{5E581957-9E6F-4209-8DA3-FF97E97EABB9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

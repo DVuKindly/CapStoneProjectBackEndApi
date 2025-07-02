@@ -16,6 +16,7 @@ namespace AuthService.API.Services
         );
         Task<List<LocationDto>> GetLocationsAsync();
         Task<bool> IsValidLocationAsync(Guid locationId);
+        Task<string?> GetLocationNameAsync(Guid locationId);
 
 
         Task<bool> UpdateUserProfileStatusAsync(UserProfilePayload payload);

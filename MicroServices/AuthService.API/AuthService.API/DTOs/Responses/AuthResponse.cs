@@ -14,6 +14,7 @@
         public string? Role { get; set; }
         public Guid? UserId { get; set; }
         public Guid? LocationId { get; set; }
+        public string? LocationName { get; set; }
 
     }
 }

@@ -107,6 +107,12 @@ public class UserServiceClient : IUserServiceClient
         var locations = await response.Content.ReadFromJsonAsync<List<LocationDto>>();
         return locations ?? new();
     }
+    public async Task<string?> GetLocationNameAsync(Guid locationId)
+    {
+        var locations = await GetLocationsAsync();
+        var match = locations.FirstOrDefault(x => x.Id == locationId);
+        return match?.Name;
+    }
 
     public async Task<bool> IsValidLocationAsync(Guid locationId)
     {
@@ -139,4 +145,6 @@ public class UserServiceClient : IUserServiceClient
             return false;
         }
     }
+  
+
 }
