@@ -8,8 +8,9 @@
 
     public class MarkPaidRequestDto
     {
+        // id payment
         public Guid? RequestId { get; set; }
-
+        // id packgake
         public Guid? MembershipRequestId { get; set; }
 
         public string PaymentTransactionId { get; set; } = string.Empty;
