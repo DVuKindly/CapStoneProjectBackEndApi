@@ -26,7 +26,7 @@ namespace MembershipService.API.Controllers
         [HttpGet("by-basicPlan/{planId}")]
         public async Task<IActionResult> GetByBasicPlanId(Guid planId)
         {
-            var result = await _service.GetByAccommodationOptionIdAsync(planId);
+            var result = await _service.GetByBasicPlanIdAsync(planId);
             return Ok(result);
         }
 
