@@ -41,9 +41,8 @@ builder.Services.AddScoped<IPackageLevelService, PackageLevelService>();
 builder.Services.AddAutoMapper(typeof(PackageLevelProfile));
 // ??ng ký DI cho BasicPlan
 builder.Services.AddScoped<IBasicPlanRepository, BasicPlanRepository>();
-builder.Services.AddScoped<IBasicPlanServiceRepository, BasicPlanServiceRepository>();
 builder.Services.AddScoped<IBasicPlanService, BasicPlanService>();
-builder.Services.AddAutoMapper(typeof(BasicPackageProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(BasicPlanProfile).Assembly);
 // ??ng ký DI cho ComboPlanDuration
 builder.Services.AddScoped<IComboPlanDurationRepository, ComboPlanDurationRepository>();
 // ??ng ký DI cho ComboPlan
@@ -51,6 +50,16 @@ builder.Services.AddScoped<IComboPlanBasicRepository, ComboPlanBasicRepository>(
 builder.Services.AddScoped<IComboPlanRepository, ComboPlanRepository>();
 builder.Services.AddScoped<IComboPlanService, ComboPlanService>();
 builder.Services.AddAutoMapper(typeof(ComboPlanProfile).Assembly);
+// ??ng ký DI cho AccommodationOption
+builder.Services.AddScoped<IAccommodationOptionRepository, AccommodationOptionRepository>();
+builder.Services.AddScoped<IAccommodationOptionService, AccommodationOptionService>();
+builder.Services.AddAutoMapper(typeof(AccommodationOptionProfile).Assembly);
+// ??ng ký DI cho RoomInstance
+builder.Services.AddScoped<IRoomInstanceRepository, RoomInstanceRepository>();
+builder.Services.AddScoped<IRoomInstanceService, RoomInstanceService>();
+builder.Services.AddAutoMapper(typeof(RoomInstanceProfile).Assembly);
+// ??ng ký DI cho BasicPlanRoom
+builder.Services.AddScoped<IBasicPlanRoomRepository, BasicPlanRoomRepository>();
 
 
 

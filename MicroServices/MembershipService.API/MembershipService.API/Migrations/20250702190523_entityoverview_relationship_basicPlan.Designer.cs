@@ -4,6 +4,7 @@ using MembershipService.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MembershipService.API.Migrations
 {
     [DbContext(typeof(MembershipDbContext))]
-    partial class MembershipDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250702190523_entityoverview_relationship_basicPlan")]
+    partial class entityoverview_relationship_basicPlan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -219,6 +222,9 @@ namespace MembershipService.API.Migrations
 
                     b.Property<int>("NightsIncluded")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("RoomInstanceId")
                         .HasColumnType("uniqueidentifier");
@@ -1046,7 +1052,7 @@ namespace MembershipService.API.Migrations
                     b.HasOne("MembershipService.API.Entities.RoomInstance", "RoomInstance")
                         .WithMany()
                         .HasForeignKey("RoomInstanceId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("BasicPlan");

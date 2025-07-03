@@ -45,6 +45,11 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<List<NextUServiceResponseDto>>(result);
         }
 
+        public Task<List<NextUServiceResponseDto>> GetByBasicPlanIdAsync(Guid basicPlanId)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<NextUServiceResponseDto> GetByIdAsync(Guid id)
         {
             var result = await _repositoryNextUSer.GetByIdAsync(id);
@@ -57,19 +62,7 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<List<NextUServiceResponseDto>>(result);
         }
 
-        public async Task<List<NextUServiceResponseDto>> GetByBasicPlanIdAsync(Guid basicPlanId)
-        {
-            var allServices = await _repositoryNextUSer.GetAllAsync();
-            var basicPlan = await _repositoryBasic.GetByIdAsync(basicPlanId); 
-
-            var relatedServiceIds = basicPlan.BasicPlanServices?.Select(bps => bps.NextUServiceId).ToHashSet() ?? new HashSet<Guid>();
-
-            var result = allServices
-                .Where(s => relatedServiceIds.Contains(s.Id))
-                .ToList();
-
-            return _mapper.Map<List<NextUServiceResponseDto>>(result);
-        }
+        
 
 
 

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MembershipService.API.Migrations
 {
     [DbContext(typeof(MembershipDbContext))]
-    [Migration("20250626145443_InitAuthDb")]
-    partial class InitAuthDb
+    [Migration("20250703120454_AddBasicPlanRoomRoomInstanceFK")]
+    partial class AddBasicPlanRoomRoomInstanceFK
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43,18 +43,17 @@ namespace MembershipService.API.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("NextUServiceId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("PricePerNight")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
-                    b.Property<int>("QuantityAvailable")
+                    b.Property<int>("RoomTypeId")
                         .HasColumnType("int");
-
-                    b.Property<string>("RoomType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -64,7 +63,11 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LocationId");
+
                     b.HasIndex("NextUServiceId");
+
+                    b.HasIndex("RoomTypeId");
 
                     b.ToTable("AccommodationOptions");
                 });
@@ -73,6 +76,12 @@ namespace MembershipService.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BasicPlanCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("BasicPlanTypeId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
@@ -95,11 +104,14 @@ namespace MembershipService.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("PlanCategoryId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("PlanLevelId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TargetAudienceId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -112,14 +124,45 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BasicPlanCategoryId");
+
+                    b.HasIndex("BasicPlanTypeId");
+
                     b.HasIndex("LocationId");
 
-                    b.HasIndex("PlanCategoryId");
+                    b.HasIndex("PlanLevelId");
+
+                    b.HasIndex("TargetAudienceId");
 
                     b.ToTable("BasicPlans");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanService", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("BasicPlanTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BasicPlanTypeId");
+
+                    b.ToTable("BasicPlanCategories");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanEntitlement", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -128,14 +171,95 @@ namespace MembershipService.API.Migrations
                     b.Property<Guid>("BasicPlanId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("EntitlementRuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BasicPlanId");
+
+                    b.HasIndex("EntitlementRuleId");
+
+                    b.ToTable("BasicPlanEntitlements");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanLevel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("BasicPlanTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BasicPlanTypeId");
+
+                    b.ToTable("BasicPlanLevels");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanRoom", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BasicPlanId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("CustomPricePerNight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("NightsIncluded")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RoomInstanceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("TotalPrice")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BasicPlanId");
+
+                    b.HasIndex("RoomInstanceId");
+
+                    b.ToTable("BasicPlanRooms");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("NextUServiceId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -145,11 +269,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BasicPlanId");
-
-                    b.HasIndex("NextUServiceId");
-
-                    b.ToTable("BasicPlanServices");
+                    b.ToTable("BasicPlanTypes");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Booking", b =>
@@ -462,6 +582,9 @@ namespace MembershipService.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("AccommodationOptionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -489,6 +612,8 @@ namespace MembershipService.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AccommodationOptionId");
 
                     b.HasIndex("NextUServiceId");
 
@@ -710,15 +835,75 @@ namespace MembershipService.API.Migrations
                     b.ToTable("PackageLevels");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.PlanCategory", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.PlanTargetAudience", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PlanTargetAudiences");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.RoomInstance", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Code")
+                    b.Property<Guid>("AccommodationOptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DescriptionDetails")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Floor")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoomCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RoomName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccommodationOptionId");
+
+                    b.ToTable("Rooms");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.RoomType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -741,96 +926,135 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PlanCategories");
-                });
-
-            modelBuilder.Entity("MembershipService.API.Entities.RoomInstance", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AccommodationOptionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Floor")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RoomCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccommodationOptionId");
-
-                    b.ToTable("Rooms");
+                    b.ToTable("RoomType");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.AccommodationOption", b =>
                 {
+                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                        .WithMany("AccommodationOptions")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
                         .WithMany("AccommodationOptions")
                         .HasForeignKey("NextUServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("NextUService");
-                });
-
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlan", b =>
-                {
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
-                        .WithMany("BasicPlans")
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MembershipService.API.Entities.PlanCategory", "PlanCategory")
-                        .WithMany("BasicPlans")
-                        .HasForeignKey("PlanCategoryId")
+                    b.HasOne("MembershipService.API.Entities.RoomType", "RoomType")
+                        .WithMany("AccommodationOptions")
+                        .HasForeignKey("RoomTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Location");
 
-                    b.Navigation("PlanCategory");
+                    b.Navigation("NextUService");
+
+                    b.Navigation("RoomType");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanService", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlan", b =>
+                {
+                    b.HasOne("MembershipService.API.Entities.BasicPlanCategory", "BasicPlanCategory")
+                        .WithMany("BasicPlans")
+                        .HasForeignKey("BasicPlanCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MembershipService.API.Entities.BasicPlanType", "BasicPlanType")
+                        .WithMany("BasicPlans")
+                        .HasForeignKey("BasicPlanTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                        .WithMany("BasicPlans")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MembershipService.API.Entities.BasicPlanLevel", "BasicPlanLevel")
+                        .WithMany("BasicPlans")
+                        .HasForeignKey("PlanLevelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MembershipService.API.Entities.PlanTargetAudience", "PlanTargetAudience")
+                        .WithMany("BasicPlans")
+                        .HasForeignKey("TargetAudienceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BasicPlanCategory");
+
+                    b.Navigation("BasicPlanLevel");
+
+                    b.Navigation("BasicPlanType");
+
+                    b.Navigation("Location");
+
+                    b.Navigation("PlanTargetAudience");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanCategory", b =>
+                {
+                    b.HasOne("MembershipService.API.Entities.BasicPlanType", "BasicPlanType")
+                        .WithMany("BasicPlanCategories")
+                        .HasForeignKey("BasicPlanTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BasicPlanType");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanEntitlement", b =>
                 {
                     b.HasOne("MembershipService.API.Entities.BasicPlan", "BasicPlan")
-                        .WithMany("BasicPlanServices")
+                        .WithMany("BasicPlanEntitlements")
                         .HasForeignKey("BasicPlanId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
-                        .WithMany("BasicPlanServices")
-                        .HasForeignKey("NextUServiceId")
+                    b.HasOne("MembershipService.API.Entities.EntitlementRule", "EntitlementRule")
+                        .WithMany()
+                        .HasForeignKey("EntitlementRuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BasicPlan");
+
+                    b.Navigation("EntitlementRule");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanLevel", b =>
+                {
+                    b.HasOne("MembershipService.API.Entities.BasicPlanType", "BasicPlanType")
+                        .WithMany("BasicPlanLevels")
+                        .HasForeignKey("BasicPlanTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BasicPlanType");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanRoom", b =>
+                {
+                    b.HasOne("MembershipService.API.Entities.BasicPlan", "BasicPlan")
+                        .WithMany("BasicPlanRooms")
+                        .HasForeignKey("BasicPlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MembershipService.API.Entities.RoomInstance", "RoomInstance")
+                        .WithMany()
+                        .HasForeignKey("RoomInstanceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("BasicPlan");
 
-                    b.Navigation("NextUService");
+                    b.Navigation("RoomInstance");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Booking", b =>
@@ -919,10 +1143,18 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.Media", b =>
                 {
+                    b.HasOne("MembershipService.API.Entities.AccommodationOption", "AccommodationOption")
+                        .WithMany("MediaGallery")
+                        .HasForeignKey("AccommodationOptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
                         .WithMany("MediaGallery")
                         .HasForeignKey("NextUServiceId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AccommodationOption");
 
                     b.Navigation("NextUService");
                 });
@@ -992,12 +1224,16 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.AccommodationOption", b =>
                 {
+                    b.Navigation("MediaGallery");
+
                     b.Navigation("Rooms");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlan", b =>
                 {
-                    b.Navigation("BasicPlanServices");
+                    b.Navigation("BasicPlanEntitlements");
+
+                    b.Navigation("BasicPlanRooms");
 
                     b.Navigation("ComboPlanBasics");
 
@@ -1006,6 +1242,25 @@ namespace MembershipService.API.Migrations
                     b.Navigation("MembershipHistories");
 
                     b.Navigation("Memberships");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanCategory", b =>
+                {
+                    b.Navigation("BasicPlans");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanLevel", b =>
+                {
+                    b.Navigation("BasicPlans");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanType", b =>
+                {
+                    b.Navigation("BasicPlanCategories");
+
+                    b.Navigation("BasicPlanLevels");
+
+                    b.Navigation("BasicPlans");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
@@ -1026,6 +1281,8 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.Location", b =>
                 {
+                    b.Navigation("AccommodationOptions");
+
                     b.Navigation("BasicPlans");
 
                     b.Navigation("ComboPlans");
@@ -1036,8 +1293,6 @@ namespace MembershipService.API.Migrations
             modelBuilder.Entity("MembershipService.API.Entities.NextUService", b =>
                 {
                     b.Navigation("AccommodationOptions");
-
-                    b.Navigation("BasicPlanServices");
 
                     b.Navigation("EntitlementRules");
 
@@ -1054,7 +1309,7 @@ namespace MembershipService.API.Migrations
                     b.Navigation("ComboPlans");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.PlanCategory", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.PlanTargetAudience", b =>
                 {
                     b.Navigation("BasicPlans");
                 });
@@ -1062,6 +1317,11 @@ namespace MembershipService.API.Migrations
             modelBuilder.Entity("MembershipService.API.Entities.RoomInstance", b =>
                 {
                     b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.RoomType", b =>
+                {
+                    b.Navigation("AccommodationOptions");
                 });
 #pragma warning restore 612, 618
         }
