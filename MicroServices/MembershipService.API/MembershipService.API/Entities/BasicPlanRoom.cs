@@ -6,7 +6,7 @@
         public Guid BasicPlanId { get; set; }
         public BasicPlan BasicPlan { get; set; }
 
-        public Guid RoomId { get; set; }
+        public Guid RoomInstanceId { get; set; }
         public RoomInstance RoomInstance { get; set; }
 
         public int NightsIncluded { get; set; } // Số đêm được sử dụng

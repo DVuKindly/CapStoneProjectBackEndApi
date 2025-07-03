@@ -62,7 +62,7 @@ namespace MembershipService.API.Repositories.Implementations
         public async Task<bool> ExistsAsync(Guid basicPlanId, Guid roomId)
         {
             return await _context.BasicPlanRooms
-                .AnyAsync(r => r.BasicPlanId == basicPlanId && r.RoomId == roomId);
+                .AnyAsync(r => r.BasicPlanId == basicPlanId && r.RoomInstanceId == roomId);
         }
     }
 }

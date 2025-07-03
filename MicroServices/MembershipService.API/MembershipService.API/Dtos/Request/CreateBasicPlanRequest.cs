@@ -6,6 +6,7 @@
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public bool VerifyBuy { get; set; }
+        public decimal Price { get; set; }
 
         public Guid BasicPlanTypeId { get; set; }
         public int BasicPlanCategoryId { get; set; }
@@ -19,10 +20,12 @@
 
     public class BasicPlanRoomDto
     {
-        public Guid RoomId { get; set; }
+        public Guid RoomInstanceId { get; set; }  // đổi từ RoomId → RoomInstanceId
         public int NightsIncluded { get; set; }
         public decimal? CustomPricePerNight { get; set; }
+        public decimal? TotalPrice { get; set; }
     }
+
     public class PackageDurationDto
     {
         public int DurationId { get; set; }
@@ -36,7 +39,7 @@
 
     public class RoomPriceItem
     {
-        public Guid RoomId { get; set; }
+        public Guid RoomInstanceId { get; set; }
         public int Nights { get; set; }
         public decimal? CustomPricePerNight { get; set; }
     }

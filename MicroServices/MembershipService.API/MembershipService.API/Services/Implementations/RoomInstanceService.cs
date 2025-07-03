@@ -24,6 +24,12 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<List<RoomInstanceResponse>>(entities);
         }
 
+        public async Task<List<RoomInstanceResponse>> GetByBasicPlanIdAsync(Guid planId)
+        {
+            var entities = await _repository.GetByBasicPlanIdAsync(planId);
+            return _mapper.Map<List<RoomInstanceResponse>>(entities);
+        }
+
         public async Task<RoomInstanceResponse?> GetByIdAsync(Guid id)
         {
             var entity = await _repository.GetByIdAsync(id);

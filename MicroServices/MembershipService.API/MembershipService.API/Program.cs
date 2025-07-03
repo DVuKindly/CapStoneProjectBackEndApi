@@ -42,7 +42,7 @@ builder.Services.AddAutoMapper(typeof(PackageLevelProfile));
 // ??ng ký DI cho BasicPlan
 builder.Services.AddScoped<IBasicPlanRepository, BasicPlanRepository>();
 builder.Services.AddScoped<IBasicPlanService, BasicPlanService>();
-builder.Services.AddAutoMapper(typeof(BasicPackageProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(BasicPlanProfile).Assembly);
 // ??ng ký DI cho ComboPlanDuration
 builder.Services.AddScoped<IComboPlanDurationRepository, ComboPlanDurationRepository>();
 // ??ng ký DI cho ComboPlan

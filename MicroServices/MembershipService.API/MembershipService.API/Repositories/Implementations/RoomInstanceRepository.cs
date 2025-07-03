@@ -23,6 +23,21 @@ namespace MembershipService.API.Repositories.Implementations
                 .ToListAsync();
         }
 
+        public async Task<List<RoomInstance>> GetByBasicPlanIdAsync(Guid planId)
+        {
+            var roomIds = await _context.BasicPlanRooms
+                .Where(bpr => bpr.BasicPlanId == planId)
+                .Select(bpr => bpr.RoomInstanceId)
+                .ToListAsync();
+
+            return await _context.Rooms
+                .Where(r => roomIds.Contains(r.Id))
+                .Include(r => r.AccommodationOption)
+                    .ThenInclude(opt => opt.RoomType)
+                .ToListAsync();
+        }
+
+
         public async Task<RoomInstance?> GetByIdAsync(Guid id)
         {
             return await _context.Rooms

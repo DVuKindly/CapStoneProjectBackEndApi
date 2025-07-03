@@ -6,6 +6,7 @@ using MembershipService.API.Entities;
 using MembershipService.API.Repositories.Interfaces;
 using MembershipService.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace MembershipService.API.Services.Implementations
 {
@@ -33,10 +34,29 @@ namespace MembershipService.API.Services.Implementations
 
         public async Task<BasicPlanResponseDto> CreateAsync(CreateBasicPlanRequest request)
         {
+            Console.WriteLine($"Request: {JsonConvert.SerializeObject(request)}");
             var basicPlan = _mapper.Map<BasicPlan>(request);
+            Console.WriteLine($"Mapped basicPlan: {JsonConvert.SerializeObject(basicPlan)}");
+
             basicPlan.Code = Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
 
             var createdPlan = await _basicPlanRepo.AddAsync(basicPlan);
+
+            if (request.Rooms != null && request.Rooms.Any())
+            {
+                foreach (var room in request.Rooms)
+                {
+                    var roomEntity = new BasicPlanRoom
+                    {
+                        BasicPlanId = createdPlan.Id,
+                        RoomInstanceId = room.RoomInstanceId,  // đổi tên
+                        NightsIncluded = room.NightsIncluded,
+                        CustomPricePerNight = room.CustomPricePerNight,
+                        TotalPrice = room.TotalPrice
+                    };
+                    await _basicPlanRoomRepo.AddAsync(roomEntity);
+                }
+            }
 
             return _mapper.Map<BasicPlanResponseDto>(createdPlan);
         }
@@ -74,10 +94,10 @@ namespace MembershipService.API.Services.Implementations
             return await _basicPlanRepo.DeleteAsync(id);
         }
 
-        public async Task<List<BasicPlanResponse>> GetByIdsAsync(List<Guid> ids)
+        public async Task<List<BasicPlanResponseDto>> GetByIdsAsync(List<Guid> ids)
         {
             if (ids == null || ids.Count == 0)
-                return new List<BasicPlanResponse>();
+                return new List<BasicPlanResponseDto>();
 
             var plans = await _context.BasicPlans
                 .Where(p => ids.Contains(p.Id))
@@ -93,7 +113,7 @@ namespace MembershipService.API.Services.Implementations
                     .OrderBy(d => d.PackageDuration.Value)
                     .FirstOrDefault();
 
-                return new BasicPlanResponse
+                return new BasicPlanResponseDto
                 {
                     Id = p.Id,
                     Code = p.Code ?? string.Empty,
@@ -119,7 +139,7 @@ namespace MembershipService.API.Services.Implementations
 
             var rooms = await _context.Rooms
                 .Where(r => roomIds.Contains(r.Id))
-                .Include(r => r.AccommodationOption) // ✅ cần Include để lấy PricePerNight
+                .Include(r => r.AccommodationOption)
                 .ToListAsync();
 
             decimal total = 0;
@@ -127,14 +147,11 @@ namespace MembershipService.API.Services.Implementations
             foreach (var room in rooms)
             {
                 var defaultPrice = room.AccommodationOption?.PricePerNight ?? 0;
-
-                // Nếu BasicPlanRoom có CustomPrice thì lấy từ đó (giả sử bạn truyền vào NightsIncluded hoặc customPrice sau này)
                 total += defaultPrice;
             }
 
             return total;
         }
-
 
         public async Task<DurationDto?> GetPlanDurationAsync(Guid planId)
         {

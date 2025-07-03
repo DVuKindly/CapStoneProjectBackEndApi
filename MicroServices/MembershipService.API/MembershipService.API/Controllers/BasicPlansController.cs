@@ -54,7 +54,7 @@ namespace MembershipService.API.Controllers
             return success ? NoContent() : NotFound();
         }
         [HttpPost("batch")]
-        public async Task<ActionResult<List<BasicPlanResponse>>> GetBasicPlansByIds([FromBody] List<Guid> ids)
+        public async Task<ActionResult<List<BasicPlanResponseDto>>> GetBasicPlansByIds([FromBody] List<Guid> ids)
         {
             var result = await _service.GetByIdsAsync(ids);
             return Ok(result);
