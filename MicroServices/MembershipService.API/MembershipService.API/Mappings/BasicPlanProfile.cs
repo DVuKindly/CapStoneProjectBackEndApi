@@ -40,12 +40,30 @@ namespace MembershipService.API.Mappings
 
             // Mapping từ entity → response DTO
             CreateMap<BasicPlan, BasicPlanResponseDto>()
-                .ForMember(dest => dest.ServiceIds, opt => opt.Ignore()) // Tạm ignore nếu có logic riêng để gán
-                .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
-                .ForMember(dest => dest.BasicPlanType, opt => opt.MapFrom(src => src.BasicPlanType != null ? src.BasicPlanType.Name : null))
-                .ForMember(dest => dest.PlanLevelName, opt => opt.MapFrom(src => src.BasicPlanLevel != null ? src.BasicPlanLevel.Name : null))
-                .ForMember(dest => dest.TargetAudienceName, opt => opt.MapFrom(src => src.PlanTargetAudience != null ? src.PlanTargetAudience.Name : null))
-                .ForMember(dest => dest.PlanCategoryName, opt => opt.MapFrom(src => src.BasicPlanCategory != null ? src.BasicPlanCategory.Name : null));
+               .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
+               .ForMember(dest => dest.BasicPlanType, opt => opt.MapFrom(src => src.BasicPlanType != null ? src.BasicPlanType.Name : null))
+               .ForMember(dest => dest.PlanLevelName, opt => opt.MapFrom(src => src.BasicPlanLevel != null ? src.BasicPlanLevel.Name : null))
+               .ForMember(dest => dest.TargetAudienceName, opt => opt.MapFrom(src => src.PlanTargetAudience != null ? src.PlanTargetAudience.Name : null))
+               .ForMember(dest => dest.PlanCategoryName, opt => opt.MapFrom(src => src.BasicPlanCategory != null ? src.BasicPlanCategory.Name : null))
+               .ForMember(dest => dest.Rooms, opt => opt.MapFrom(src => src.BasicPlanRooms)) // ✅ Map room
+               .ForMember(dest => dest.PlanDurations, opt => opt.MapFrom(src => src.ComboPlanDurations)); // ✅ Map durations (nếu bạn dùng ComboPlanDurations)
+
+            CreateMap<BasicPlanRoom, BasicPlanRoomResponseDto>()
+                .ForMember(dest => dest.RoomInstanceId, opt => opt.MapFrom(src => src.RoomInstanceId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.RoomInstance != null ? src.RoomInstance.RoomCode : string.Empty))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.RoomInstance != null ? src.RoomInstance.DescriptionDetails : string.Empty))
+                .ForMember(dest => dest.NightsIncluded, opt => opt.MapFrom(src => src.NightsIncluded))
+                .ForMember(dest => dest.CustomPricePerNight, opt => opt.MapFrom(src => src.CustomPricePerNight))
+                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice));
+
+            CreateMap<ComboPlanDuration, PlanDurationResponseDto>()
+                .ForMember(dest => dest.PlanDurationId, opt => opt.MapFrom(src => src.PackageDurationId))
+                .ForMember(dest => dest.DiscountRate, opt => opt.MapFrom(src => src.DiscountDurationRate))
+                .ForMember(dest => dest.PlanDurationUnit, opt => opt.MapFrom(src => src.PackageDuration.Unit))
+                .ForMember(dest => dest.PlanDurationValue, opt => opt.MapFrom(src => src.PackageDuration.Value.ToString()))
+                .ForMember(dest => dest.PlanDurationDescription, opt => opt.MapFrom(src => src.PackageDuration.Description));
+
+
         }
     }
 }
