@@ -60,6 +60,11 @@ builder.Services.AddScoped<IRoomInstanceService, RoomInstanceService>();
 builder.Services.AddAutoMapper(typeof(RoomInstanceProfile).Assembly);
 // ??ng ký DI cho BasicPlanRoom
 builder.Services.AddScoped<IBasicPlanRoomRepository, BasicPlanRoomRepository>();
+// ??ng ký DI cho BasicPlanRoom
+builder.Services.AddScoped<IBasicPlanTypeRepository, BasicPlanTypeRepository>();
+builder.Services.AddScoped<IBasicPlanTypeService, BasicPlanTypeService>();
+builder.Services.AddAutoMapper(typeof(BasicPlanTypeProfile).Assembly);
+
 
 
 

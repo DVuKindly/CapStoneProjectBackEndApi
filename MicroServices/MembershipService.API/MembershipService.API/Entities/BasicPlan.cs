@@ -28,10 +28,10 @@ namespace MembershipService.API.Entities
 
         public ICollection<BasicPlanEntitlement> BasicPlanEntitlements { get; set; }
         public ICollection<BasicPlanRoom> BasicPlanRooms { get; set; }
+        public ICollection<ComboPlanDuration> ComboPlanDurations { get; set; }
         public ICollection<ComboPlanBasic> ComboPlanBasics { get; set; }
         public ICollection<Membership> Memberships { get; set; }
         public ICollection<MembershipHistory> MembershipHistories { get; set; }
-        public ICollection<ComboPlanDuration> ComboPlanDurations { get; set; }
 
 
     }
