@@ -8,6 +8,7 @@ namespace UserService.API.DTOs.Requests
         public Guid PackageId { get; set; }
 
         public string PackageType { get; set; } = "basic";
+        public DateTime? SelectedStartDate { get; set; } // ngày user chọn
 
         [MaxLength(2000)]
         public string? MessageToStaff { get; set; }

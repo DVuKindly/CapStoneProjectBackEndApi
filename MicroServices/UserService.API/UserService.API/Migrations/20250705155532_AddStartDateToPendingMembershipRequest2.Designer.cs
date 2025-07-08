@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UserService.API.Data;
 
@@ -11,9 +12,11 @@ using UserService.API.Data;
 namespace UserService.API.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    partial class UserDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250705155532_AddStartDateToPendingMembershipRequest2")]
+    partial class AddStartDateToPendingMembershipRequest2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -516,9 +519,6 @@ namespace UserService.API.Migrations
                     b.Property<string>("PaymentTransactionId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("PendingRequestId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("PlanSource")
                         .HasColumnType("nvarchar(max)");
 
@@ -543,8 +543,6 @@ namespace UserService.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId");
-
-                    b.HasIndex("PendingRequestId");
 
                     b.HasIndex("UserProfileId");
 
@@ -804,16 +802,9 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PendingMembershipRequest", "PendingRequest")
-                        .WithMany()
-                        .HasForeignKey("PendingRequestId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
                         .WithMany()
                         .HasForeignKey("UserProfileId");
-
-                    b.Navigation("PendingRequest");
 
                     b.Navigation("UserProfile");
                 });

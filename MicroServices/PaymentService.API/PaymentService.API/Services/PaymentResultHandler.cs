@@ -63,7 +63,8 @@ namespace PaymentService.API.Services
                     paymentNote = dto.PaymentNote,
                     paymentProofUrl = dto.PaymentProofUrl,
                     fullName = dto.FullName,
-                    source = dto.Source
+                    source = dto.Source,
+                    startDate = dto.StartDate   
                 };
 
                 var json = JsonSerializer.Serialize(dtoToSend, options);
