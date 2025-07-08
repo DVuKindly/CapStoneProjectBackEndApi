@@ -22,7 +22,7 @@
         public string? PaymentProofUrl { get; set; }
 
         public string? FullName { get; set; }
-
+        public DateTime? StartDate { get; set; }
         public PaymentSource Source { get; set; } = PaymentSource.PendingMembershipRequest;
 
     

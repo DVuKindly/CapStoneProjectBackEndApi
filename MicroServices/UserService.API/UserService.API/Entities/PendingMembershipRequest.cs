@@ -19,6 +19,7 @@ public class PendingMembershipRequest
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal? Amount { get; set; }
+    public DateTime? StartDate { get; set; }
 
     [MaxLength(1000)]
     public string? Interests { get; set; }
