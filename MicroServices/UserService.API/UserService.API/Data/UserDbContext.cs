@@ -49,6 +49,12 @@ namespace UserService.API.Data
                 .HasKey(x => x.Id);
 
 
+            // Membership có thể liên kết với PendingMembershipRequest
+            modelBuilder.Entity<Membership>()
+                .HasOne(m => m.PendingRequest)
+                .WithMany()
+                .HasForeignKey(m => m.PendingRequestId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // lịch sử pending 
 

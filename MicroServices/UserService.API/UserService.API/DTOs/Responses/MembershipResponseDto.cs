@@ -3,6 +3,8 @@
     public class MembershipResponseDto
     {
         public Guid Id { get; set; }
+        public Guid? PendingRequestId { get; set; }
+
         public string PackageName { get; set; } = string.Empty;
         public string PackageType { get; set; } = "basic";
         public decimal Amount { get; set; }
@@ -15,8 +17,9 @@
         public bool IsActive { get; set; }
         public bool UsedForRoleUpgrade { get; set; }
         public string? PlanSource { get; set; }
+        public DateTime? StartDate { get; set; }
 
-        
+
         public int? PackageDurationValue { get; set; }
         public string? PackageDurationUnit { get; set; }
 

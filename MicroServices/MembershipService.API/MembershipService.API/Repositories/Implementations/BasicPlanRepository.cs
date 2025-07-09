@@ -34,20 +34,30 @@ namespace MembershipService.API.Repositories.Implementations
         public async Task<List<BasicPlan>> GetAllAsync()
         {
             return await _context.BasicPlans
-                .Include(x => x.BasicPlanServices)
                 .Include(x => x.ComboPlanDurations)
+                    .ThenInclude(d => d.PackageDuration)
+                .Include(x => x.BasicPlanRooms)
+                    .ThenInclude(r => r.RoomInstance)
                 .Include(x => x.Location)
-                .Include(x => x.PlanCategory)
+                .Include(x => x.BasicPlanType)
+                .Include(x => x.BasicPlanCategory)
+                .Include(x => x.BasicPlanLevel)
+                .Include(x => x.PlanTargetAudience)
                 .ToListAsync();
         }
 
         public async Task<BasicPlan> GetByIdAsync(Guid id)
         {
             return await _context.BasicPlans
-                .Include(x => x.BasicPlanServices)
                 .Include(x => x.ComboPlanDurations)
+                    .ThenInclude(d => d.PackageDuration)
+                .Include(x => x.BasicPlanRooms)
+                    .ThenInclude(r => r.RoomInstance)
                 .Include(x => x.Location)
-                .Include(x => x.PlanCategory)
+                .Include(x => x.BasicPlanType)
+                .Include(x => x.BasicPlanCategory)
+                .Include(x => x.BasicPlanLevel)
+                .Include(x => x.PlanTargetAudience)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 

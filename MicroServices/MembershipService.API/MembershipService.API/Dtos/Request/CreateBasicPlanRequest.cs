@@ -2,22 +2,45 @@
 {
     public class CreateBasicPlanRequest
     {
-        public string Code { get; set; }
-        public string Name { get; set; }
+        public string Code { get; set; } = null!;
+        public string Name { get; set; } = null!;
         public string? Description { get; set; }
-        public decimal Price { get; set; }
         public bool VerifyBuy { get; set; }
-        public Guid PlanCategoryId { get; set; }
+        public decimal Price { get; set; }
+
+        public Guid BasicPlanTypeId { get; set; }
+        public int BasicPlanCategoryId { get; set; }
+        public int PlanLevelId { get; set; }
+        public int TargetAudienceId { get; set; }
         public Guid? LocationId { get; set; }
-        public List<Guid> ServiceIds { get; set; } = new();
+
+        public List<BasicPlanRoomDto>? Rooms { get; set; } = new();
         public List<PackageDurationDto> PackageDurations { get; set; } = new();
     }
 
-    public class UpdateBasicPlanRequest : CreateBasicPlanRequest { }
+    public class BasicPlanRoomDto
+    {
+        public Guid RoomInstanceId { get; set; }  // đổi từ RoomId → RoomInstanceId
+        public int NightsIncluded { get; set; }
+        public decimal? CustomPricePerNight { get; set; }
+        public decimal? TotalPrice { get; set; }
+    }
 
     public class PackageDurationDto
     {
         public int DurationId { get; set; }
         public decimal DiscountRate { get; set; }
+    }
+
+    public class CalculateBasicPlanPriceRequest
+    {
+        public List<RoomPriceItem> Rooms { get; set; } = new();
+    }
+
+    public class RoomPriceItem
+    {
+        public Guid RoomInstanceId { get; set; }
+        public int Nights { get; set; }
+        public decimal? CustomPricePerNight { get; set; }
     }
 }

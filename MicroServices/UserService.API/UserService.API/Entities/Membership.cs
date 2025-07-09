@@ -1,47 +1,56 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using UserService.API.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-public class Membership
+
+namespace UserService.API.Entities
 {
-    [Key]
-    public Guid Id { get; set; }
+    public class Membership : AuditableEntity
+    {
+        [Key]
+        public Guid Id { get; set; }
 
-    public Guid AccountId { get; set; }
+        [Required]
+        public Guid AccountId { get; set; }
 
-    public Guid PackageId { get; set; }
+        [Required]
+        public Guid PackageId { get; set; }
 
-    public string PackageType { get; set; } = "basic";
+        [Required]
+        public string PackageType { get; set; } = "basic";
 
-    public string PackageName { get; set; } = string.Empty;
+        [Required]
+        public string PackageName { get; set; } = string.Empty;
 
-    public decimal Amount { get; set; }
+        [Required]
+        public decimal Amount { get; set; }
 
-    public DateTime PurchasedAt { get; set; } = DateTime.UtcNow;
+        public DateTime PurchasedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? StartDate { get; set; } = DateTime.UtcNow;
+        public DateTime? ExpireAt { get; set; }
 
-    public string? PaymentStatus { get; set; }
+        public string? PaymentStatus { get; set; }
+        public string? PaymentMethod { get; set; }
+        public int? PackageDurationValue { get; set; }
+        public string? PackageDurationUnit { get; set; }
 
-    public string? PaymentMethod { get; set; }
-    public int? PackageDurationValue { get; set; }
-    public string? PackageDurationUnit { get; set; }  // "day", "month", "year"
+        public string? PaymentTransactionId { get; set; }
+        public DateTime? PaymentTime { get; set; }
+        public string? PaymentNote { get; set; }
 
-    public string? PaymentTransactionId { get; set; }
+        public Guid LocationId { get; set; }
+        public bool UsedForRoleUpgrade { get; set; } = false;
 
-    public DateTime? PaymentTime { get; set; }
+        public string? PlanSource { get; set; }
 
-    public string? PaymentNote { get; set; }
+        public Guid? UserProfileId { get; set; }
+        public UserProfile? UserProfile { get; set; }
 
-    public Guid LocationId { get; set; }
+        // ✅ NEW: Liên kết với yêu cầu
+        public Guid? PendingRequestId { get; set; }
+        public PendingMembershipRequest? PendingRequest { get; set; }
 
-    public bool UsedForRoleUpgrade { get; set; } = false;
+        [NotMapped]
+        public bool IsActive => ExpireAt > DateTime.UtcNow;
+    }
 
-    public DateTime? ExpireAt { get; set; }
-
-    [NotMapped]
-    public bool IsActive => !ExpireAt.HasValue || ExpireAt > DateTime.UtcNow;
-
-    public string? PlanSource { get; set; }
-
-    public Guid? UserProfileId { get; set; }
-    public UserProfile? UserProfile { get; set; }
 }

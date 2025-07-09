@@ -10,6 +10,7 @@
         public string? PaymentNote { get; set; }
         public string? PaymentProofUrl { get; set; }
         public DateTime? PaidTime { get; set; }
+        public DateTime? StartDate { get; set; }
     }
 
 

@@ -148,78 +148,6 @@ namespace UserService.API.Migrations
                     b.ToTable("ManagerProfiles");
                 });
 
-            modelBuilder.Entity("Membership", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AccountId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("ExpireAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("LocationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PackageDurationUnit")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("PackageDurationValue")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("PackageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PackageName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("PackageType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PaymentNote")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PaymentStatus")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("PaymentTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PaymentTransactionId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PlanSource")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("PurchasedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("UsedForRoleUpgrade")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("UserProfileId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("UserProfileId");
-
-                    b.ToTable("Memberships");
-                });
-
             modelBuilder.Entity("PartnerProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -378,6 +306,9 @@ namespace UserService.API.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -526,6 +457,98 @@ namespace UserService.API.Migrations
                         .IsUnique();
 
                     b.ToTable("LocationMappings");
+                });
+
+            modelBuilder.Entity("UserService.API.Entities.Membership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ExpireAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PackageDurationUnit")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PackageDurationValue")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PackageName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PackageType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PaymentTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentTransactionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("PendingRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PlanSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PurchasedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("UsedForRoleUpgrade")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("PendingRequestId");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("Memberships");
                 });
 
             modelBuilder.Entity("UserService.API.Entities.SupplierProfile", b =>
@@ -702,21 +725,6 @@ namespace UserService.API.Migrations
                     b.Navigation("UserProfile");
                 });
 
-            modelBuilder.Entity("Membership", b =>
-                {
-                    b.HasOne("UserService.API.Entities.UserProfile", null)
-                        .WithMany()
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
-                        .WithMany()
-                        .HasForeignKey("UserProfileId");
-
-                    b.Navigation("UserProfile");
-                });
-
             modelBuilder.Entity("PartnerProfile", b =>
                 {
                     b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
@@ -786,6 +794,28 @@ namespace UserService.API.Migrations
                         .IsRequired();
 
                     b.Navigation("LocationRegion");
+                });
+
+            modelBuilder.Entity("UserService.API.Entities.Membership", b =>
+                {
+                    b.HasOne("UserService.API.Entities.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PendingMembershipRequest", "PendingRequest")
+                        .WithMany()
+                        .HasForeignKey("PendingRequestId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
+                        .WithMany()
+                        .HasForeignKey("UserProfileId");
+
+                    b.Navigation("PendingRequest");
+
+                    b.Navigation("UserProfile");
                 });
 
             modelBuilder.Entity("UserService.API.Entities.SupplierProfile", b =>
