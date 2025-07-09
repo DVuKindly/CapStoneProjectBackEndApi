@@ -5,7 +5,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env
+
 var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
 if (!File.Exists(envPath))
 {
@@ -59,22 +59,22 @@ builder.Services.AddHttpClient("AuthService", client =>
     client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("AUTHSERVICE_URL") ?? "http://localhost:5001");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-
+// local user
 builder.Services.AddHttpClient("UserService", client =>
 {
     client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("USERSERVICE_URL") ?? "http://localhost:5005");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-
+// local payment
 builder.Services.AddHttpClient("PaymentService", client =>
 {
     client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("PAYMENTSERVICE_URL") ?? "http://localhost:5010");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-
+//local membership
 builder.Services.AddHttpClient("MembershipService", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5008"); // 📌 Ghi rõ luôn MembershipService
+    client.BaseAddress = new Uri("http://localhost:5008"); 
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 

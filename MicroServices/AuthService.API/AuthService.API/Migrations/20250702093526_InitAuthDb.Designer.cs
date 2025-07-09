@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthService.API.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20250611081712_Init")]
-    partial class Init
+    [Migration("20250702093526_InitAuthDb")]
+    partial class InitAuthDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,7 +34,7 @@ namespace AuthService.API.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PermissionName")
+                    b.Property<string>("PermissionKey")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -42,6 +42,80 @@ namespace AuthService.API.Migrations
                     b.HasKey("PermissionId");
 
                     b.ToTable("Permissions", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0001"),
+                            Description = "Gán role",
+                            PermissionKey = "assign_role"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0002"),
+                            Description = "Gán quyền cho role",
+                            PermissionKey = "assign_permission_to_role"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0003"),
+                            Description = "Gán quyền cho user",
+                            PermissionKey = "assign_permission_to_user"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0004"),
+                            Description = "Truy cập dashboard admin",
+                            PermissionKey = "access_admin_dashboard"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0005"),
+                            Description = "Tạo nhà cung cấp",
+                            PermissionKey = "create_supplier"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0006"),
+                            Description = "Tạo đối tác",
+                            PermissionKey = "create_partner"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0007"),
+                            Description = "Tạo Manager",
+                            PermissionKey = "create_manager"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0008"),
+                            Description = "Tạo Staff Onboarding",
+                            PermissionKey = "create_staff_onboarding"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0009"),
+                            Description = "Tạo Staff Service",
+                            PermissionKey = "create_staff_service"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0010"),
+                            Description = "Tạo Staff Content",
+                            PermissionKey = "create_staff_content"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0011"),
+                            Description = "Tạo Coach",
+                            PermissionKey = "create_coach"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0012"),
+                            Description = "Tạo Admin Khu vực",
+                            PermissionKey = "create_admin"
+                        });
                 });
 
             modelBuilder.Entity("AuthService.API.Entities.Role", b =>
@@ -69,79 +143,79 @@ namespace AuthService.API.Migrations
                         new
                         {
                             RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
-                            Description = "Quản lý toàn bộ hệ thống, toàn quyền",
+                            Description = "Toàn quyền, tạo admin khu vực",
                             RoleKey = "super_admin",
-                            RoleName = "Quản trị hệ thống cấp cao"
+                            RoleName = "Super Admin"
                         },
                         new
                         {
                             RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
-                            Description = "Quản lý hệ thống theo khu vực",
+                            Description = "Tạo các role khác trong khu vực",
                             RoleKey = "admin",
                             RoleName = "Admin khu vực"
                         },
                         new
                         {
                             RoleId = new Guid("05387973-58b6-48d1-9cc4-11874d712149"),
-                            Description = "Duyệt nội dung từ các staff",
+                            Description = "Duyệt nội dung và package",
                             RoleKey = "manager",
-                            RoleName = "Quản lý nội dung"
+                            RoleName = "Manager"
                         },
                         new
                         {
                             RoleId = new Guid("f5d32824-116a-4f97-ae91-73c7d84c6486"),
-                            Description = "Duyệt hồ sơ đăng ký, tạo package",
+                            Description = "Tạo package, duyệt user-member",
                             RoleKey = "staff_onboarding",
-                            RoleName = "Nhân viên onboarding"
+                            RoleName = "Staff Onboarding"
                         },
                         new
                         {
                             RoleId = new Guid("d9f65410-6925-4351-a5ad-4aaaf5df0305"),
-                            Description = "Duyệt nội dung và dịch vụ từ đối tác",
+                            Description = "Tạo event hoạt động Co-Living",
                             RoleKey = "staff_service",
-                            RoleName = "Nhân viên vận hành"
+                            RoleName = "Staff Service"
                         },
                         new
                         {
                             RoleId = new Guid("833d3494-42b4-2222-afc2-4265a521c5f8"),
-                            Description = "Tạo và gửi nội dung chờ duyệt",
+                            Description = "Đăng nội dung",
                             RoleKey = "staff_content",
-                            RoleName = "Nhân viên nội dung"
+                            RoleName = "Staff Content"
                         },
                         new
                         {
                             RoleId = new Guid("ed3a2ae2-f05b-47e6-949f-28fb477d5b24"),
-                            Description = "Chưa đăng ký gói, chỉ xem công khai",
+                            Description = "Khách đăng nhập",
                             RoleKey = "user",
-                            RoleName = "Khách đăng nhập"
+                            RoleName = "User"
                         },
                         new
                         {
                             RoleId = new Guid("78454018-bec6-459d-85e2-4265a521b5f8"),
-                            Description = "Đã thanh toán gói membership, truy cập nội dung",
+                            Description = "Thành viên trả phí",
                             RoleKey = "member",
-                            RoleName = "Thành viên"
+                            RoleName = "Member"
                         },
                         new
                         {
                             RoleId = new Guid("cca492d0-4de1-42b4-afc2-bb613eeb219b"),
-                            Description = "Chủ động đăng nội dung khóa học/sự kiện",
+                            Description = "Đối tác nội dung",
                             RoleKey = "partner",
-                            RoleName = "Đối tác nội dung"
+                            RoleName = "Partner"
                         },
                         new
                         {
                             RoleId = new Guid("833d5494-3559-4826-a3ec-58b0b14c7c81"),
-                            Description = "Giảng viên, mentor lớp học",
+                            Description = "Hướng dẫn viên / mentor",
                             RoleKey = "coaching",
-                            RoleName = "Hướng dẫn viên"
+                            RoleName = "Coaching"
                         },
                         new
                         {
                             RoleId = new Guid("833d5492-afc2-42b4-afc2-8265a521b5f8"),
-                            Description = "Cung cấp nội dung, tính hoa hồng",
+                            Description = "Nhà cung cấp nội dung",
                             RoleKey = "supplier",
-                            RoleName = "Nhà cung cấp nội dung"
+                            RoleName = "Supplier"
                         });
                 });
 
@@ -158,6 +232,103 @@ namespace AuthService.API.Migrations
                     b.HasIndex("PermissionId");
 
                     b.ToTable("RolePermissions", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0001")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0002")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0003")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0004")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0005")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0006")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0007")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0008")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0009")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0010")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("cca492d0-42b4-42b4-a3ec-4265a521b5f8"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0011")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0004")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0005")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0006")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0007")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0008")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0009")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0010")
+                        },
+                        new
+                        {
+                            RoleId = new Guid("7b6c3929-7bce-48e8-9f60-b0df90792c5c"),
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0011")
+                        });
                 });
 
             modelBuilder.Entity("AuthService.API.Entities.UserAuth", b =>
@@ -191,7 +362,7 @@ namespace AuthService.API.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("LocationId")
+                    b.Property<Guid?>("LocationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("LoginAttempt")

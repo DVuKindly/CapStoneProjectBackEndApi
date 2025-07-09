@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UserService.API.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPackageDurationToPendingRequests : Migration
+    public partial class InitAuthDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -365,10 +365,7 @@ namespace UserService.API.Migrations
                 {
                     { new Guid("10000000-0000-0000-0000-000000000001"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Hà Nội", "Hà Nội" },
                     { new Guid("10000000-0000-0000-0000-000000000002"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Hải Phòng", "Hải Phòng" },
-                    { new Guid("10000000-0000-0000-0000-000000000003"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Đà Nẵng", "Đà Nẵng" },
-                    { new Guid("5a418674-9e47-4d19-b827-1e8e2b25c324"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Hải Phòng", "Hải Phòng" },
-                    { new Guid("9f38b827-4e1a-4a6e-b8c5-5ff6b759a2a1"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Hà Nội", "Hà Nội" },
-                    { new Guid("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Đà Nẵng", "Đà Nẵng" }
+                    { new Guid("10000000-0000-0000-0000-000000000003"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực Đà Nẵng", "Đà Nẵng" }
                 });
 
             migrationBuilder.CreateIndex(

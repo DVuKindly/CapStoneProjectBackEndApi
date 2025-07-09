@@ -94,27 +94,6 @@ namespace UserService.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("9f38b827-4e1a-4a6e-b8c5-5ff6b759a2a1"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Hà Nội",
-                            Name = "Hà Nội"
-                        },
-                        new
-                        {
-                            Id = new Guid("5a418674-9e47-4d19-b827-1e8e2b25c324"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Hải Phòng",
-                            Name = "Hải Phòng"
-                        },
-                        new
-                        {
-                            Id = new Guid("f0b2b2d9-5e77-4c7e-a601-2e3b9b740e0c"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Đà Nẵng",
-                            Name = "Đà Nẵng"
-                        },
-                        new
-                        {
                             Id = new Guid("10000000-0000-0000-0000-000000000001"),
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Khu vực Hà Nội",

@@ -12,7 +12,7 @@ using PaymentService.API.Data;
 namespace PaymentService.API.Migrations
 {
     [DbContext(typeof(PaymentDbContext))]
-    [Migration("20250624172153_InitAuthDb")]
+    [Migration("20250702093634_InitAuthDb")]
     partial class InitAuthDb
     {
         /// <inheritdoc />
@@ -56,6 +56,9 @@ namespace PaymentService.API.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("IsAuthServiceUpdated")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDirectMembership")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsSyncedToRedis")

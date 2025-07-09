@@ -106,6 +106,12 @@ namespace AuthService.API.Migrations
                             PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0011"),
                             Description = "Tạo Coach",
                             PermissionKey = "create_coach"
+                        },
+                        new
+                        {
+                            PermissionId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0012"),
+                            Description = "Tạo Admin Khu vực",
+                            PermissionKey = "create_admin"
                         });
                 });
 
@@ -353,7 +359,7 @@ namespace AuthService.API.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("LocationId")
+                    b.Property<Guid?>("LocationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("LoginAttempt")
