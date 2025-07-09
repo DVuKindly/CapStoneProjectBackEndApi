@@ -4,6 +4,7 @@ using MembershipService.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MembershipService.API.Migrations
 {
     [DbContext(typeof(MembershipDbContext))]
-    partial class MembershipDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250707163444_add_Accomo_to_basicPlanRoom")]
+    partial class add_Accomo_to_basicPlanRoom
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,7 +70,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("RoomTypeId");
 
-                    b.ToTable("AccommodationOptions", (string)null);
+                    b.ToTable("AccommodationOptions");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlan", b =>
@@ -132,7 +135,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("TargetAudienceId");
 
-                    b.ToTable("BasicPlans", (string)null);
+                    b.ToTable("BasicPlans");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanCategory", b =>
@@ -157,7 +160,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("BasicPlanTypeId");
 
-                    b.ToTable("BasicPlanCategories", (string)null);
+                    b.ToTable("BasicPlanCategories");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanEntitlement", b =>
@@ -181,7 +184,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("EntitlementRuleId");
 
-                    b.ToTable("BasicPlanEntitlements", (string)null);
+                    b.ToTable("BasicPlanEntitlements");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanLevel", b =>
@@ -203,7 +206,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("BasicPlanTypeId");
 
-                    b.ToTable("BasicPlanLevels", (string)null);
+                    b.ToTable("BasicPlanLevels");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanRoom", b =>
@@ -238,7 +241,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("RoomInstanceId");
 
-                    b.ToTable("BasicPlanRooms", (string)null);
+                    b.ToTable("BasicPlanRooms");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanType", b =>
@@ -272,7 +275,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("BasicPlanTypes", (string)null);
+                    b.ToTable("BasicPlanTypes");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Booking", b =>
@@ -315,7 +318,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("RoomInstanceId");
 
-                    b.ToTable("Bookings", (string)null);
+                    b.ToTable("Bookings");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
@@ -368,7 +371,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("PackageLevelId");
 
-                    b.ToTable("ComboPlans", (string)null);
+                    b.ToTable("ComboPlans");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlanBasic", b =>
@@ -401,7 +404,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("ComboPlanId");
 
-                    b.ToTable("ComboPlanBasics", (string)null);
+                    b.ToTable("ComboPlanBasics");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlanDuration", b =>
@@ -442,7 +445,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("PackageDurationId");
 
-                    b.ToTable("ComboPlanDurations", (string)null);
+                    b.ToTable("ComboPlanDurations");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Ecosystem", b =>
@@ -476,7 +479,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Ecosystems", (string)null);
+                    b.ToTable("Ecosystems");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.EntitlementRule", b =>
@@ -519,7 +522,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("NextUServiceId");
 
-                    b.ToTable("EntitlementRules", (string)null);
+                    b.ToTable("EntitlementRules");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Location", b =>
@@ -553,7 +556,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations", (string)null);
+                    b.ToTable("Locations");
 
                     b.HasData(
                         new
@@ -620,7 +623,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("NextUServiceId");
 
-                    b.ToTable("MediaGallery", (string)null);
+                    b.ToTable("MediaGallery");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Membership", b =>
@@ -672,7 +675,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("ComboPlanId");
 
-                    b.ToTable("Memberships", (string)null);
+                    b.ToTable("Memberships");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.MembershipHistory", b =>
@@ -731,7 +734,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("ComboPlanId");
 
-                    b.ToTable("MembershipHistory", (string)null);
+                    b.ToTable("MembershipHistory");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.NextUService", b =>
@@ -771,7 +774,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("NextUServices", (string)null);
+                    b.ToTable("NextUServices");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.PackageDuration", b =>
@@ -805,7 +808,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PackageDurations", (string)null);
+                    b.ToTable("PackageDurations");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.PackageLevel", b =>
@@ -835,7 +838,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PackageLevels", (string)null);
+                    b.ToTable("PackageLevels");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.PlanTargetAudience", b =>
@@ -852,7 +855,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PlanTargetAudiences", (string)null);
+                    b.ToTable("PlanTargetAudiences");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.RoomInstance", b =>
@@ -897,7 +900,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("AccommodationOptionId");
 
-                    b.ToTable("Rooms", (string)null);
+                    b.ToTable("Rooms");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.RoomType", b =>
@@ -929,7 +932,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RoomType", (string)null);
+                    b.ToTable("RoomType");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.AccommodationOption", b =>

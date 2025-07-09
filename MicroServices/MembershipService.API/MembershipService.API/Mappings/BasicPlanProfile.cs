@@ -11,6 +11,7 @@ namespace MembershipService.API.Mappings
         {
             // Mapping từ request DTOs → entity
             CreateMap<BasicPlanRoomDto, BasicPlanRoom>()
+                .ForMember(dest => dest.AccommodationOptionId, opt => opt.MapFrom(src => src.AccomodationId))
                 .ForMember(dest => dest.RoomInstanceId, opt => opt.MapFrom(src => src.RoomInstanceId))
                 .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src =>
                     src.TotalPrice ?? (src.CustomPricePerNight.HasValue
@@ -18,6 +19,11 @@ namespace MembershipService.API.Mappings
                         : 0)))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.BasicPlan, opt => opt.Ignore());
+
+            CreateMap<PackageDurationDto, ComboPlanDuration>()
+                .ForMember(dest => dest.PackageDurationId, opt => opt.MapFrom(src => src.DurationId))
+                .ForMember(dest => dest.DiscountDurationRate, opt => opt.MapFrom(src => src.DiscountRate));
+                
 
             CreateMap<CreateBasicPlanRequest, BasicPlan>()
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => Convert.ToDecimal(src.Price)))
@@ -45,16 +51,9 @@ namespace MembershipService.API.Mappings
                .ForMember(dest => dest.PlanLevelName, opt => opt.MapFrom(src => src.BasicPlanLevel != null ? src.BasicPlanLevel.Name : null))
                .ForMember(dest => dest.TargetAudienceName, opt => opt.MapFrom(src => src.PlanTargetAudience != null ? src.PlanTargetAudience.Name : null))
                .ForMember(dest => dest.PlanCategoryName, opt => opt.MapFrom(src => src.BasicPlanCategory != null ? src.BasicPlanCategory.Name : null))
-               .ForMember(dest => dest.Rooms, opt => opt.MapFrom(src => src.BasicPlanRooms)) // ✅ Map room
-               .ForMember(dest => dest.PlanDurations, opt => opt.MapFrom(src => src.ComboPlanDurations)); // ✅ Map durations (nếu bạn dùng ComboPlanDurations)
+               .ForMember(dest => dest.PlanDurations, opt => opt.MapFrom(src => src.ComboPlanDurations)) // ✅ Map durations (nếu bạn dùng ComboPlanDurations)
+               .ForMember(dest => dest.AccomodationDescription, opt => opt.MapFrom(src => GetAccommodationDescription(src)));
 
-            CreateMap<BasicPlanRoom, BasicPlanRoomResponseDto>()
-                .ForMember(dest => dest.RoomInstanceId, opt => opt.MapFrom(src => src.RoomInstanceId))
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.RoomInstance != null ? src.RoomInstance.RoomCode : string.Empty))
-                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.RoomInstance != null ? src.RoomInstance.DescriptionDetails : string.Empty))
-                .ForMember(dest => dest.NightsIncluded, opt => opt.MapFrom(src => src.NightsIncluded))
-                .ForMember(dest => dest.CustomPricePerNight, opt => opt.MapFrom(src => src.CustomPricePerNight))
-                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice));
 
             CreateMap<ComboPlanDuration, PlanDurationResponseDto>()
                 .ForMember(dest => dest.PlanDurationId, opt => opt.MapFrom(src => src.PackageDurationId))
@@ -63,7 +62,24 @@ namespace MembershipService.API.Mappings
                 .ForMember(dest => dest.PlanDurationValue, opt => opt.MapFrom(src => src.PackageDuration.Value.ToString()))
                 .ForMember(dest => dest.PlanDurationDescription, opt => opt.MapFrom(src => src.PackageDuration.Description));
 
-
+            CreateMap<BasicPlanRoom, BasicPlanRoomResponseDto>()
+                .ForMember(dest => dest.RoomInstanceId, opt => opt.MapFrom(src => src.RoomInstanceId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.RoomInstance != null ? src.RoomInstance.RoomCode : string.Empty))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.RoomInstance != null ? src.RoomInstance.DescriptionDetails : string.Empty))
+                .ForMember(dest => dest.NightsIncluded, opt => opt.MapFrom(src => src.NightsIncluded))
+                .ForMember(dest => dest.CustomPricePerNight, opt => opt.MapFrom(src => src.CustomPricePerNight))
+                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice));
         }
+
+        private static string? GetAccommodationDescription(BasicPlan src)
+        {
+            return src.BasicPlanRooms?
+                      .FirstOrDefault()?
+                      .RoomInstance?
+                      .AccommodationOption?
+                      .Description;
+        }
+
+
     }
 }

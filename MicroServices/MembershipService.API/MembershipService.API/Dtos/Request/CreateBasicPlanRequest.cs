@@ -20,8 +20,9 @@
 
     public class BasicPlanRoomDto
     {
-        public Guid RoomInstanceId { get; set; }  // đổi từ RoomId → RoomInstanceId
-        public int NightsIncluded { get; set; }
+        public Guid AccomodationId { get; set; }
+        public Guid? RoomInstanceId { get; set; }
+        public int? NightsIncluded { get; set; }
         public decimal? CustomPricePerNight { get; set; }
         public decimal? TotalPrice { get; set; }
     }

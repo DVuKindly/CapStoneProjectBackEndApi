@@ -21,16 +21,6 @@ namespace MembershipService.API.Repositories.Implementations
             return entity;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            var entity = await _context.BasicPlans.FindAsync(id);
-            if (entity == null) return false;
-
-            _context.BasicPlans.Remove(entity);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
         public async Task<List<BasicPlan>> GetAllAsync()
         {
             return await _context.BasicPlans
@@ -38,6 +28,9 @@ namespace MembershipService.API.Repositories.Implementations
                     .ThenInclude(d => d.PackageDuration)
                 .Include(x => x.BasicPlanRooms)
                     .ThenInclude(r => r.RoomInstance)
+                    .ThenInclude(a => a.AccommodationOption)
+                    .ThenInclude(rt => rt.RoomType)
+                .Include(x => x.BasicPlanEntitlements)
                 .Include(x => x.Location)
                 .Include(x => x.BasicPlanType)
                 .Include(x => x.BasicPlanCategory)
@@ -46,13 +39,16 @@ namespace MembershipService.API.Repositories.Implementations
                 .ToListAsync();
         }
 
-        public async Task<BasicPlan> GetByIdAsync(Guid id)
+        public async Task<BasicPlan?> GetByIdAsync(Guid id)
         {
             return await _context.BasicPlans
                 .Include(x => x.ComboPlanDurations)
                     .ThenInclude(d => d.PackageDuration)
                 .Include(x => x.BasicPlanRooms)
                     .ThenInclude(r => r.RoomInstance)
+                    .ThenInclude(a => a.AccommodationOption)
+                    .ThenInclude(rt => rt.RoomType)
+                .Include(x => x.BasicPlanEntitlements)
                 .Include(x => x.Location)
                 .Include(x => x.BasicPlanType)
                 .Include(x => x.BasicPlanCategory)
@@ -67,6 +63,18 @@ namespace MembershipService.API.Repositories.Implementations
             await _context.SaveChangesAsync();
             return entity;
         }
+
+        public async Task<bool> DeleteAsync(Guid id)
+        {
+            var entity = await _context.BasicPlans.FindAsync(id);
+            if (entity == null) return false;
+
+            _context.BasicPlans.Remove(entity);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+
 
     }
 }

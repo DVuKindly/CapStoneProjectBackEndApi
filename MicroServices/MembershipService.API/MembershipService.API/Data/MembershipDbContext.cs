@@ -156,11 +156,19 @@ namespace MembershipService.API.Data
                 .HasForeignKey(s => s.BasicPlanId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // AccommodationOption - BasicPlanRoom
+            modelBuilder.Entity<BasicPlanRoom>()
+                .HasOne(s => s.AccommodationOption)
+                .WithMany(a => a.BasicPlanRooms) 
+                .HasForeignKey(s => s.AccommodationOptionId) 
+                .OnDelete(DeleteBehavior.Restrict);
+
             // RoomInstance - BasicPlanRoom
             modelBuilder.Entity<BasicPlanRoom>()
                 .HasOne(s => s.RoomInstance)
-                .WithMany() // Nếu RoomInstance không có navigation reverse
-                .HasForeignKey(s => s.RoomInstanceId) // sửa đúng tên FK bạn đang dùng
+                .WithMany(r => r.BasicPlanRooms) 
+                .HasForeignKey(s => s.RoomInstanceId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // BasicPlan - BasicPlanRoom

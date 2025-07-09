@@ -1,7 +1,9 @@
 ﻿using MembershipService.API.Data;
 using MembershipService.API.Entities;
+using MembershipService.API.Enums;
 using MembershipService.API.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace MembershipService.API.Repositories.Implementations
 {
@@ -14,12 +16,26 @@ namespace MembershipService.API.Repositories.Implementations
             _context = context;
         }
 
+        
+
         public async Task<List<RoomInstance>> GetByAccommodationOptionIdAsync(Guid optionId)
         {
             return await _context.Rooms
                 .Include(r => r.AccommodationOption)
                     .ThenInclude(opt => opt.RoomType)
+                .Include(r => r.AccommodationOption)
+                     .ThenInclude(opt => opt.Location)
                 .Where(r => r.AccommodationOptionId == optionId)
+                .ToListAsync();
+        }
+
+        public async Task<List<RoomInstance>> GetAllAsync()
+        {
+            return await _context.Rooms
+                .Include(r => r.AccommodationOption)
+                    .ThenInclude(opt => opt.RoomType)
+                .Include(r => r.AccommodationOption)
+                     .ThenInclude(opt => opt.Location)
                 .ToListAsync();
         }
 
@@ -34,9 +50,22 @@ namespace MembershipService.API.Repositories.Implementations
                 .Where(r => roomIds.Contains(r.Id))
                 .Include(r => r.AccommodationOption)
                     .ThenInclude(opt => opt.RoomType)
+                .Include(r => r.AccommodationOption)
+                    .ThenInclude(opt => opt.Location)
                 .ToListAsync();
         }
 
+        public async Task<List<RoomInstance>> GetByLocationIdAsync(Guid locationId)
+        {
+            
+            return await _context.Rooms
+                .Include(r => r.AccommodationOption)
+                    .ThenInclude(opt => opt.RoomType)
+                .Include(r => r.AccommodationOption)
+                   .ThenInclude(opt => opt.Location)
+                .Where(r => r.AccommodationOption.LocationId == locationId)
+                .ToListAsync();
+        }
 
         public async Task<RoomInstance?> GetByIdAsync(Guid id)
         {
@@ -45,6 +74,8 @@ namespace MembershipService.API.Repositories.Implementations
                     .ThenInclude(opt => opt.RoomType)
                 .FirstOrDefaultAsync(r => r.Id == id);
         }
+
+        
 
         public async Task<RoomInstance> CreateAsync(RoomInstance entity)
         {
