@@ -22,14 +22,24 @@ namespace MembershipService.API.Dtos.Response
 
         public Guid? LocationId { get; set; }
         public string? LocationName { get; set; }
+        public Guid AccomodationId { get; set; } = Guid.Empty;
+        public string AccomodationDescription { get; set; } = "test";
         public List<PlanDurationResponseDto> PlanDurations { get; set; } = new();
-        public List<BasicPlanRoomResponseDto> Rooms { get; set; } = new();
 
         //Vu 
         public int PackageDurationValue { get; set; }
         public string PackageDurationUnit { get; set; } = string.Empty;
         public string DurationDescription { get; set; } = string.Empty;
         public string PlanSource { get; set; } = "basic";
+    }
+
+    public class PlanDurationResponseDto
+    {
+        public int PlanDurationId { get; set; }
+        public decimal DiscountRate { get; set; }
+        public string PlanDurationUnit { get; set; } = string.Empty;
+        public string PlanDurationValue { get; set; } = string.Empty;
+        public string PlanDurationDescription { get; set; } = string.Empty;
     }
 
     public class BasicPlanRoomResponseDto
@@ -40,15 +50,6 @@ namespace MembershipService.API.Dtos.Response
         public int NightsIncluded { get; set; }
         public decimal? CustomPricePerNight { get; set; }
         public decimal? TotalPrice { get; set; }
-    }
-
-    public class PlanDurationResponseDto
-    {
-        public int PlanDurationId { get; set; }
-        public decimal DiscountRate { get; set; }
-        public string PlanDurationUnit { get; set; } = string.Empty;
-        public string PlanDurationValue { get; set; } = string.Empty;
-        public string PlanDurationDescription { get; set; } = string.Empty;
     }
 
 }

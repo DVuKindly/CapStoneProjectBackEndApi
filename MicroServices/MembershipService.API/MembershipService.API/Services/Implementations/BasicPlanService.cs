@@ -3,6 +3,7 @@ using MembershipService.API.Data;
 using MembershipService.API.Dtos.Request;
 using MembershipService.API.Dtos.Response;
 using MembershipService.API.Entities;
+using MembershipService.API.Repositories.Implementations;
 using MembershipService.API.Repositories.Interfaces;
 using MembershipService.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -34,30 +35,42 @@ namespace MembershipService.API.Services.Implementations
 
         public async Task<BasicPlanResponseDto> CreateAsync(CreateBasicPlanRequest request)
         {
-            Console.WriteLine($"Request: {JsonConvert.SerializeObject(request)}");
+            //Console.WriteLine($"Request: {JsonConvert.SerializeObject(request)}");
             var basicPlan = _mapper.Map<BasicPlan>(request);
-            Console.WriteLine($"Mapped basicPlan: {JsonConvert.SerializeObject(basicPlan)}");
-
             basicPlan.Code = Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
-
             var createdPlan = await _basicPlanRepo.AddAsync(basicPlan);
 
             if (request.Rooms != null && request.Rooms.Any())
             {
                 foreach (var room in request.Rooms)
                 {
-                    var roomEntity = new BasicPlanRoom
-                    {
-                        BasicPlanId = createdPlan.Id,
-                        RoomInstanceId = room.RoomInstanceId,  // đổi tên
-                        NightsIncluded = room.NightsIncluded,
-                        CustomPricePerNight = room.CustomPricePerNight,
-                        TotalPrice = room.TotalPrice
-                    };
+                    var roomEntity = _mapper.Map<BasicPlanRoom>(room);
+                    roomEntity.BasicPlanId = createdPlan.Id;
+                    //var roomEntity = new BasicPlanRoom
+                    //{
+                    //    BasicPlanId = createdPlan.Id,
+                    //    AccommodationOptionId = room.AccomodationId,
+                    //    RoomInstanceId = room.RoomInstanceId,  // đổi tên
+                    //    NightsIncluded = room.NightsIncluded,
+                    //    CustomPricePerNight = room.CustomPricePerNight,
+                    //    TotalPrice = room.TotalPrice
+                    //};
                     await _basicPlanRoomRepo.AddAsync(roomEntity);
                 }
             }
+            if (request.PackageDurations != null && request.PackageDurations.Any())
+            {
+                var planDurations = request.PackageDurations
+                    .Select(dto =>
+                    {
+                        var entity = _mapper.Map<ComboPlanDuration>(dto);
+                        entity.BasicPlanId = createdPlan.Id;
+                        return entity;
+                    })
+                    .ToList();
 
+                await _durationRepo.AddRangeAsync(planDurations);
+            }
             return _mapper.Map<BasicPlanResponseDto>(createdPlan);
         }
 
@@ -79,8 +92,11 @@ namespace MembershipService.API.Services.Implementations
 
         public async Task<BasicPlanResponseDto> GetByIdAsync(Guid id)
         {
-            var plan = await _basicPlanRepo.GetByIdAsync(id);
-            return _mapper.Map<BasicPlanResponseDto>(plan);
+            var basicPlan = await _basicPlanRepo.GetByIdAsync(id);
+            if (basicPlan == null)
+                throw new KeyNotFoundException($"Không tìm thấy BasicPlan với Id = {id}");
+
+            return _mapper.Map<BasicPlanResponseDto>(basicPlan);
         }
 
         public async Task<List<BasicPlanResponseDto>> GetAllAsync()

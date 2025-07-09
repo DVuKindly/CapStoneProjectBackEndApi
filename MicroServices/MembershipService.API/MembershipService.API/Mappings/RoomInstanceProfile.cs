@@ -15,7 +15,9 @@ namespace MembershipService.API.Mappings
             CreateMap<RoomInstance, RoomInstanceResponse>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.Floor, opt => opt.MapFrom(src => src.Floor.ToString()))
-                .ForMember(dest => dest.RoomTypeName, opt => opt.MapFrom(src => src.AccommodationOption.RoomType.Name));
+                .ForMember(dest => dest.RoomTypeName, opt => opt.MapFrom(src => src.AccommodationOption.RoomType.Name))
+                .ForMember(dest => dest.LocationId, opt => opt.MapFrom(src => src.AccommodationOption.Location.Id))
+                .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.AccommodationOption.Location.Name));
         }
     }
 }

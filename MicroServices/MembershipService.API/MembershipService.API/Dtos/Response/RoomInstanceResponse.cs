@@ -10,5 +10,7 @@
         public string Status { get; set; }
         public string Floor { get; set; }
         public string RoomTypeName { get; set; }
+        public Guid? LocationId { get; set; }
+        public string LocationName { get; set; }
     }
 }

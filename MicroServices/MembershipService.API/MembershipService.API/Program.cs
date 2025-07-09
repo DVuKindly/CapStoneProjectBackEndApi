@@ -64,7 +64,10 @@ builder.Services.AddScoped<IBasicPlanRoomRepository, BasicPlanRoomRepository>();
 builder.Services.AddScoped<IBasicPlanTypeRepository, BasicPlanTypeRepository>();
 builder.Services.AddScoped<IBasicPlanTypeService, BasicPlanTypeService>();
 builder.Services.AddAutoMapper(typeof(BasicPlanTypeProfile).Assembly);
-
+// ??ng ký DI cho Bookings
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddAutoMapper(typeof(BookingProfile).Assembly);
 
 
 

@@ -23,6 +23,20 @@ namespace MembershipService.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllRooms( )
+        {
+            var result = await _service.GetAllAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("by-location/{locationId}")]
+        public async Task<IActionResult> GetByLocationId(Guid locationId)
+        {
+            var result = await _service.GetByLocationIdAsync(locationId);
+            return Ok(result);
+        }
+
         [HttpGet("by-basicPlan/{planId}")]
         public async Task<IActionResult> GetByBasicPlanId(Guid planId)
         {
