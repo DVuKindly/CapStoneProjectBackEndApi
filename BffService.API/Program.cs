@@ -5,7 +5,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// === Load .env ===
 var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
 if (!File.Exists(envPath))
 {
@@ -14,7 +14,7 @@ if (!File.Exists(envPath))
 }
 DotNetEnv.Env.Load(envPath);
 
-// JWT Secret Key
+// === JWT Secret Key ===
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
                ?? throw new InvalidOperationException("Missing JWT_SECRET_KEY in .env");
 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
@@ -24,7 +24,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend3000", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3111")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -59,22 +59,22 @@ builder.Services.AddHttpClient("AuthService", client =>
     client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("AUTHSERVICE_URL") ?? "http://localhost:5001");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-// local user
+
 builder.Services.AddHttpClient("UserService", client =>
 {
     client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("USERSERVICE_URL") ?? "http://localhost:5005");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-// local payment
+
 builder.Services.AddHttpClient("PaymentService", client =>
 {
     client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("PAYMENTSERVICE_URL") ?? "http://localhost:5010");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-//local membership
+
 builder.Services.AddHttpClient("MembershipService", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5008"); 
+    client.BaseAddress = new Uri("http://localhost:5003");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
