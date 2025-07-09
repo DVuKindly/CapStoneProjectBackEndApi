@@ -12,7 +12,20 @@ namespace UserService.API.Services.Interfaces
 
         Task<decimal> GetPlanPriceAsync(Guid planId, string planType);
         Task<PlanPriceInfoDto?> GetPlanPriceInfoAsync(Guid planId, string planType);
+
         Task<DurationDto?> GetPlanDurationAsync(Guid planId, string planType);
+
+        Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId);
+
+        Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime selectedStartDate);
+
+        Task<bool> CreateBookingAsync(
+      Guid accountId,
+      Guid roomInstanceId,
+      DateTime startDate,
+      int durationValue,
+      string durationUnit);
+
 
     }
 }

@@ -191,5 +191,12 @@ namespace MembershipService.API.Services.Implementations
                 Unit = duration.PackageDuration.Unit.ToString()
             };
         }
+        public async Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId)
+        {
+            return await _context.BasicPlanRooms
+                .AnyAsync(x => x.BasicPlanId == planId && x.RoomInstanceId == roomInstanceId);
+        }
+
+
     }
 }

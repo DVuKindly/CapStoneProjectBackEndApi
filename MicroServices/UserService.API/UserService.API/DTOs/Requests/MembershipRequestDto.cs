@@ -8,18 +8,18 @@ namespace UserService.API.DTOs.Requests
         public Guid PackageId { get; set; }
 
         public string PackageType { get; set; } = "basic";
-        public DateTime? SelectedStartDate { get; set; } 
+
+        public DateTime? SelectedStartDate { get; set; }
 
         public bool RequireBooking { get; set; } = false;
+
+        
         public Guid? RoomInstanceId { get; set; }
-        public Guid? BookingId { get; set; }
 
         [MaxLength(2000)]
         public string? MessageToStaff { get; set; }
 
-        /// <summary>
-        /// Chỉ cần khi gói Basic thanh toán trực tiếp (VerifyBuy = true)
-        /// </summary>
+    
         public string? RedirectUrl { get; set; }
     }
 }

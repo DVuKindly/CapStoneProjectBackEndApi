@@ -89,6 +89,14 @@ namespace MembershipService.API.Controllers
 
             return Ok(duration); // trả trực tiếp DurationDto
         }
+        [HttpGet("{planId}/rooms/{roomInstanceId}/check")]
+        public async Task<IActionResult> CheckRoomBelongsToPlan(Guid planId, Guid roomInstanceId)
+        {
+            var isValid = await _service.IsRoomBelongToPlanAsync(planId, roomInstanceId);
+            return Ok(isValid);
+        }
+
+
 
 
 

@@ -29,5 +29,13 @@ namespace MembershipService.API.Controllers
             var result = await _bookingService.GetRoomBookingsAsync(roomId, from, to);
             return Ok(result);
         }
+        [HttpGet("check")]
+        public async Task<IActionResult> CheckRoomBooked([FromQuery] Guid roomId, [FromQuery] DateTime startDate)
+        {
+            var isBooked = await _bookingService.ValidateBookingAsync(roomId, Guid.Empty, startDate);
+            return Ok(isBooked);
+        }
+
+
     }
 }

@@ -158,6 +158,79 @@ public class MembershipServiceClient : IMembershipServiceClient
             return null;
         }
     }
+    public async Task<bool> CreateBookingAsync(
+    Guid accountId,
+    Guid roomInstanceId,
+    DateTime startDate,
+    int durationValue,
+    string durationUnit)
+    {
+        var endDate = durationUnit.ToLower() switch
+        {
+            "day" => startDate.AddDays(durationValue),
+            "month" => startDate.AddMonths(durationValue),
+            "year" => startDate.AddYears(durationValue),
+            _ => startDate
+        };
+
+        var request = new CreateBookingRequest
+        {
+            MemberId = accountId,
+            RoomInstanceId = roomInstanceId,
+            StartDate = startDate,
+            EndDate = endDate,
+            Note = "Tự động tạo sau khi thanh toán"
+        };
+
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/bookings", request);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[MembershipService] CreateBookingAsync failed.");
+            return false;
+        }
+    }
+
+
+
+
+    public async Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/api/basicplans/{planId}/rooms/{roomInstanceId}/check");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("[MembershipService] IsRoomBelongToPlanAsync failed with status: {StatusCode}", response.StatusCode);
+                return false;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<bool>();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[MembershipService] Exception in IsRoomBelongToPlanAsync");
+            return false;
+        }
+    }
+
+    public async Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime selectedStartDate)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/api/bookings/check?roomId={roomInstanceId}&startDate={selectedStartDate:O}");
+            return response.IsSuccessStatusCode && await response.Content.ReadFromJsonAsync<bool>();
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
 
 }

@@ -17,6 +17,8 @@ namespace MembershipService.API.Services.Interfaces
         // vũ code
         Task<List<BasicPlanResponseDto>> GetByIdsAsync(List<Guid> ids);
         Task<DurationDto?> GetPlanDurationAsync(Guid planId);
+        Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId);
+
 
     }
 }
