@@ -10,6 +10,7 @@ namespace MembershipService.API.Entities
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public bool VerifyBuy { get; set; }
+        public bool RequireBooking { get; set; } = false;
 
         public Guid BasicPlanTypeId { get; set; }
         public BasicPlanType BasicPlanType { get; set; }
