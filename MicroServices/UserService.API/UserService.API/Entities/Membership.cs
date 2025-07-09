@@ -41,6 +41,8 @@ namespace UserService.API.Entities
         public bool UsedForRoleUpgrade { get; set; } = false;
 
         public string? PlanSource { get; set; }
+        public Guid? RoomInstanceId { get; set; }
+        public Guid? BookingId { get; set; }
 
         public Guid? UserProfileId { get; set; }
         public UserProfile? UserProfile { get; set; }

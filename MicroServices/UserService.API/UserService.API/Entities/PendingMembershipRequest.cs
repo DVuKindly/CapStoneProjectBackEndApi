@@ -65,6 +65,9 @@ public class PendingMembershipRequest
     [MaxLength(50)]
     public string? PackageDurationUnit { get; set; }
     public DateTime? ExpireAt { get; set; }  // thêm mới
+    public bool RequireBooking { get; set; } = false;
+    public Guid? RoomInstanceId { get; set; }
+    public Guid? BookingId { get; set; }
 
 
     [MaxLength(1000)]

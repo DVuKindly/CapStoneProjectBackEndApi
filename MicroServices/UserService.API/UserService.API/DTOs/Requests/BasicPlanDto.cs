@@ -7,6 +7,7 @@
         public string Name { get; set; } = string.Empty; 
 
         public decimal Price { get; set; }
+        public bool RequireBooking { get; set; }
 
         public Guid? LocationId { get; set; }
 

@@ -8,7 +8,11 @@ namespace UserService.API.DTOs.Requests
         public Guid PackageId { get; set; }
 
         public string PackageType { get; set; } = "basic";
-        public DateTime? SelectedStartDate { get; set; } // ngày user chọn
+        public DateTime? SelectedStartDate { get; set; } 
+
+        public bool RequireBooking { get; set; } = false;
+        public Guid? RoomInstanceId { get; set; }
+        public Guid? BookingId { get; set; }
 
         [MaxLength(2000)]
         public string? MessageToStaff { get; set; }

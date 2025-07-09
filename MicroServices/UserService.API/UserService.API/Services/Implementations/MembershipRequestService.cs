@@ -272,12 +272,18 @@ public class MembershipRequestService : IMembershipRequestService
             locationId = plan.LocationId ?? Guid.Empty;
             name = plan.Name;
 
-            // ✅ Ưu tiên lấy ngày từ FE, nếu không có thì lấy ngày hôm nay
             var selectedStartDate = dto.SelectedStartDate?.Date ?? DateTime.UtcNow.Date;
 
             var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate);
             request.PackageDurationValue = duration.Value;
             request.PackageDurationUnit = duration.Unit;
+
+            if (dto.RequireBooking)
+            {
+                request.RequireBooking = true;
+                request.RoomInstanceId = dto.RoomInstanceId;
+                request.BookingId = dto.BookingId;
+            }
 
             if (plan.VerifyBuy)
             {
@@ -357,15 +363,15 @@ public class MembershipRequestService : IMembershipRequestService
     }
 
     private PendingMembershipRequest BuildRequest(
-  Guid accountId,
-  Guid packageId,
-  string name,
-  decimal price,
-  Guid locationId,
-  UserProfile user,
-  string? messageToStaff,
-  string packageType,
-  DateTime startDate)
+        Guid accountId,
+        Guid packageId,
+        string name,
+        decimal price,
+        Guid locationId,
+        UserProfile user,
+        string? messageToStaff,
+        string packageType,
+        DateTime startDate)
     {
         return new PendingMembershipRequest
         {
@@ -385,7 +391,6 @@ public class MembershipRequestService : IMembershipRequestService
             StartDate = startDate
         };
     }
-
 
 
 
@@ -805,9 +810,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         if (durationValue.HasValue && !string.IsNullOrWhiteSpace(durationUnit))
         {
-            var startDate = request.StartDate ?? paidTime;
-            expireAt = CalculateExpireDate(startDate, durationValue.Value, durationUnit);
-
+            expireAt = CalculateExpireDate(paidTime, durationValue.Value, durationUnit);
         }
 
         // ✅ Tạo bản ghi Membership
@@ -823,9 +826,6 @@ public class MembershipRequestService : IMembershipRequestService
             PurchasedAt = paidTime,
             UsedForRoleUpgrade = request.PackageType?.ToLower() == "combo",
 
-            // ✅ Gán thêm StartDate
-            StartDate = request.StartDate ?? paidTime,
-
             // Thanh toán
             PaymentMethod = request.PaymentMethod,
             PaymentStatus = request.PaymentStatus,
@@ -833,12 +833,11 @@ public class MembershipRequestService : IMembershipRequestService
             PaymentTime = request.PaymentTime,
             PaymentTransactionId = request.PaymentTransactionId,
 
-            // Thời hạn
+            // Thời hạn (TỪ BẢNG `PendingMembershipRequests`)
             PackageDurationValue = durationValue,
             PackageDurationUnit = durationUnit,
             ExpireAt = expireAt
         };
-
 
         _db.Memberships.Add(membership);
         await _db.SaveChangesAsync();
