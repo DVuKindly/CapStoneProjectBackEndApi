@@ -784,14 +784,16 @@ public class MembershipRequestService : IMembershipRequestService
         request.PaymentNote = dto.PaymentNote;
         request.Status = "Completed";
 
-        // ✅ Cập nhật trạng thái onboarding & nâng role
+        // ✅ Cập nhật trạng thái onboarding
         if (request.UserProfile != null)
         {
             request.UserProfile.OnboardingStatus = "ApprovedMember";
 
-            if (request.UserProfile.RoleType != "member")
+            // ✅ CHỈ combo mới nâng role
+            if (request.PackageType?.ToLower() == "combo" && request.UserProfile.RoleType != "member")
             {
                 request.UserProfile.RoleType = "member";
+
                 try
                 {
                     var promoted = await _authServiceClient.PromoteUserToMemberAsync(request.AccountId);
@@ -807,7 +809,7 @@ public class MembershipRequestService : IMembershipRequestService
             }
             else
             {
-                Console.WriteLine("✅ User đã là member, không cần nâng role.");
+                Console.WriteLine("ℹ️ Gói không yêu cầu nâng role hoặc user đã là member.");
             }
         }
 
@@ -834,7 +836,7 @@ public class MembershipRequestService : IMembershipRequestService
             PurchasedAt = paidTime,
             UsedForRoleUpgrade = request.PackageType?.ToLower() == "combo",
 
-            // Thanh toán
+            // Thông tin thanh toán
             PaymentMethod = request.PaymentMethod,
             PaymentStatus = request.PaymentStatus,
             PaymentNote = request.PaymentNote,
@@ -850,8 +852,9 @@ public class MembershipRequestService : IMembershipRequestService
         _db.Memberships.Add(membership);
         await _db.SaveChangesAsync();
 
-        // ✅ Tạo booking nếu gói yêu cầu
+        // ✅ Tạo booking nếu có yêu cầu và đủ thông tin
         bool bookingCreated = false;
+
         if (request.RequireBooking == true && request.RoomInstanceId.HasValue)
         {
             try
@@ -870,7 +873,6 @@ public class MembershipRequestService : IMembershipRequestService
                 {
                     Console.WriteLine("⚠️ Không đủ thông tin thời hạn gói để tạo booking.");
                 }
-
 
                 if (!bookingCreated)
                 {
@@ -893,6 +895,7 @@ public class MembershipRequestService : IMembershipRequestService
             BookingCreated = bookingCreated
         });
     }
+
 
 
 
