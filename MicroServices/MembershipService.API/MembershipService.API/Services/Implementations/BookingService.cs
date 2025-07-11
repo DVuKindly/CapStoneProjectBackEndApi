@@ -47,11 +47,48 @@ namespace MembershipService.API.Services.Implementations
 
 
 
+        //public async Task<List<BookingResponseDto>> GetRoomBookingsAsync(Guid roomInstanceId, DateTime from, DateTime to)
+        //{
+        //    var bookings = await _repo.GetRoomBookingsAsync(roomInstanceId, from, to);
+        //    return _mapper.Map<List<BookingResponseDto>>(bookings);
+        //}
+
         public async Task<List<BookingResponseDto>> GetRoomBookingsAsync(Guid roomInstanceId, DateTime from, DateTime to)
         {
-            var bookings = await _repo.GetRoomBookingsAsync(roomInstanceId, from, to);
-            return _mapper.Map<List<BookingResponseDto>>(bookings);
+            var bookings = await _repo.GetRoomBookingsAsync(roomInstanceId, from, to); // chỉ các booking trùng khoảng
+
+            var bookingResponses = _mapper.Map<List<BookingResponseDto>>(bookings);
+
+            // Nếu không có booking nào trùng: phòng rảnh hoàn toàn
+            if (!bookings.Any())
+            {
+                return new List<BookingResponseDto>
+        {
+            new BookingResponseDto
+            {
+                RoomInstanceId = roomInstanceId,
+                ViewedBookingStatus = "available",
+                StartDate = from,
+                EndDate = to
+            }
+        };
+            }
+
+            // Nếu có ít nhất 1 booking trùng → vướng lịch → phải ghi Available từ ngày trống tiếp theo
+            var maxEndDate = bookings.Max(b => b.EndDate).AddDays(1);
+
+            return new List<BookingResponseDto>
+    {
+        new BookingResponseDto
+        {
+            RoomInstanceId = roomInstanceId,
+            ViewedBookingStatus = $"available from {maxEndDate:yyyy-MM-dd}",
+            StartDate = from,
+            EndDate = to
         }
+    };
+        }
+
 
 
         public async Task<bool> ValidateBookingAsync(Guid roomInstanceId, Guid bookingId, DateTime startDate)

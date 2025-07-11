@@ -52,7 +52,8 @@ namespace MembershipService.API.Mappings
                .ForMember(dest => dest.TargetAudienceName, opt => opt.MapFrom(src => src.PlanTargetAudience != null ? src.PlanTargetAudience.Name : null))
                .ForMember(dest => dest.PlanCategoryName, opt => opt.MapFrom(src => src.BasicPlanCategory != null ? src.BasicPlanCategory.Name : null))
                .ForMember(dest => dest.PlanDurations, opt => opt.MapFrom(src => src.ComboPlanDurations)) // ✅ Map durations (nếu bạn dùng ComboPlanDurations)
-               .ForMember(dest => dest.AccomodationDescription, opt => opt.MapFrom(src => GetAccommodationDescription(src)));
+               .ForMember(dest => dest.AccomodationDescription, opt => opt.MapFrom(src => GetAccommodationDescription(src)))
+               .ForMember(dest => dest.AccomodationId, opt => opt.MapFrom(src => GetAccommodationId(src)));
 
 
             CreateMap<ComboPlanDuration, PlanDurationResponseDto>()
@@ -78,6 +79,14 @@ namespace MembershipService.API.Mappings
                       .RoomInstance?
                       .AccommodationOption?
                       .Description;
+        }
+        private static Guid? GetAccommodationId(BasicPlan src)
+        {
+            return src.BasicPlanRooms?
+                      .FirstOrDefault()?
+                      .RoomInstance?
+                      .AccommodationOption?
+                      .Id;
         }
 
 
