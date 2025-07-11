@@ -81,6 +81,14 @@ namespace MembershipService.API.Mappings
             // Nếu chưa có RoomInstance → lấy từ navigation AccommodationOption (nếu đã Include)
             return room?.AccommodationOption?.Description;
         }
+        private static Guid? GetAccommodationId(BasicPlan src)
+        {
+            return src.BasicPlanRooms?
+                      .FirstOrDefault()?
+                      .RoomInstance?
+                      .AccommodationOption?
+                      .Id;
+        }
 
 
         // Ưu tiên lấy từ RoomInstance.AccommodationOption.Id, nếu không thì fallback sang AccommodationOptionId

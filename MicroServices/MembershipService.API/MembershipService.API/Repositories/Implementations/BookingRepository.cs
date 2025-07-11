@@ -25,7 +25,7 @@ namespace MembershipService.API.Repositories.Implementations
         {
             return await _context.Bookings
                 .Where(b => b.RoomInstanceId == roomInstanceId &&
-                            b.StartDate < to && b.EndDate > from)
+                            b.StartDate <= to && b.EndDate >=  from && b.Status == Enums.BookingStatus.Confirmed)
                 .ToListAsync();
         }
     }
