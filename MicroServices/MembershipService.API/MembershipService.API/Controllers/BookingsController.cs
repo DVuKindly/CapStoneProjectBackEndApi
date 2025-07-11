@@ -24,7 +24,7 @@ namespace MembershipService.API.Controllers
         }
 
         [HttpGet("room/{roomId}")]
-        public async Task<IActionResult> GetRoomBookings(Guid roomId, [FromQuery] DateTime from, [FromQuery] DateTime to)
+        public async Task<IActionResult> GetRoomBookings(Guid roomId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
         {
             var result = await _bookingService.GetRoomBookingsAsync(roomId, from, to);
             return Ok(result);
