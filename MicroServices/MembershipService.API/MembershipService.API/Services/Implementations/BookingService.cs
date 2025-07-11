@@ -53,41 +53,98 @@ namespace MembershipService.API.Services.Implementations
         //    return _mapper.Map<List<BookingResponseDto>>(bookings);
         //}
 
-        public async Task<List<BookingResponseDto>> GetRoomBookingsAsync(Guid roomInstanceId, DateTime from, DateTime to)
+        public async Task<List<BookingResponseDto>> GetRoomBookingsAsync(Guid roomInstanceId, DateTime? from, DateTime? to)
         {
-            var bookings = await _repo.GetRoomBookingsAsync(roomInstanceId, from, to); // chỉ các booking trùng khoảng
-
-            var bookingResponses = _mapper.Map<List<BookingResponseDto>>(bookings);
-
-            // Nếu không có booking nào trùng: phòng rảnh hoàn toàn
-            if (!bookings.Any())
+            // Lấy toàn bộ bookings đã confirmed
+            var allBookings = await _repo.GetRoomBookingsAsync(roomInstanceId, null, null);
+            if (!allBookings.Any()) // nếu không có gì response avalable
             {
                 return new List<BookingResponseDto>
-        {
-            new BookingResponseDto
+                {
+                    new BookingResponseDto
+                    {
+                        BookingId = Guid.Empty,
+                        RoomInstanceId = roomInstanceId,
+                        StartDate = null,
+                        EndDate = null,
+                        Note = null,
+                        Status = null,
+                        ViewedBookingStatus = "available"
+                    }
+                };
+            }
+            // TH1: from và to đều null
+            if (from == null && to == null)
             {
-                RoomInstanceId = roomInstanceId,
-                ViewedBookingStatus = "available",
-                StartDate = from,
-                EndDate = to
+                // Tìm booking muộn nhất từ hôm nay trở đi
+                var latestBooking = allBookings
+                .OrderByDescending(b => b.EndDate)
+                .FirstOrDefault();
+                return new List<BookingResponseDto>
+                {
+                    new BookingResponseDto
+                    {
+                        BookingId = Guid.Empty,
+                        RoomInstanceId = roomInstanceId,
+                        StartDate = latestBooking.StartDate,
+                        EndDate = latestBooking.EndDate,
+                        Status = "available",
+                        ViewedBookingStatus = $"available from {latestBooking.EndDate.AddDays(1):yyyy-MM-dd}",
+                        Note = null
+                    }
+                };
             }
-        };
+    
+            // TH2 & TH3: from và to có giá trị
+            var fromDate = from.Value.Date;
+            var toDate = to.Value.Date;
+    
+            // Kiểm tra xem khoảng thời gian [from, to] có overlap với bất kỳ booking nào không
+            var overlappingBookings = allBookings
+                .Where(b => b.StartDate <= toDate && b.EndDate >= fromDate)
+                .OrderBy(b => b.StartDate)
+                .ToList();
+    
+            if (overlappingBookings.Any())
+            {
+                // TH2: Có overlap → hiển thị available sau ngày EndDate của booking cuối cùng
+                var lastBooking = overlappingBookings.OrderBy(b => b.EndDate).Last();
+                return new List<BookingResponseDto>
+                {
+                    new BookingResponseDto
+                    {
+                        BookingId = Guid.Empty,
+                        RoomInstanceId = roomInstanceId,
+                        ViewedBookingStatus = $"available from {lastBooking.EndDate.AddDays(1):yyyy-MM-dd}",
+                        StartDate = fromDate,
+                        EndDate = toDate,
+                        Status = "available",
+                        Note = null
+                    }
+                };
             }
-
-            // Nếu có ít nhất 1 booking trùng → vướng lịch → phải ghi Available từ ngày trống tiếp theo
-            var maxEndDate = bookings.Max(b => b.EndDate).AddDays(1);
-
-            return new List<BookingResponseDto>
-    {
-        new BookingResponseDto
-        {
-            RoomInstanceId = roomInstanceId,
-            ViewedBookingStatus = $"available from {maxEndDate:yyyy-MM-dd}",
-            StartDate = from,
-            EndDate = to
+            else
+            {
+                // TH3: Không có overlap → hiển thị available
+                return new List<BookingResponseDto>
+                {
+                    new BookingResponseDto
+                    {
+                        BookingId = Guid.Empty,
+                        RoomInstanceId = roomInstanceId,
+                        ViewedBookingStatus = "available",
+                        StartDate = fromDate,
+                        EndDate = toDate,
+                        Status = "available",
+                        Note = null
+                    }
+                };
+            }
         }
-    };
-        }
+
+
+
+
 
 
 
