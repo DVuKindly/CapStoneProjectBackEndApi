@@ -35,7 +35,7 @@ namespace MembershipService.API.Services.Implementations
                 throw new InvalidOperationException("Phòng đã có người đặt trong thời gian này.");
 
             var entity = _mapper.Map<Booking>(request);
-            entity.Status = BookingStatus.Hold;
+            entity.Status = BookingStatus.Confirmed;
             entity.CreatedAt = DateTime.UtcNow;
             entity.MemberId = request.MemberId;
 
