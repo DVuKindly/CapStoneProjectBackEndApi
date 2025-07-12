@@ -48,6 +48,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordHasher<UserAuth>, PasswordHasher<UserAuth>>();
 builder.Services.AddScoped<IUserServiceClient, UserServiceClient>();
+builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<EmailSettings>(options =>

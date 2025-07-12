@@ -31,6 +31,7 @@ namespace AuthService.API.Services
         private readonly IUserServiceClient _userServiceClient;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly JwtSettings _jwtSettings;
+        private readonly IAccountQueryService _accountQueryService;
         private readonly AuthDbContext _context;
         
 
@@ -42,7 +43,8 @@ namespace AuthService.API.Services
             IOptions<JwtSettings> jwtOptions,
              AuthDbContext context,
             IUserServiceClient userServiceClient,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor ,
+            IAccountQueryService accountQueryService )
         {
             _userRepository = userRepository;
             _tokenService = tokenService;
@@ -52,6 +54,7 @@ namespace AuthService.API.Services
             _httpContextAccessor = httpContextAccessor;
             _passwordHasher = new PasswordHasher<UserAuth>();
             _userServiceClient = userServiceClient;
+            _accountQueryService = accountQueryService;
         }
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -1024,6 +1027,57 @@ namespace AuthService.API.Services
                 Description = r.Description
             }).ToListAsync();
         }
+
+        public async Task<List<AccountResponseDto>> GetAccountsByRoleAsync(string[] roleKeys)
+        {
+            // Gọi từ UserServiceClient để lấy danh sách profile theo role
+            var profiles = await _userServiceClient.GetUserProfilesByRoleKeysAsync(roleKeys);
+
+            // Map về DTO trả về cho client
+            var result = profiles.Select(profile => new AccountResponseDto
+            {
+                AccountId = profile.AccountId,
+
+                Username = profile.FullName ?? "(Không có tên)",
+                Email = null,                       
+                EmailVerified = false,             
+                IsLocked = false,                
+
+                RoleKey = profile.RoleType,     
+                RoleName = profile.RoleType,     
+
+                RoleType = profile.RoleType,
+                LocationId = profile.LocationId,
+                LocationName = profile.LocationName,
+
+        
+            }).ToList();
+
+            return result;
+        }
+
+        public async Task<List<AccountResponseDto>> GetFilteredAccountsByCurrentUserAsync(Guid currentUserId, string[] roleKeys)
+        {
+            var profile = await _userServiceClient.GetUserProfileShortDtoByIdAsync(currentUserId);
+
+            if (profile == null)
+                return new List<AccountResponseDto>();
+
+            if (profile.RoleType == "super_admin")
+            {
+                return await _accountQueryService.GetAccountsByRoleKeysAsync(roleKeys);
+            }
+
+            if (profile.LocationId == null)
+                return new List<AccountResponseDto>();
+
+            return await _accountQueryService.GetAccountsByRoleKeysAndLocationAsync(profile.LocationId.Value, roleKeys);
+        }
+
+
+
+
+
 
         public async Task<List<PermissionDto>> GetAllPermissionsAsync()
         {

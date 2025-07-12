@@ -1,5 +1,7 @@
 ﻿using AuthService.API.Data;
+using AuthService.API.DTOs.Responses;
 using AuthService.API.Entities;
+using AuthService.API.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.API.Repositories
@@ -7,10 +9,12 @@ namespace AuthService.API.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly AuthDbContext _context;
+        private readonly IUserServiceClient _userServiceClient;
 
-        public UserRepository(AuthDbContext context)
+        public UserRepository(AuthDbContext context, IUserServiceClient userServiceClient)
         {
             _context = context;
+            _userServiceClient = userServiceClient;
         }
 
         public async Task<UserAuth?> GetByEmailAsync(string email)
@@ -97,11 +101,38 @@ namespace AuthService.API.Repositories
 
           
         }
+        public async Task<List<UserAuth>> GetAccountsByRoleKeysAsync(string[] roleKeys)
+        {
+            return await _context.AuthUsers
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => u.UserRoles.Any(ur => roleKeys.Contains(ur.Role.RoleKey)))
+                .ToListAsync();
+        }
+
+
 
         public async Task AddUserRoleAsync(UserRole userRole)
         {
             await _context.UserRoles.AddAsync(userRole);
         }
+
+        public async Task<List<UserAuth>> GetAllUsersWithRolesAsync()
+        {
+            return await _context.AuthUsers
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .ToListAsync();
+        }
+
+   
+      
+
+
+
+
+
+
 
 
     }

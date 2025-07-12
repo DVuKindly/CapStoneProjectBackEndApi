@@ -13,5 +13,10 @@ namespace UserService.API.Services.Interfaces
 
         // Thêm method cập nhật trạng thái hồ sơ
         Task<BaseResponse> UpdateStatusAsync(Guid accountId, UpdateUserProfileStatusDto dto);
+        Task<List<UserProfileShortDto>> GetProfilesByAccountIdsAsync(List<Guid> accountIds);
+        Task<List<UserProfileShortDto>> GetProfilesByRoleKeysAsync(string[] roleKeys);
+        Task<UserProfileShortDto?> GetProfileShortDtoAsync(Guid accountId);
+
+
     }
 }

@@ -151,6 +151,34 @@ namespace UserService.API.Services.Implementations
             };
         }
 
+
+
+
+
+
+
+        public async Task<List<UserProfileShortDto>> GetProfilesByAccountIdsAsync(List<Guid> accountIds)
+        {
+            var profiles = await _db.UserProfiles
+                .Where(p => accountIds.Contains(p.AccountId))
+                .Include(p => p.LocationRegion)
+                .Select(p => new UserProfileShortDto
+                {
+                    AccountId = p.AccountId,
+                    LocationId = p.LocationId,
+                    LocationName = p.LocationRegion != null ? p.LocationRegion.Name : null,
+                    RoleType = p.RoleType
+                })
+                .ToListAsync();
+
+            return profiles;
+        }
+
+
+
+
+
+
         public async Task<BaseResponse> UpdateStatusAsync(Guid accountId, UpdateUserProfileStatusDto dto)
         {
             try
@@ -180,6 +208,38 @@ namespace UserService.API.Services.Implementations
                 return new BaseResponse { Success = false, Message = $"Lỗi khi cập nhật trạng thái hồ sơ: {ex.Message}" };
             }
         }
+
+        public async Task<List<UserProfileShortDto>> GetProfilesByRoleKeysAsync(string[] roleKeys)
+        {
+            var profiles = await _db.UserProfiles
+                .Include(p => p.LocationRegion)
+                .Where(p => roleKeys.Contains(p.RoleType)) 
+                .ToListAsync();
+
+            return profiles.Select(p => new UserProfileShortDto
+            {
+                AccountId = p.AccountId,
+                RoleType = p.RoleType,
+                LocationId = p.LocationId,
+                LocationName = p.LocationRegion?.Name ?? ""
+            }).ToList();
+        }
+
+        public async Task<UserProfileShortDto?> GetProfileShortDtoAsync(Guid accountId)
+        {
+            return await _db.UserProfiles
+                .Where(x => x.AccountId == accountId)
+                .Select(x => new UserProfileShortDto
+                {
+                    AccountId = x.AccountId,
+              
+                    LocationId = x.LocationId,
+                    LocationName = x.LocationRegion.Name,
+                    RoleType = x.RoleType
+                })
+                .FirstOrDefaultAsync();
+        }
+
 
     }
 }

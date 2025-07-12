@@ -1,5 +1,6 @@
 ﻿using AuthService.API.DTOs.AdminCreate;
 using AuthService.API.DTOs.Request;
+using AuthService.API.DTOs.Responses;
 using AuthService.API.Services;
 using System.Text;
 using System.Text.Json;
@@ -34,14 +35,12 @@ public class UserServiceClient : IUserServiceClient
 
             if (profileInfo is UserProfilePayload extra)
             {
-                // ✅ Bổ sung thông tin chi tiết từ profileInfo
                 profilePayload.Phone = extra.Phone;
                 profilePayload.Gender = extra.Gender;
                 profilePayload.DOB = extra.DOB;
                 profilePayload.LocationId = extra.LocationId;
                 profilePayload.OnboardingStatus = extra.OnboardingStatus;
                 profilePayload.Note = extra.Note;
-
                 profilePayload.OrganizationName = extra.OrganizationName;
                 profilePayload.PartnerType = extra.PartnerType;
                 profilePayload.ContractUrl = extra.ContractUrl;
@@ -52,11 +51,9 @@ public class UserServiceClient : IUserServiceClient
                 profilePayload.WebsiteUrl = extra.WebsiteUrl;
                 profilePayload.Industry = extra.Industry;
                 profilePayload.CreatedByAdminId = extra.CreatedByAdminId;
-
                 profilePayload.CoachType = extra.CoachType;
                 profilePayload.Module = extra.Module;
                 profilePayload.Specialty = extra.Specialty;
-
                 profilePayload.Level = extra.Level;
                 profilePayload.Department = extra.Department;
                 profilePayload.Address = extra.Address;
@@ -73,7 +70,6 @@ public class UserServiceClient : IUserServiceClient
                 "staff_service" or "staff_onboarding" or "staff_content" => "/bff/api/user/profiles/create-staff",
                 _ => "/bff/api/user/profiles"
             };
-
 
             var jsonPayload = JsonSerializer.Serialize(profilePayload);
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
@@ -107,6 +103,7 @@ public class UserServiceClient : IUserServiceClient
         var locations = await response.Content.ReadFromJsonAsync<List<LocationDto>>();
         return locations ?? new();
     }
+
     public async Task<string?> GetLocationNameAsync(Guid locationId)
     {
         var locations = await GetLocationsAsync();
@@ -145,6 +142,44 @@ public class UserServiceClient : IUserServiceClient
             return false;
         }
     }
-  
+
+   
+
+    public async Task<Dictionary<Guid, UserProfileDto>> GetProfilesByUserIdsAsync(IEnumerable<Guid> userIds)
+    {
+        var query = string.Join(",", userIds);
+        var response = await _httpClient.GetAsync($"/bff/api/user/profiles/full-by-ids?ids={query}");
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<List<UserProfileDto>>();
+        return result?.ToDictionary(p => p.AccountId) ?? new();
+    }
+    public async Task<List<UserProfileShortDto>> GetUserProfileShortDtosByIdsAsync(List<Guid> ids)
+    {
+        var query = string.Join(",", ids);
+        var response = await _httpClient.GetAsync($"/bff/api/user/profiles/by-ids?ids={query}");
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<List<UserProfileShortDto>>();
+        return result ?? new();
+    }
+    public async Task<List<UserProfileShortDto>> GetUserProfilesByRoleKeysAsync(string[] roleKeys)
+    {
+        var query = string.Join(",", roleKeys);
+        var response = await _httpClient.GetAsync($"/bff/api/user/profiles/by-role-keys?roleKeys={query}");
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<List<UserProfileShortDto>>();
+        return result ?? new();
+    }
+
+    public async Task<UserProfileShortDto?> GetUserProfileShortDtoByIdAsync(Guid accountId)
+    {
+        var response = await _httpClient.GetAsync($"/bff/api/user/profiles/by-id/{accountId}");
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<UserProfileShortDto>();
+        return result;
+    }
 
 }

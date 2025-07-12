@@ -1,4 +1,5 @@
-﻿using AuthService.API.Entities;
+﻿using AuthService.API.DTOs.Responses;
+using AuthService.API.Entities;
 
 namespace AuthService.API.Repositories
 {
@@ -24,5 +25,9 @@ namespace AuthService.API.Repositories
 
         // MỚI: Thêm role cho user
         Task AddUserRoleAsync(UserRole userRole);
+        Task<List<UserAuth>> GetAllUsersWithRolesAsync();
+
+        Task<List<UserAuth>> GetAccountsByRoleKeysAsync(string[] roleKeys);
+
     }
 }

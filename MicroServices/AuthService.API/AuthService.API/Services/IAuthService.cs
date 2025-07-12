@@ -47,6 +47,7 @@ namespace AuthService.API.Services
         Task<List<LocationDto>> GetLocationsAsync();
 
 
+        Task<List<AccountResponseDto>> GetFilteredAccountsByCurrentUserAsync(Guid currentUserId, string[] roleKeys);
 
         Task<BaseResponse> AssignRoleAsync(Guid userId, Guid roleId);
         Task<BaseResponse> AssignPermissionToRoleAsync(Guid roleId, Guid permissionId);
@@ -56,6 +57,11 @@ namespace AuthService.API.Services
         Task<List<PermissionDto>> GetAllPermissionsAsync();
         // Thay đổi Role của một người dùng (chỉ giữ 1 role mới)
         Task<BaseResponse> ChangeUserRoleAsync(Guid userId, Guid newRoleId);
+
+
+        Task<List<AccountResponseDto>> GetAccountsByRoleAsync(string[] roleKeys);
+   
+
 
     }
 }

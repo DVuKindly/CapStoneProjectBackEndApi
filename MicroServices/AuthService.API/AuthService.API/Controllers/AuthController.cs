@@ -6,6 +6,8 @@ using AuthService.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using AuthService.API.Repositories;
+using AuthService.API.Extensions;
 
 namespace AuthService.API.Controllers
 {
@@ -15,11 +17,17 @@ namespace AuthService.API.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ITokenService _tokenService;
+        private readonly IUserRepository _userRepository;
+        private readonly IAccountQueryService _accountQueryService;
+        private readonly IUserServiceClient _userServiceClient;
 
-        public AuthController(IAuthService authService, ITokenService tokenService)
+        public AuthController(IAuthService authService, ITokenService tokenService, IUserRepository userRepository, IAccountQueryService accountQueryService, IUserServiceClient userServiceClient)
         {
             _authService = authService;
             _tokenService = tokenService;
+            _userRepository = userRepository;
+            _accountQueryService = accountQueryService;
+            _userServiceClient = userServiceClient;
         }
 
         [HttpPost("register")]
@@ -117,6 +125,20 @@ namespace AuthService.API.Controllers
             var locations = await _authService.GetLocationsAsync();
             return Ok(locations);
         }
+
+        [HttpGet("accounts")]
+        [Authorize(Roles = "super_admin,admin,manager,staff_service,staff_onboarding,staff_content")]
+        public async Task<IActionResult> GetAccounts([FromQuery] string[] roleKeys)
+        {
+            var currentUserId = User.GetAccountId();
+
+            // Gọi AuthService để xử lý logic phân quyền + gọi đến AccountQueryService bên trong
+            var result = await _authService.GetFilteredAccountsByCurrentUserAsync(currentUserId, roleKeys);
+            return Ok(result);
+        }
+
+
+
     }
 
     public class PromoteToMemberRequest

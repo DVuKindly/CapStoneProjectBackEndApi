@@ -137,5 +137,44 @@ namespace UserService.API.Controllers
         }
 
 
+
+
+        [HttpGet("by-ids")]
+        public async Task<IActionResult> GetProfilesByIds([FromQuery] string ids)
+        {
+            if (string.IsNullOrWhiteSpace(ids))
+                return BadRequest("Danh sách ID trống.");
+
+            var idList = ids
+                .Split(',')
+                .Select(id => Guid.TryParse(id, out var guid) ? guid : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToList();
+
+            if (!idList.Any())
+                return BadRequest("Danh sách ID không hợp lệ.");
+
+            var profiles = await _userProfileService.GetProfilesByAccountIdsAsync(idList); 
+            return Ok(profiles);
+        }
+
+        [HttpGet("by-role-keys")]
+        public async Task<IActionResult> GetProfilesByRoleKeys([FromQuery] string roleKeys)
+        {
+            var keys = roleKeys.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var result = await _userProfileService.GetProfilesByRoleKeysAsync(keys);
+            return Ok(result);
+        }
+
+        [HttpGet("by-id/{accountId}")]
+        public async Task<IActionResult> GetProfileById(Guid accountId)
+        {
+            var profile = await _userProfileService.GetProfileShortDtoAsync(accountId);
+            if (profile == null)
+                return NotFound(new { success = false, message = "Không tìm thấy hồ sơ người dùng." });
+
+            return Ok(profile);
+        }
+
     }
 }
