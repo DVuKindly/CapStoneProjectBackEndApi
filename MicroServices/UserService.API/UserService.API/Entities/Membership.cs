@@ -50,7 +50,7 @@ namespace UserService.API.Entities
         // ✅ NEW: Liên kết với yêu cầu
         public Guid? PendingRequestId { get; set; }
         public PendingMembershipRequest? PendingRequest { get; set; }
-
+      
         [NotMapped]
         public bool IsActive => ExpireAt > DateTime.UtcNow;
     }

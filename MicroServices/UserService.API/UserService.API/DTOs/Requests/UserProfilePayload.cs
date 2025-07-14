@@ -31,6 +31,14 @@ namespace UserService.API.DTOs.Requests
         public string? Certifications { get; set; }
         public string? LinkedInUrl { get; set; }
 
+
+
+
+        public List<Guid>? InterestIds { get; set; }
+        public List<Guid>? PersonalityTraitIds { get; set; }
+
+
+
         // Partner
         public string? OrganizationName { get; set; }
         public string? PartnerType { get; set; }

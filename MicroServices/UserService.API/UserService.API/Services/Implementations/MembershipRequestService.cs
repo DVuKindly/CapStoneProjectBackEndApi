@@ -139,7 +139,7 @@ public class MembershipRequestService : IMembershipRequestService
 
     public async Task<List<PendingMembershipRequestDto>> GetPendingRequestsForStaffAsync(Guid staffAccountId)
     {
-        // 1. Lấy LocationId của staff
+        // 1. Get staff's LocationId
         var staffLocationId = await _db.StaffProfiles
             .Where(s => s.AccountId == staffAccountId)
             .Select(s => s.LocationId)
@@ -148,16 +148,21 @@ public class MembershipRequestService : IMembershipRequestService
         if (staffLocationId == Guid.Empty)
             return new List<PendingMembershipRequestDto>();
 
-        // 2. Lấy danh sách request có cùng LocationId và status = Pending
+        // 2. Get pending requests with same location
         var pendingRequests = await _db.PendingMembershipRequests
             .Where(r => r.LocationId == staffLocationId && r.Status == "Pending")
             .Include(r => r.UserProfile)
+                .ThenInclude(u => u.UserPersonalityTraits)
+                    .ThenInclude(t => t.PersonalityTrait)
+            .Include(r => r.UserProfile)
+                .ThenInclude(u => u.UserSkills)
+                    .ThenInclude(s => s.Skill)
             .ToListAsync();
 
         if (!pendingRequests.Any())
             return new List<PendingMembershipRequestDto>();
 
-        // 3. Lấy tất cả PackageId duy nhất để gọi MembershipService
+        // 3. Get plan info from MembershipService
         var packageIds = pendingRequests
             .Where(r => r.PackageId.HasValue)
             .Select(r => r.PackageId!.Value)
@@ -167,11 +172,15 @@ public class MembershipRequestService : IMembershipRequestService
         var plans = await _membershipServiceClient.GetBasicPlansByIdsAsync(packageIds);
         var planDict = plans.ToDictionary(p => p.Id, p => p);
 
-        // 4. Mapping sang DTO đầy đủ
+        // 4. Map to DTOs
         var result = pendingRequests.Select(r =>
         {
             var user = r.UserProfile;
             planDict.TryGetValue(r.PackageId ?? Guid.Empty, out var plan);
+
+            var traits = user?.UserPersonalityTraits?.Select(t => t.PersonalityTrait.Name) ?? new List<string>();
+            var skills = user?.UserSkills?.Select(s => s.Skill.Name) ?? new List<string>();
+            var combinedTraits = traits.Concat(skills).ToList();
 
             return new PendingMembershipRequestDto
             {
@@ -190,10 +199,10 @@ public class MembershipRequestService : IMembershipRequestService
 
                 MessageToStaff = r.MessageToStaff,
                 CreatedAt = r.CreatedAt,
-                LocationName = plan?.LocationName ?? "Không rõ",
+                LocationName = plan?.LocationName ?? "Unknown",
 
                 Interests = r.Interests,
-                PersonalityTraits = r.PersonalityTraits,
+                PersonalityTraits = string.Join(", ", combinedTraits),
                 Introduction = r.Introduction,
                 CvUrl = r.CvUrl,
 
@@ -218,188 +227,7 @@ public class MembershipRequestService : IMembershipRequestService
 
 
 
-    public async Task<BaseResponse> SubmitRequestAsync(Guid accountId, MembershipRequestDto dto)
-    {
-        if (dto.PackageId == Guid.Empty)
-            return BaseResponse.Fail("Thiếu mã gói dịch vụ.");
 
-        var packageType = dto.PackageType?.ToLower();
-        if (packageType != "basic" && packageType != "combo")
-            return BaseResponse.Fail("Loại gói không hợp lệ. Chỉ được chọn 'basic' hoặc 'combo'.");
-
-        var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
-        if (user == null)
-            return BaseResponse.Fail("Không tìm thấy hồ sơ người dùng.");
-
-        if (!IsUserProfileCompleted(user))
-            return BaseResponse.Fail("Vui lòng hoàn tất hồ sơ cá nhân trước khi gửi yêu cầu.");
-
-        var existingRequest = await _db.PendingMembershipRequests
-            .Where(r => r.AccountId == accountId && r.PackageId == dto.PackageId &&
-                        (r.Status == "Pending" || r.Status == "PendingPayment" || r.Status == "Completed"))
-            .OrderByDescending(r => r.CreatedAt)
-            .FirstOrDefaultAsync();
-
-        if (existingRequest != null)
-        {
-            if (existingRequest.Status == "Completed" || existingRequest.Status == "Pending")
-                return BaseResponse.Fail("Bạn đã gửi hoặc đã mua gói này rồi. Không thể gửi lại yêu cầu.");
-
-            if (existingRequest.Status == "PendingPayment")
-            {
-                var elapsed = DateTime.UtcNow - existingRequest.CreatedAt;
-                if (elapsed.TotalMinutes < 15)
-                    return BaseResponse.Fail("Bạn đã tạo yêu cầu mua gói này và chưa thanh toán. Vui lòng hoàn tất thanh toán hoặc đợi 15 phút để gửi lại.");
-
-                _db.PendingMembershipRequests.Remove(existingRequest);
-                await _db.SaveChangesAsync();
-            }
-        }
-
-        Guid locationId;
-        string name;
-        decimal price;
-
-        var selectedStartDate = dto.SelectedStartDate?.Date ?? DateTime.UtcNow.Date;
-
-        if (packageType == "basic")
-        {
-            var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
-            var duration = await _membershipServiceClient.GetPlanDurationAsync(dto.PackageId, "basic");
-            if (plan == null || duration == null || string.IsNullOrWhiteSpace(duration.Unit))
-                return BaseResponse.Fail("Không thể lấy thông tin gói hoặc thời hạn từ MembershipService.");
-
-            var priceInfo = await _membershipServiceClient.GetPlanPriceAsync(dto.PackageId, "basic");
-            price = Convert.ToDecimal(priceInfo);
-            locationId = plan.LocationId ?? Guid.Empty;
-            name = plan.Name;
-
-            if (dto.RequireBooking)
-            {
-                if (dto.RoomInstanceId == null)
-                    return BaseResponse.Fail("Thiếu RoomInstanceId.");
-
-                // Check phòng có thuộc gói hay không
-                var roomValid = await _membershipServiceClient.IsRoomBelongToPlanAsync(dto.PackageId, dto.RoomInstanceId.Value);
-                if (!roomValid)
-                    return BaseResponse.Fail("Phòng được chọn không thuộc gói này.");
-
-                // Check phòng đã được đặt trước đó chưa (chỉ cần kiểm tra RoomInstanceId + ngày bắt đầu)
-                var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate);
-                if (isBooked)
-                    return BaseResponse.Fail("Phòng đã được đặt vào ngày được chọn. Vui lòng chọn ngày khác.");
-            }
-
-            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate);
-            request.PackageDurationValue = duration.Value;
-            request.PackageDurationUnit = duration.Unit;
-            request.RequireBooking = dto.RequireBooking;
-            request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
-
-            _db.PendingMembershipRequests.Add(request);
-            await _db.SaveChangesAsync();
-
-            if (plan.VerifyBuy)
-            {
-                if (string.IsNullOrWhiteSpace(dto.RedirectUrl))
-                    return BaseResponse.Fail("Thiếu RedirectUrl để chuyển hướng sau thanh toán.");
-
-                request.Status = "PendingPayment";
-                await _db.SaveChangesAsync();
-
-                var paymentDto = new CreatePaymentRequestDto
-                {
-                    RequestId = request.Id,
-                    AccountId = accountId,
-                    PackageId = request.PackageId,
-                    Amount = request.Amount,
-                    PackageType = "basic",
-                    PaymentMethod = "VNPAY",
-                    RedirectUrl = dto.RedirectUrl
-                };
-
-                var paymentResponse = await _paymentServiceClient.CreatePaymentRequestAsync(paymentDto);
-                if (!paymentResponse.Success)
-                    return BaseResponse.Fail("Tạo thanh toán thất bại: " + paymentResponse.Message);
-
-                return BaseResponse.Ok("Yêu cầu đã được tạo và chuyển sang thanh toán.", new
-                {
-                    IsDirectPurchase = true,
-                    RequestId = request.Id,
-                    PaymentUrl = paymentResponse.Data
-                });
-            }
-
-            request.Status = "Pending";
-            await _db.SaveChangesAsync();
-
-            return BaseResponse.Ok("Yêu cầu của bạn đã được gửi. Vui lòng chờ xét duyệt.", new
-            {
-                IsDirectPurchase = false,
-                RequestId = request.Id
-            });
-        }
-
-        if (packageType == "combo")
-        {
-            var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
-            var duration = await _membershipServiceClient.GetPlanDurationAsync(dto.PackageId, "combo");
-            if (combo == null || duration == null || string.IsNullOrWhiteSpace(duration.Unit))
-                return BaseResponse.Fail("Không thể lấy thông tin gói Combo hoặc thời hạn từ MembershipService.");
-
-            var priceInfo = await _membershipServiceClient.GetPlanPriceAsync(dto.PackageId, "combo");
-            price = priceInfo;
-            locationId = combo.LocationId ?? Guid.Empty;
-            name = combo.Name;
-
-            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate);
-            request.PackageDurationValue = duration.Value;
-            request.PackageDurationUnit = duration.Unit;
-            request.Status = "Pending";
-
-            _db.PendingMembershipRequests.Add(request);
-            await _db.SaveChangesAsync();
-
-            return BaseResponse.Ok("Yêu cầu mua gói Combo đã được gửi. Vui lòng chờ xét duyệt.", new
-            {
-                IsDirectPurchase = false,
-                RequestId = request.Id
-            });
-        }
-
-        return BaseResponse.Fail("Xảy ra lỗi không xác định.");
-    }
-
-
-    private PendingMembershipRequest BuildRequest(
-    Guid accountId,
-    Guid packageId,
-    string name,
-    decimal price,
-    Guid locationId,
-    UserProfile user,
-    string? messageToStaff,
-    string packageType,
-    DateTime startDate)
-{
-    return new PendingMembershipRequest
-    {
-        Id = Guid.NewGuid(),
-        AccountId = accountId,
-        PackageId = packageId,
-        RequestedPackageName = name ?? "Unknown",
-        Amount = price,
-        LocationId = locationId,
-        Interests = user.Interests ?? "",
-        PersonalityTraits = user.PersonalityTraits ?? "",
-        Introduction = user.Introduction ?? "",
-        CvUrl = user.CvUrl ?? "",
-        MessageToStaff = messageToStaff ?? "",
-        CreatedAt = DateTime.UtcNow,
-        PackageType = packageType ?? "basic",
-        StartDate = startDate
-    };
-}
 
 
 
@@ -426,16 +254,17 @@ public class MembershipRequestService : IMembershipRequestService
             && !string.IsNullOrWhiteSpace(user.Gender)
             && user.DOB.HasValue
             && !string.IsNullOrWhiteSpace(user.AvatarUrl)
-            && !string.IsNullOrWhiteSpace(user.Interests)
-              && !string.IsNullOrWhiteSpace(user.Address)
-            && !string.IsNullOrWhiteSpace(user.PersonalityTraits)
+            && user.UserInterests != null && user.UserInterests.Any()
+            && ((user.UserPersonalityTraits != null && user.UserPersonalityTraits.Any())
+                || (user.UserSkills != null && user.UserSkills.Any()))
             && !string.IsNullOrWhiteSpace(user.Introduction)
             && !string.IsNullOrWhiteSpace(user.CvUrl);
     }
 
+
     public async Task<PendingMembershipRequestDto?> GetRequestDetailAsync(Guid requestId, Guid staffAccountId)
     {
-        // Lấy khu vực của staff
+        // 1. Lấy khu vực của staff
         var staffRegionId = await _db.StaffProfiles
             .Where(s => s.AccountId == staffAccountId)
             .Select(s => s.LocationId)
@@ -444,30 +273,42 @@ public class MembershipRequestService : IMembershipRequestService
         if (staffRegionId == Guid.Empty)
             return null;
 
-        // Lấy yêu cầu kèm user
+        // 2. Lấy request kèm user profile, interests, traits, skills
         var request = await _db.PendingMembershipRequests
             .Include(r => r.UserProfile)
-            .FirstOrDefaultAsync(r =>
-                r.Id == requestId &&
-                r.LocationId == staffRegionId);
+                .ThenInclude(u => u.UserInterests)
+                    .ThenInclude(i => i.Interest)
+            .Include(r => r.UserProfile)
+                .ThenInclude(u => u.UserPersonalityTraits)
+                    .ThenInclude(pt => pt.PersonalityTrait)
+            .Include(r => r.UserProfile)
+                .ThenInclude(u => u.UserSkills)
+                    .ThenInclude(s => s.Skill)
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.LocationId == staffRegionId);
 
         if (request == null)
             return null;
 
         var user = request.UserProfile;
 
-        // Lấy thông tin membership nếu đã thanh toán
+        // 3. Lấy thông tin Membership nếu đã mua gói (ưu tiên MembershipData mới hơn RequestData)
         var membership = await _db.Memberships
-            .Where(m => m.AccountId == request.AccountId)
+            .Where(m => m.AccountId == request.AccountId && m.PackageId == request.PackageId)
             .OrderByDescending(m => m.PurchasedAt)
             .FirstOrDefaultAsync();
 
-        // Lấy location name từ bảng LocationRegions
+        // 4. Lấy tên location
         var locationName = await _db.LocationRegions
             .Where(l => l.Id == request.LocationId)
             .Select(l => l.Name)
             .FirstOrDefaultAsync();
 
+        // 5. Ghép tên sở thích, traits, skills
+        var interestNames = user?.UserInterests.Select(i => i.Interest.Name).ToList() ?? new();
+        var personalityNames = user?.UserPersonalityTraits.Select(t => t.PersonalityTrait.Name).ToList() ?? new();
+        var skillNames = user?.UserSkills.Select(s => s.Skill.Name).ToList() ?? new();
+
+        // 6. Trả về DTO hoàn chỉnh
         return new PendingMembershipRequestDto
         {
             RequestId = request.Id,
@@ -485,10 +326,13 @@ public class MembershipRequestService : IMembershipRequestService
             MessageToStaff = request.MessageToStaff,
             CreatedAt = request.CreatedAt,
             LocationName = locationName,
-            Interests = request.Interests,
-            PersonalityTraits = request.PersonalityTraits,
+
+            Interests = string.Join(", ", interestNames),
+            PersonalityTraits = string.Join(", ", personalityNames.Concat(skillNames)),
+
             Introduction = request.Introduction,
             CvUrl = request.CvUrl,
+
             ExtendedProfile = new ExtendedProfileDto
             {
                 Gender = user?.Gender,
@@ -500,6 +344,7 @@ public class MembershipRequestService : IMembershipRequestService
             }
         };
     }
+
 
 
 
@@ -587,7 +432,7 @@ public class MembershipRequestService : IMembershipRequestService
                 CreatedAt = m.PurchasedAt,
                 LocationName = plan?.LocationName,
                 Interests = user?.Interests,
-                PersonalityTraits = user?.PersonalityTraits,
+              
                 Introduction = user?.Introduction,
                 CvUrl = user?.CvUrl,
                 PackageType = m.PackageType,
@@ -673,7 +518,7 @@ public class MembershipRequestService : IMembershipRequestService
 
     public async Task<List<PendingMembershipRequestDto>> GetAllRequestsForStaffLocationAsync(Guid staffAccountId)
     {
-        // 1. Lấy khu vực mà Staff đang phụ trách
+        // 1. Lấy khu vực của staff
         var staffLocationId = await _db.StaffProfiles
             .Where(s => s.AccountId == staffAccountId)
             .Select(s => s.LocationId)
@@ -682,19 +527,27 @@ public class MembershipRequestService : IMembershipRequestService
         if (staffLocationId == Guid.Empty)
             return new();
 
-        // 2. Lấy danh sách request trong khu vực đó
+        // 2. Lấy toàn bộ request trong khu vực
         var requests = await _db.PendingMembershipRequests
             .Where(r => r.LocationId == staffLocationId)
             .Include(r => r.UserProfile)
+                .ThenInclude(u => u.UserInterests)
+                    .ThenInclude(i => i.Interest)
+            .Include(r => r.UserProfile)
+                .ThenInclude(u => u.UserPersonalityTraits)
+                    .ThenInclude(t => t.PersonalityTrait)
+            .Include(r => r.UserProfile)
+                .ThenInclude(u => u.UserSkills)
+                    .ThenInclude(s => s.Skill)
             .ToListAsync();
 
         if (!requests.Any())
             return new();
 
-        // 3. Lấy accountId và packageId để xử lý Membership và giá
+        // 3. Lấy các accountId duy nhất
         var accountIds = requests.Select(r => r.AccountId).Distinct().ToList();
 
-        // 4. Lấy Membership đã thanh toán của user (nếu có)
+        // 4. Lấy Membership gần nhất cho từng account (nếu có)
         var memberships = await _db.Memberships
             .Where(m => accountIds.Contains(m.AccountId))
             .ToListAsync();
@@ -703,19 +556,25 @@ public class MembershipRequestService : IMembershipRequestService
             .GroupBy(m => m.AccountId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(m => m.PurchasedAt).First());
 
-        // 5. Lấy tên khu vực (LocationRegion.Name) theo LocationId
-        var locationRegions = await _db.LocationRegions
+        // 5. Lấy tên khu vực
+        var regionName = await _db.LocationRegions
             .Where(l => l.Id == staffLocationId)
-            .ToDictionaryAsync(l => l.Id, l => l.Name);
+            .Select(l => l.Name)
+            .FirstOrDefaultAsync() ?? string.Empty;
 
-        // 6. Chuẩn bị danh sách kết quả
-        var result = requests.Select(r =>
+        // 6. Chuẩn bị kết quả
+        var result = new List<PendingMembershipRequestDto>();
+
+        foreach (var r in requests)
         {
             var user = r.UserProfile;
             membershipDict.TryGetValue(r.AccountId, out var membership);
-            locationRegions.TryGetValue(r.LocationId ?? Guid.Empty, out var regionName);
 
-            return new PendingMembershipRequestDto
+            var interestNames = user?.UserInterests?.Select(i => i.Interest.Name).ToList() ?? new();
+            var traitNames = user?.UserPersonalityTraits?.Select(t => t.PersonalityTrait.Name).ToList() ?? new();
+            var skillNames = user?.UserSkills?.Select(s => s.Skill.Name).ToList() ?? new();
+
+            result.Add(new PendingMembershipRequestDto
             {
                 RequestId = r.Id,
                 FullName = user?.FullName,
@@ -731,11 +590,13 @@ public class MembershipRequestService : IMembershipRequestService
                 ApprovedAt = r.ApprovedAt,
                 MessageToStaff = r.MessageToStaff,
                 CreatedAt = r.CreatedAt,
-                LocationName = regionName ?? string.Empty, // ✅ Lấy từ LocationRegions
-                Interests = r.Interests,
-                PersonalityTraits = r.PersonalityTraits,
-                Introduction = r.Introduction,
-                CvUrl = r.CvUrl,
+                LocationName = regionName,
+                Interests = string.Join(", ", interestNames),
+                PersonalityTraits = string.Join(", ", traitNames.Concat(skillNames)),
+                Introduction = user?.Introduction,
+                CvUrl = user?.CvUrl,
+                RequireBooking = r.RequireBooking,
+                RoomInstanceId = r.RoomInstanceId,
                 ExtendedProfile = new ExtendedProfileDto
                 {
                     Gender = user?.Gender,
@@ -745,8 +606,8 @@ public class MembershipRequestService : IMembershipRequestService
                     Address = user?.Address,
                     RoleType = user?.RoleType
                 }
-            };
-        }).ToList();
+            });
+        }
 
         return result;
     }
@@ -755,6 +616,197 @@ public class MembershipRequestService : IMembershipRequestService
 
 
 
+
+    public async Task<BaseResponse> SubmitRequestAsync(Guid accountId, MembershipRequestDto dto)
+    {
+        if (dto.PackageId == Guid.Empty)
+            return BaseResponse.Fail("Missing package ID.");
+
+        var packageType = dto.PackageType?.ToLower();
+        if (packageType != "basic" && packageType != "combo")
+            return BaseResponse.Fail("Invalid package type. Must be 'basic' or 'combo'.");
+
+        var user = await _db.UserProfiles
+            .Include(u => u.UserInterests).ThenInclude(ui => ui.Interest)
+            .Include(u => u.UserPersonalityTraits).ThenInclude(pt => pt.PersonalityTrait)
+            .Include(u => u.UserSkills).ThenInclude(s => s.Skill)
+            .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+        if (user == null)
+            return BaseResponse.Fail("User profile not found.");
+
+        if (!IsUserProfileCompleted(user))
+            return BaseResponse.Fail("Please complete your profile before submitting a request.");
+
+        var existingRequest = await _db.PendingMembershipRequests
+            .Where(r => r.AccountId == accountId && r.PackageId == dto.PackageId &&
+                        (r.Status == "Pending" || r.Status == "PendingPayment" || r.Status == "Completed"))
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (existingRequest != null)
+        {
+            if (existingRequest.Status == "Completed" || existingRequest.Status == "Pending")
+                return BaseResponse.Fail("You have already submitted or purchased this package.");
+
+            if (existingRequest.Status == "PendingPayment")
+            {
+                var elapsed = DateTime.UtcNow - existingRequest.CreatedAt;
+                if (elapsed.TotalMinutes < 15)
+                    return BaseResponse.Fail("You have already created a request for this package and not completed payment. Please wait 15 minutes or complete the payment.");
+
+                _db.PendingMembershipRequests.Remove(existingRequest);
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        Guid locationId;
+        string name;
+        decimal price;
+
+        var selectedStartDate = dto.SelectedStartDate?.Date ?? DateTime.UtcNow.Date;
+
+        if (packageType == "basic")
+        {
+            var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
+            var duration = await _membershipServiceClient.GetPlanDurationAsync(dto.PackageId, "basic");
+            if (plan == null || duration == null || string.IsNullOrWhiteSpace(duration.Unit))
+                return BaseResponse.Fail("Unable to get plan or duration info from MembershipService.");
+
+            var priceInfo = await _membershipServiceClient.GetPlanPriceAsync(dto.PackageId, "basic");
+            price = Convert.ToDecimal(priceInfo);
+            locationId = plan.LocationId ?? Guid.Empty;
+            name = plan.Name;
+
+            if (dto.RequireBooking)
+            {
+                if (dto.RoomInstanceId == null)
+                    return BaseResponse.Fail("RoomInstanceId is required.");
+
+                var roomValid = await _membershipServiceClient.IsRoomBelongToPlanAsync(dto.PackageId, dto.RoomInstanceId.Value);
+                if (!roomValid)
+                    return BaseResponse.Fail("Selected room does not belong to this package.");
+
+                var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate);
+                if (isBooked)
+                    return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
+            }
+
+            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate);
+            request.PackageDurationValue = duration.Value;
+            request.PackageDurationUnit = duration.Unit;
+            request.RequireBooking = dto.RequireBooking;
+            request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
+
+            _db.PendingMembershipRequests.Add(request);
+            await _db.SaveChangesAsync();
+
+            if (plan.VerifyBuy)
+            {
+                if (string.IsNullOrWhiteSpace(dto.RedirectUrl))
+                    return BaseResponse.Fail("RedirectUrl is required after payment.");
+
+                request.Status = "PendingPayment";
+                await _db.SaveChangesAsync();
+
+                var paymentDto = new CreatePaymentRequestDto
+                {
+                    RequestId = request.Id,
+                    AccountId = accountId,
+                    PackageId = request.PackageId,
+                    Amount = request.Amount,
+                    PackageType = "basic",
+                    PaymentMethod = "VNPAY",
+                    RedirectUrl = dto.RedirectUrl
+                };
+
+                var paymentResponse = await _paymentServiceClient.CreatePaymentRequestAsync(paymentDto);
+                if (!paymentResponse.Success)
+                    return BaseResponse.Fail("Payment creation failed: " + paymentResponse.Message);
+
+                return BaseResponse.Ok("Request created and proceeding to payment.", new
+                {
+                    IsDirectPurchase = true,
+                    RequestId = request.Id,
+                    PaymentUrl = paymentResponse.Data
+                });
+            }
+
+            request.Status = "Pending";
+            await _db.SaveChangesAsync();
+
+            return BaseResponse.Ok("Your request has been submitted. Please wait for approval.", new
+            {
+                IsDirectPurchase = false,
+                RequestId = request.Id
+            });
+        }
+
+        if (packageType == "combo")
+        {
+            var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
+            var duration = await _membershipServiceClient.GetPlanDurationAsync(dto.PackageId, "combo");
+            if (combo == null || duration == null || string.IsNullOrWhiteSpace(duration.Unit))
+                return BaseResponse.Fail("Unable to get combo plan or duration info.");
+
+            var priceInfo = await _membershipServiceClient.GetPlanPriceAsync(dto.PackageId, "combo");
+            price = priceInfo;
+            locationId = combo.LocationId ?? Guid.Empty;
+            name = combo.Name;
+
+            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate);
+            request.PackageDurationValue = duration.Value;
+            request.PackageDurationUnit = duration.Unit;
+            request.Status = "Pending";
+
+            _db.PendingMembershipRequests.Add(request);
+            await _db.SaveChangesAsync();
+
+            return BaseResponse.Ok("Combo plan request submitted successfully.", new
+            {
+                IsDirectPurchase = false,
+                RequestId = request.Id
+            });
+        }
+
+        return BaseResponse.Fail("Unexpected error occurred.");
+    }
+
+
+
+    private PendingMembershipRequest BuildRequest(
+       Guid accountId,
+       Guid packageId,
+       string name,
+       decimal price,
+       Guid locationId,
+       UserProfile user,
+       string? messageToStaff,
+       string packageType,
+       DateTime startDate)
+    {
+        var traitNames = user.UserPersonalityTraits.Select(p => p.PersonalityTrait.Name);
+        var skillNames = user.UserSkills.Select(s => s.Skill.Name);
+        var combinedTraits = traitNames.Concat(skillNames);
+
+        return new PendingMembershipRequest
+        {
+            Id = Guid.NewGuid(),
+            AccountId = accountId,
+            PackageId = packageId,
+            RequestedPackageName = name ?? "Unknown",
+            Amount = price,
+            LocationId = locationId,
+            Interests = string.Join(",", user.UserInterests.Select(i => i.Interest.Name)),
+            PersonalityTraits = string.Join(",", combinedTraits),
+            Introduction = user.Introduction ?? "",
+            CvUrl = user.CvUrl ?? "",
+            MessageToStaff = messageToStaff ?? "",
+            CreatedAt = DateTime.UtcNow,
+            PackageType = packageType ?? "basic",
+            StartDate = startDate
+        };
+    }
 
 
 
@@ -846,7 +898,8 @@ public class MembershipRequestService : IMembershipRequestService
             // Thời hạn
             PackageDurationValue = durationValue,
             PackageDurationUnit = durationUnit,
-            ExpireAt = expireAt
+            ExpireAt = expireAt,
+            RoomInstanceId = request.RequireBooking == true ? request.RoomInstanceId : null
         };
 
         _db.Memberships.Add(membership);

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using UserService.API.Data;
@@ -18,6 +20,17 @@ namespace UserService.API.Services.Implementations
             _db = db;
         }
 
+        private async Task<(List<Guid> skillIds, List<Guid> traitIds)> SplitTraitsAndSkillsAsync(List<Guid> ids)
+        {
+            var skillIds = await _db.Skills
+                .Where(s => ids.Contains(s.Id))
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            var traitIds = ids.Except(skillIds).ToList();
+            return (skillIds, traitIds);
+        }
+
         public async Task<BaseResponse> CreateAsync(UserProfilePayload request)
         {
             try
@@ -33,7 +46,8 @@ namespace UserService.API.Services.Implementations
                     RoleType = request.RoleType,
                     LocationId = request.LocationId == Guid.Empty ? null : request.LocationId,
                     IsCompleted = false,
-                    Interests = request.
+                    Interests = string.Join(",", request.InterestIds ?? new List<Guid>()),
+                    PersonalityTraits = string.Join(",", request.PersonalityTraitIds ?? new List<Guid>()),
                     Phone = request.Phone,
                     Gender = request.Gender,
                     DOB = string.IsNullOrEmpty(request.DOB) ? null : DateTime.Parse(request.DOB),
@@ -45,6 +59,42 @@ namespace UserService.API.Services.Implementations
                 };
 
                 await _db.UserProfiles.AddAsync(entity);
+
+                if (request.InterestIds != null)
+                {
+                    foreach (var id in request.InterestIds)
+                    {
+                        _db.UserInterests.Add(new UserInterest
+                        {
+                            UserProfileId = request.AccountId,
+                            InterestId = id
+                        });
+                    }
+                }
+
+                if (request.PersonalityTraitIds != null)
+                {
+                    var (skillIds, traitIds) = await SplitTraitsAndSkillsAsync(request.PersonalityTraitIds);
+
+                    foreach (var id in skillIds)
+                    {
+                        _db.UserSkills.Add(new UserSkill
+                        {
+                            UserProfileId = request.AccountId,
+                            SkillId = id
+                        });
+                    }
+
+                    foreach (var id in traitIds)
+                    {
+                        _db.UserPersonalityTraits.Add(new UserPersonalityTrait
+                        {
+                            UserProfileId = request.AccountId,
+                            PersonalityTraitId = id
+                        });
+                    }
+                }
+
                 await _db.SaveChangesAsync();
 
                 return new BaseResponse { Success = true, Message = "Tạo hồ sơ thành công." };
@@ -55,9 +105,6 @@ namespace UserService.API.Services.Implementations
             }
         }
 
-
-
-        // ✅ GET profile cá nhân
         public async Task<UserProfileDto> GetProfileAsync(Guid accountId)
         {
             var user = await _db.UserProfiles
@@ -65,6 +112,24 @@ namespace UserService.API.Services.Implementations
                 .FirstOrDefaultAsync(u => u.AccountId == accountId);
 
             if (user == null) return null!;
+
+            var interestNames = await _db.UserInterests
+                .Where(ui => ui.UserProfileId == accountId)
+                .Include(ui => ui.Interest)
+                .Select(ui => ui.Interest.Name)
+                .ToListAsync();
+
+            var traitNames = await _db.UserPersonalityTraits
+                .Where(up => up.UserProfileId == accountId)
+                .Include(up => up.PersonalityTrait)
+                .Select(up => up.PersonalityTrait.Name)
+                .ToListAsync();
+
+            var skillNames = await _db.UserSkills
+                .Where(us => us.UserProfileId == accountId)
+                .Include(us => us.Skill)
+                .Select(us => us.Skill.Name)
+                .ToListAsync();
 
             return new UserProfileDto
             {
@@ -80,11 +145,10 @@ namespace UserService.API.Services.Implementations
                 Address = user.Address,
                 OnboardingStatus = user.OnboardingStatus,
                 Note = user.Note,
-             Interests = user.Interests,
-             CvUrl = user.CvUrl,
-             Introduction = user.Introduction,
-             PersonalityTraits = user.PersonalityTraits,
-
+                Interests = interestNames,
+                PersonalityTraits = traitNames.Concat(skillNames).ToList(),
+                CvUrl = user.CvUrl,
+                Introduction = user.Introduction
             };
         }
 
@@ -99,11 +163,97 @@ namespace UserService.API.Services.Implementations
                 return new UserProfileResponseDto
                 {
                     Success = false,
-                    Message = "Không tìm thấy người dùng."
+                    Message = "User not found."
                 };
             }
 
-            // ✅ Cập nhật thông tin cho phép
+            // Validate interest IDs
+            if (dto.InterestIds != null && dto.InterestIds.Any())
+            {
+                var validInterestIds = await _db.Interests
+                    .Where(i => dto.InterestIds.Contains(i.Id))
+                    .Select(i => i.Id)
+                    .ToListAsync();
+
+                var invalidIds = dto.InterestIds.Except(validInterestIds).ToList();
+
+                if (invalidIds.Any())
+                {
+                    return new UserProfileResponseDto
+                    {
+                        Success = false,
+                        Message = $"Invalid InterestId(s): {string.Join(", ", invalidIds)}"
+                    };
+                }
+
+                var old = await _db.UserInterests.Where(x => x.UserProfileId == accountId).ToListAsync();
+                _db.UserInterests.RemoveRange(old);
+
+                foreach (var id in dto.InterestIds)
+                {
+                    _db.UserInterests.Add(new UserInterest
+                    {
+                        UserProfileId = accountId,
+                        InterestId = id
+                    });
+                }
+
+                user.Interests = string.Join(",", dto.InterestIds);
+            }
+
+            // Validate personality trait and skill IDs
+            if (dto.PersonalityTraitIds != null && dto.PersonalityTraitIds.Any())
+            {
+                var allTraitIds = dto.PersonalityTraitIds;
+
+                var validSkillIds = await _db.Skills
+                    .Where(s => allTraitIds.Contains(s.Id))
+                    .Select(s => s.Id)
+                    .ToListAsync();
+
+                var validTraitIds = await _db.PersonalityTraits
+                    .Where(t => allTraitIds.Contains(t.Id))
+                    .Select(t => t.Id)
+                    .ToListAsync();
+
+                var validIds = validSkillIds.Concat(validTraitIds).ToHashSet();
+                var invalidIds = allTraitIds.Where(id => !validIds.Contains(id)).ToList();
+
+                if (invalidIds.Any())
+                {
+                    return new UserProfileResponseDto
+                    {
+                        Success = false,
+                        Message = $"Invalid PersonalityTraitId(s): {string.Join(", ", invalidIds)}"
+                    };
+                }
+
+                _db.UserPersonalityTraits.RemoveRange(_db.UserPersonalityTraits.Where(x => x.UserProfileId == accountId));
+                _db.UserSkills.RemoveRange(_db.UserSkills.Where(x => x.UserProfileId == accountId));
+
+                var (skillIds, traitIds) = await SplitTraitsAndSkillsAsync(dto.PersonalityTraitIds);
+
+                foreach (var id in skillIds)
+                {
+                    _db.UserSkills.Add(new UserSkill
+                    {
+                        UserProfileId = accountId,
+                        SkillId = id
+                    });
+                }
+
+                foreach (var id in traitIds)
+                {
+                    _db.UserPersonalityTraits.Add(new UserPersonalityTrait
+                    {
+                        UserProfileId = accountId,
+                        PersonalityTraitId = id
+                    });
+                }
+
+                user.PersonalityTraits = string.Join(",", dto.PersonalityTraitIds);
+            }
+
             user.FullName = dto.FullName;
             user.Phone = dto.Phone;
             user.Gender = dto.Gender;
@@ -111,8 +261,6 @@ namespace UserService.API.Services.Implementations
             user.AvatarUrl = dto.AvatarUrl;
             user.SocialLinks = dto.SocialLinks;
             user.Address = dto.Address;
-            user.Interests = dto.Interests;
-            user.PersonalityTraits = dto.PersonalityTraits;
             user.Introduction = dto.Introduction;
             user.CvUrl = dto.CvUrl;
             user.Note = dto.Note;
@@ -120,14 +268,25 @@ namespace UserService.API.Services.Implementations
 
             await _db.SaveChangesAsync();
 
-            // ✅ Lấy lại thông tin khu vực (nếu cần)
             var locationRegion = await _db.LocationRegions
                 .FirstOrDefaultAsync(r => r.Id == user.LocationId);
+
+            var personalityNames = await _db.UserPersonalityTraits
+                .Where(x => x.UserProfileId == accountId)
+                .Include(x => x.PersonalityTrait)
+                .Select(x => x.PersonalityTrait.Name)
+                .ToListAsync();
+
+            var skillNames = await _db.UserSkills
+                .Where(x => x.UserProfileId == accountId)
+                .Include(x => x.Skill)
+                .Select(x => x.Skill.Name)
+                .ToListAsync();
 
             return new UserProfileResponseDto
             {
                 Success = true,
-                Message = "Cập nhật hồ sơ thành công.",
+                Message = "Profile updated successfully.",
                 Data = new UserProfileDto
                 {
                     AccountId = user.AccountId,
@@ -143,19 +302,16 @@ namespace UserService.API.Services.Implementations
                     OnboardingStatus = user.OnboardingStatus,
                     Note = user.Note,
                     UpdatedAt = user.UpdatedAt,
-                    Interests = user.Interests,
-                    PersonalityTraits = user.PersonalityTraits,
+                    Interests = dto.InterestIds != null
+                        ? await _db.Interests.Where(i => dto.InterestIds.Contains(i.Id)).Select(i => i.Name).ToListAsync()
+                        : new List<string>(),
+                    PersonalityTraits = personalityNames.Concat(skillNames).ToList(),
                     Introduction = user.Introduction,
                     CvUrl = user.CvUrl
                 }
             };
         }
-
-
-
-
-
-
+            
 
         public async Task<List<UserProfileShortDto>> GetProfilesByAccountIdsAsync(List<Guid> accountIds)
         {
@@ -174,11 +330,6 @@ namespace UserService.API.Services.Implementations
             return profiles;
         }
 
-
-
-
-
-
         public async Task<BaseResponse> UpdateStatusAsync(Guid accountId, UpdateUserProfileStatusDto dto)
         {
             try
@@ -188,10 +339,8 @@ namespace UserService.API.Services.Implementations
                 if (user == null)
                     return new BaseResponse { Success = false, Message = "Không tìm thấy hồ sơ người dùng." };
 
-             
                 user.OnboardingStatus = "ApprovedMember";
 
-              
                 if (user.RoleType?.ToLower() != "member")
                 {
                     user.RoleType = "member";
@@ -213,7 +362,7 @@ namespace UserService.API.Services.Implementations
         {
             var profiles = await _db.UserProfiles
                 .Include(p => p.LocationRegion)
-                .Where(p => roleKeys.Contains(p.RoleType)) 
+                .Where(p => roleKeys.Contains(p.RoleType))
                 .ToListAsync();
 
             return profiles.Select(p => new UserProfileShortDto
@@ -232,14 +381,11 @@ namespace UserService.API.Services.Implementations
                 .Select(x => new UserProfileShortDto
                 {
                     AccountId = x.AccountId,
-              
                     LocationId = x.LocationId,
                     LocationName = x.LocationRegion.Name,
                     RoleType = x.RoleType
                 })
                 .FirstOrDefaultAsync();
         }
-
-
     }
 }

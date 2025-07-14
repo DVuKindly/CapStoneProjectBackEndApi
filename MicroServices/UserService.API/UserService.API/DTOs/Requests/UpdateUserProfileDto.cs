@@ -17,6 +17,8 @@ namespace UserService.API.DTOs.Requests
 
         [DataType(DataType.Date, ErrorMessage = "Date of birth must be a valid date.")]
         public DateTime? DOB { get; set; }
+        public List<Guid>? InterestIds { get; set; }
+        public List<Guid>? PersonalityTraitIds { get; set; }
 
         [Url(ErrorMessage = "Avatar URL must be a valid URL.")]
         [MaxLength(500, ErrorMessage = "Avatar URL must not exceed {1} characters.")]

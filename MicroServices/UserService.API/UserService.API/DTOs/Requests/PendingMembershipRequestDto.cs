@@ -9,7 +9,8 @@
         public string? RequestedPackageName { get; set; }
         public string? PackageType { get; set; } // basic / combo
         public decimal? Amount { get; set; }
-        public DateTime? ExpireAt {  get; set; }
+        public DateTime? ExpireAt { get; set; }
+
         // Trạng thái yêu cầu & thanh toán
         public string? Status { get; set; }
         public string? PaymentStatus { get; set; } // Paid / Unpaid
@@ -30,6 +31,10 @@
         public string? CvUrl { get; set; }
 
         public ExtendedProfileDto? ExtendedProfile { get; set; }
+
+        // ✅ BỔ SUNG 2 THUỘC TÍNH MỚI
+        public bool? RequireBooking { get; set; }
+        public Guid? RoomInstanceId { get; set; }
     }
 
     public class ExtendedProfileDto

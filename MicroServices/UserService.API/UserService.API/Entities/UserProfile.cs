@@ -69,5 +69,9 @@ namespace UserService.API.Entities
 
         [ForeignKey("LocationId")]
         public virtual LocationRegion? LocationRegion { get; set; }
+
+        public ICollection<UserInterest> UserInterests { get; set; } = new List<UserInterest>();
+        public ICollection<UserPersonalityTrait> UserPersonalityTraits { get; set; } = new List<UserPersonalityTrait>();
+        public ICollection<UserSkill> UserSkills { get; set; } = new List<UserSkill>();
     }
 }
