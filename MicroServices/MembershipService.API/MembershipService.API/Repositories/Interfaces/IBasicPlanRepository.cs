@@ -10,5 +10,7 @@ namespace MembershipService.API.Repositories.Interfaces
         Task<BasicPlan?> GetByIdAsync(Guid id);
         Task<List<BasicPlanResponseDto>> GetAllAsync();
         Task<bool> DeleteAsync(Guid id);
+        Task<List<BasicPlanResponseDto>> GetByTypeIdAsync(Guid typeId);
+
     }
 }

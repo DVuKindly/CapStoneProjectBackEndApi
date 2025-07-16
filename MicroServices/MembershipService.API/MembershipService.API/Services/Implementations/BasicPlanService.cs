@@ -138,6 +138,11 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<BasicPlanResponseDto>(basicPlan);
         }
 
+        public async Task<List<BasicPlanResponseDto>> GetByTypeIdAsync(Guid typeId)
+        {
+            return await _basicPlanRepo.GetByTypeIdAsync(typeId);
+        }
+
         public async Task<List<BasicPlanResponseDto>> GetAllAsync()
         {
             var plans = await _basicPlanRepo.GetAllAsync();
@@ -230,28 +235,21 @@ namespace MembershipService.API.Services.Implementations
                 Unit = duration.PackageDuration.Unit.ToString()
             };
         }
-        //public async Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId)
-        //{
-        //    // 1. Nếu gói đã có RoomInstanceId cụ thể → kiểm tra trùng khớp
-        //    var hasFixedRoom = await _context.BasicPlanRooms
-        //        .AnyAsync(x => x.BasicPlanId == planId && x.RoomInstanceId == roomInstanceId);
+        public async Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomId)
+        {
+            // 1. Lấy danh sách AccommodationOptionId của gói
+            var accommodationOptionIds = await _context.BasicPlanRooms
+                .Where(x => x.BasicPlanId == planId)
+                .Select(x => x.AccommodationOptionId)
+                .ToListAsync();
 
-        //    if (hasFixedRoom)
-        //        return true;
+            if (!accommodationOptionIds.Any())
+                return false;
 
-        //    // 2. Nếu gói không gán Room → cho phép chọn phòng từ option hợp lệ
-        //    var allowedOptionIds = await _context.BasicPlanRooms
-        //        .Where(x => x.BasicPlanId == planId && x.RoomInstanceId == null)
-        //        .Select(x => x.AccommodationOptionId)
-        //        .ToListAsync();
-
-        //    if (!allowedOptionIds.Any())
-        //        return false;
-
-        //    return await _context.Rooms.AnyAsync(r =>
-        //        r.Id == roomInstanceId &&
-        //        allowedOptionIds.Contains(r.AccommodationOptionId));
-        //}
+            // 2. Kiểm tra xem Room có nằm trong số các option này không
+            return await _context.Rooms
+                .AnyAsync(r => r.Id == roomId && accommodationOptionIds.Contains(r.AccommodationOptionId));
+        }
 
 
 

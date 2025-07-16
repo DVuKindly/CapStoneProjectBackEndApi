@@ -11,14 +11,14 @@ namespace MembershipService.API.Services.Interfaces
         Task<List<BasicPlanResponseDto>> GetAllAsync();
         Task<bool> DeleteAsync(Guid id);
         Task<decimal> CalculateDynamicPriceFromRoomIdsAsync(List<Guid> roomIds);
+        Task<List<BasicPlanResponseDto>> GetByTypeIdAsync(Guid typeId);
+
 
 
 
         // vũ code
         Task<List<BasicPlanResponseDto>> GetByIdsAsync(List<Guid> ids);
         Task<DurationDto?> GetPlanDurationAsync(Guid planId);
-        //Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId);
-
-
+        Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomId);
     }
 }
