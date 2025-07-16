@@ -114,13 +114,20 @@ namespace MembershipService.API.Controllers
             return Ok(duration); // trả trực tiếp DurationDto
         }
 
+        [HttpGet("by-type/{typeId}")]
+        public async Task<IActionResult> GetByType(Guid typeId)
+        {
+            var plans = await _service.GetByTypeIdAsync(typeId);
+            return Ok(plans);
+        }
 
-        //[HttpGet("{planId}/rooms/{roomInstanceId}/check")]
-        //public async Task<IActionResult> CheckRoomBelongsToPlan(Guid planId, Guid roomInstanceId)
-        //{
-        //    var isValid = await _service.IsRoomBelongToPlanAsync(planId, roomInstanceId);
-        //    return Ok(isValid);
-        //}
+
+        [HttpGet("{planId}/rooms/{roomInstanceId}/check")]
+        public async Task<IActionResult> CheckRoomBelongsToPlan(Guid planId, Guid roomInstanceId)
+        {
+            var isValid = await _service.IsRoomBelongToPlanAsync(planId, roomInstanceId);
+            return Ok(isValid);
+        }
 
 
 
