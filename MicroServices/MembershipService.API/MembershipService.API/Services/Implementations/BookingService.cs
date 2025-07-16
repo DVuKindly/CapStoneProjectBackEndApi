@@ -148,14 +148,15 @@ namespace MembershipService.API.Services.Implementations
 
 
 
-        public async Task<bool> ValidateBookingAsync(Guid roomInstanceId, Guid bookingId, DateTime startDate)
+        public async Task<bool> ValidateBookingAsync(Guid roomInstanceId, DateTime startDate, DateTime endDate)
         {
-            return await _context.Bookings
-                .AnyAsync(b =>
-                    b.RoomInstanceId == roomInstanceId &&
-                    b.StartDate.Date == startDate.Date &&
-                    b.Status != BookingStatus.Cancelled);
+            return await _context.Bookings.AnyAsync(b =>
+                b.RoomInstanceId == roomInstanceId &&
+                b.Status != BookingStatus.Cancelled &&
+                b.StartDate < endDate &&
+                b.EndDate > startDate); // 🔥 Giao thời gian
         }
+
 
 
     }

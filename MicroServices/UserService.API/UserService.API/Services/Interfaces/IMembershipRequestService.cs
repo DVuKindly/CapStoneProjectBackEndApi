@@ -1,6 +1,7 @@
 ﻿using SharedKernel.DTOsChung.Request;
 using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
+using UserService.API.Entities;
 
 namespace UserService.API.Services.Interfaces
 {
@@ -51,6 +52,7 @@ namespace UserService.API.Services.Interfaces
 
         Task<List<PendingMembershipRequestDto>> GetAllRequestsForStaffLocationAsync(Guid staffAccountId);
 
+        bool IsUserProfileCompleted(UserProfile user);
 
 
     }

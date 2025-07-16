@@ -17,7 +17,8 @@ namespace UserService.API.Services.Interfaces
 
         Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId);
 
-        Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime selectedStartDate);
+        Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime startDate, DateTime endDate);
+
 
         Task<bool> CreateBookingAsync(
       Guid accountId,

@@ -254,16 +254,16 @@ namespace UserService.API.Services.Implementations
                 user.PersonalityTraits = string.Join(",", dto.PersonalityTraitIds);
             }
 
-            user.FullName = dto.FullName;
-            user.Phone = dto.Phone;
-            user.Gender = dto.Gender;
-            user.DOB = dto.DOB;
-            user.AvatarUrl = dto.AvatarUrl;
-            user.SocialLinks = dto.SocialLinks;
-            user.Address = dto.Address;
-            user.Introduction = dto.Introduction;
-            user.CvUrl = dto.CvUrl;
-            user.Note = dto.Note;
+            if (dto.Phone != null) user.Phone = dto.Phone;
+            if (dto.Gender != null) user.Gender = dto.Gender;
+            if (dto.DOB.HasValue) user.DOB = dto.DOB;
+            if (dto.AvatarUrl != null) user.AvatarUrl = dto.AvatarUrl;
+            if (dto.SocialLinks != null) user.SocialLinks = dto.SocialLinks;
+            if (dto.Address != null) user.Address = dto.Address;
+            if (dto.Introduction != null) user.Introduction = dto.Introduction;
+            if (dto.CvUrl != null) user.CvUrl = dto.CvUrl;
+            if (dto.Note != null) user.Note = dto.Note;
+
             user.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
@@ -387,5 +387,16 @@ namespace UserService.API.Services.Implementations
                 })
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<UserProfile?> GetCurrentUserProfileAsync(Guid accountId)
+        {
+            return await _db.UserProfiles
+                .Include(u => u.UserInterests).ThenInclude(i => i.Interest)
+                .Include(u => u.UserPersonalityTraits).ThenInclude(p => p.PersonalityTrait)
+                .Include(u => u.UserSkills).ThenInclude(s => s.Skill)
+                .FirstOrDefaultAsync(u => u.AccountId == accountId);
+        }
+
+
     }
 }

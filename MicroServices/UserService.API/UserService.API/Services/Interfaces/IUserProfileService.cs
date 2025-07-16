@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
+using UserService.API.Entities;
 
 namespace UserService.API.Services.Interfaces
 {
@@ -16,6 +17,8 @@ namespace UserService.API.Services.Interfaces
         Task<List<UserProfileShortDto>> GetProfilesByAccountIdsAsync(List<Guid> accountIds);
         Task<List<UserProfileShortDto>> GetProfilesByRoleKeysAsync(string[] roleKeys);
         Task<UserProfileShortDto?> GetProfileShortDtoAsync(Guid accountId);
+
+        Task<UserProfile?> GetCurrentUserProfileAsync(Guid accountId);
 
 
     }

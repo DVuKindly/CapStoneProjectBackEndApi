@@ -16,7 +16,7 @@ public class MembershipRequestService : IMembershipRequestService
     private readonly IMembershipServiceClient _membershipServiceClient;
     private readonly IPaymentServiceClient _paymentServiceClient;
 
-    public MembershipRequestService(UserDbContext db , IAuthServiceClient authServiceClient, IMembershipServiceClient membershipServiceClient, IPaymentServiceClient paymentServiceClient)
+    public MembershipRequestService(UserDbContext db, IAuthServiceClient authServiceClient, IMembershipServiceClient membershipServiceClient, IPaymentServiceClient paymentServiceClient)
     {
         _membershipServiceClient = membershipServiceClient;
         _db = db;
@@ -432,7 +432,7 @@ public class MembershipRequestService : IMembershipRequestService
                 CreatedAt = m.PurchasedAt,
                 LocationName = plan?.LocationName,
                 Interests = user?.Interests,
-              
+
                 Introduction = user?.Introduction,
                 CvUrl = user?.CvUrl,
                 PackageType = m.PackageType,
@@ -666,6 +666,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         var selectedStartDate = dto.SelectedStartDate?.Date ?? DateTime.UtcNow.Date;
 
+        // === BASIC PACKAGE ===
         if (packageType == "basic")
         {
             var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
@@ -687,7 +688,9 @@ public class MembershipRequestService : IMembershipRequestService
                 if (!roomValid)
                     return BaseResponse.Fail("Selected room does not belong to this package.");
 
-                var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate);
+                var endDate = CalculateExpireDate(selectedStartDate, duration.Value, duration.Unit);
+                var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate, endDate);
+
                 if (isBooked)
                     return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
             }
@@ -742,6 +745,7 @@ public class MembershipRequestService : IMembershipRequestService
             });
         }
 
+        // === COMBO PACKAGE ===
         if (packageType == "combo")
         {
             var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
@@ -754,10 +758,25 @@ public class MembershipRequestService : IMembershipRequestService
             locationId = combo.LocationId ?? Guid.Empty;
             name = combo.Name;
 
+            // ✅ THÊM VALIDATION ĐẶT PHÒNG CHO COMBO
+            if (dto.RequireBooking)
+            {
+                if (dto.RoomInstanceId == null)
+                    return BaseResponse.Fail("RoomInstanceId is required.");
+                var endDate = CalculateExpireDate(selectedStartDate, duration.Value, duration.Unit);
+                var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate, endDate);
+
+                if (isBooked)
+                    return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
+            }
+
+
             var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate);
             request.PackageDurationValue = duration.Value;
             request.PackageDurationUnit = duration.Unit;
             request.Status = "Pending";
+            request.RequireBooking = dto.RequireBooking;
+            request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
 
             _db.PendingMembershipRequests.Add(request);
             await _db.SaveChangesAsync();
@@ -771,6 +790,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         return BaseResponse.Fail("Unexpected error occurred.");
     }
+
 
 
 
@@ -965,4 +985,17 @@ public class MembershipRequestService : IMembershipRequestService
         };
     }
 
+    bool IMembershipRequestService.IsUserProfileCompleted(UserProfile user)
+    {
+        return !string.IsNullOrWhiteSpace(user.FullName)
+         && !string.IsNullOrWhiteSpace(user.Phone)
+         && !string.IsNullOrWhiteSpace(user.Gender)
+         && user.DOB.HasValue
+         && !string.IsNullOrWhiteSpace(user.AvatarUrl)
+         && user.UserInterests != null && user.UserInterests.Any()
+         && ((user.UserPersonalityTraits != null && user.UserPersonalityTraits.Any())
+             || (user.UserSkills != null && user.UserSkills.Any()))
+         && !string.IsNullOrWhiteSpace(user.Introduction)
+         && !string.IsNullOrWhiteSpace(user.CvUrl);
+    }
 }

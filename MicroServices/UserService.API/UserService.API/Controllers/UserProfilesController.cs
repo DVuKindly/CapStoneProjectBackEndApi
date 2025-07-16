@@ -17,14 +17,17 @@ namespace UserService.API.Controllers
         private readonly IStaffProfileService _staffProfileService;
         private readonly IPartnerProfileService _partnerProfileService;
         private readonly ISupplierProfileService _supplierProfileService;
+        private readonly IMembershipRequestService _membershipRequestService;
+
 
         public UserProfilesController(
               ILogger<UserProfilesController> logger,
-            IUserProfileService userProfileService,
+            IUserProfileService userProfileService, 
             ICoachProfileService coachProfileService,
             IStaffProfileService staffProfileService,
             IPartnerProfileService partnerProfileService,
-            ISupplierProfileService supplierProfileService)
+            ISupplierProfileService supplierProfileService,
+            IMembershipRequestService membershipRequestService)
         {
             _logger = logger;
             _userProfileService = userProfileService;
@@ -32,6 +35,7 @@ namespace UserService.API.Controllers
             _staffProfileService = staffProfileService;
             _partnerProfileService = partnerProfileService;
             _supplierProfileService = supplierProfileService;
+            _membershipRequestService = membershipRequestService;
         }
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UserProfilePayload request)
@@ -99,7 +103,7 @@ namespace UserService.API.Controllers
             return profile == null ? NotFound("Không tìm thấy hồ sơ.") : Ok(profile);
         }
 
-        [HttpPut("updateprofile")]
+        [HttpPatch("updateprofile")]
         [Authorize]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto dto)
         {
@@ -112,6 +116,7 @@ namespace UserService.API.Controllers
             var response = await _userProfileService.UpdateProfileAsync(accountId, dto);
             return response.Success ? Ok(response) : NotFound(response);
         }
+
 
 
         private Guid GetAccountIdFromToken()
@@ -175,6 +180,23 @@ namespace UserService.API.Controllers
 
             return Ok(profile);
         }
+
+        [HttpGet("profile/completion-status")]
+        public async Task<IActionResult> CheckProfileCompletion()
+        {
+            var accountId = GetAccountIdFromToken();
+            if (accountId == Guid.Empty)
+                return Unauthorized();
+
+            var user = await _userProfileService.GetCurrentUserProfileAsync(accountId);
+            if (user == null)
+                return NotFound("User not found");
+
+            var isComplete = _membershipRequestService.IsUserProfileCompleted(user);
+            return Ok(new { isComplete });
+        }
+
+
 
     }
 }

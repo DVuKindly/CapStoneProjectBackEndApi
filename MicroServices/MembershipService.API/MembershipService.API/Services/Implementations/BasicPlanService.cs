@@ -232,14 +232,14 @@ namespace MembershipService.API.Services.Implementations
         }
         //public async Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId)
         //{
-        //    // 1. Nếu gói đã có RoomInstanceId cụ thể → kiểm tra trùng khớp
+        //     1. Nếu gói đã có RoomInstanceId cụ thể → kiểm tra trùng khớp
         //    var hasFixedRoom = await _context.BasicPlanRooms
         //        .AnyAsync(x => x.BasicPlanId == planId && x.RoomInstanceId == roomInstanceId);
 
         //    if (hasFixedRoom)
         //        return true;
 
-        //    // 2. Nếu gói không gán Room → cho phép chọn phòng từ option hợp lệ
+        //     2. Nếu gói không gán Room → cho phép chọn phòng từ option hợp lệ
         //    var allowedOptionIds = await _context.BasicPlanRooms
         //        .Where(x => x.BasicPlanId == planId && x.RoomInstanceId == null)
         //        .Select(x => x.AccommodationOptionId)

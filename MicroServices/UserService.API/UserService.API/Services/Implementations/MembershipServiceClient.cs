@@ -219,11 +219,11 @@ public class MembershipServiceClient : IMembershipServiceClient
         }
     }
 
-    public async Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime selectedStartDate)
+    public async Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime startDate, DateTime endDate)
     {
         try
         {
-            var response = await _httpClient.GetAsync($"/api/bookings/check?roomId={roomInstanceId}&startDate={selectedStartDate:O}");
+            var response = await _httpClient.GetAsync($"/api/bookings/check?roomId={roomInstanceId}&startDate={startDate:O}&endDate={endDate:O}");
             return response.IsSuccessStatusCode && await response.Content.ReadFromJsonAsync<bool>();
         }
         catch
@@ -231,6 +231,7 @@ public class MembershipServiceClient : IMembershipServiceClient
             return false;
         }
     }
+
 
 
 }

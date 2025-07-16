@@ -245,14 +245,49 @@ namespace UserService.API.Data
 
 
             modelBuilder.Entity<PersonalityTrait>().HasData(
-                new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000001"), Name = "Introvert" },
-                new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000002"), Name = "Optimistic" }
-            );
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000001"), Name = "Introvert" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000002"), Name = "Optimistic" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000003"), Name = "Extrovert" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000004"), Name = "Realistic" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000005"), Name = "Ambitious" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000006"), Name = "Easygoing" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000007"), Name = "Thoughtful" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000008"), Name = "Energetic" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000009"), Name = "Creative" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000010"), Name = "Reliable" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000011"), Name = "Adventurous" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000012"), Name = "Compassionate" }
+   );
+
 
             modelBuilder.Entity<Skill>().HasData(
-                new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000001"), Name = "Web Development" },
-                new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000002"), Name = "Project Management" }
-            );
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000001"), Name = "A/B testing" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000002"), Name = "AI" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000003"), Name = "API development" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000004"), Name = "Accounting" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000005"), Name = "Administrative support" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000006"), Name = "Advertising" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000007"), Name = "Affiliate marketing" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000008"), Name = "Android development" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000009"), Name = "Animators" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000010"), Name = "Audio production" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000011"), Name = "Back-end development" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000012"), Name = "Blogging" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000013"), Name = "Bookkeeping" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000014"), Name = "Brand strategy" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000015"), Name = "Branding" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000016"), Name = "Business development" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000017"), Name = "CRM management" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000018"), Name = "Communication" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000019"), Name = "Community management" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000020"), Name = "Content" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000021"), Name = "Content marketing" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000022"), Name = "Copyediting" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000023"), Name = "Copywriting" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000024"), Name = "Creative writing" }
+       
+         );
+
 
 
         }
