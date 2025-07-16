@@ -37,12 +37,12 @@ namespace MembershipService.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("by-basicPlan/{planId}")]
-        public async Task<IActionResult> GetByBasicPlanId(Guid planId)
-        {
-            var result = await _service.GetByBasicPlanIdAsync(planId);
-            return Ok(result);
-        }
+        //[HttpGet("by-basicPlan/{planId}")]
+        //public async Task<IActionResult> GetByBasicPlanId(Guid planId)
+        //{
+        //    var result = await _service.GetByBasicPlanIdAsync(planId);
+        //    return Ok(result);
+        //}
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)

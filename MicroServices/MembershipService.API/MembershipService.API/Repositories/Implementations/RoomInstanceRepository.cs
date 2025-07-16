@@ -39,21 +39,21 @@ namespace MembershipService.API.Repositories.Implementations
                 .ToListAsync();
         }
 
-        public async Task<List<RoomInstance>> GetByBasicPlanIdAsync(Guid planId)
-        {
-            var roomIds = await _context.BasicPlanRooms
-                .Where(bpr => bpr.BasicPlanId == planId)
-                .Select(bpr => bpr.RoomInstanceId)
-                .ToListAsync();
+        //public async Task<List<RoomInstance>> GetByBasicPlanIdAsync(Guid planId)
+        //{
+        //    var roomIds = await _context.BasicPlanRooms
+        //        .Where(bpr => bpr.BasicPlanId == planId)
+        //        .Select(bpr => bpr.RoomInstanceId)
+        //        .ToListAsync();
 
-            return await _context.Rooms
-                .Where(r => roomIds.Contains(r.Id))
-                .Include(r => r.AccommodationOption)
-                    .ThenInclude(opt => opt.RoomType)
-                .Include(r => r.AccommodationOption)
-                    .ThenInclude(opt => opt.Location)
-                .ToListAsync();
-        }
+        //    return await _context.Rooms
+        //        .Where(r => roomIds.Contains(r.Id))
+        //        .Include(r => r.AccommodationOption)
+        //            .ThenInclude(opt => opt.RoomType)
+        //        .Include(r => r.AccommodationOption)
+        //            .ThenInclude(opt => opt.Location)
+        //        .ToListAsync();
+        //}
 
         public async Task<List<RoomInstance>> GetByLocationIdAsync(Guid locationId)
         {
