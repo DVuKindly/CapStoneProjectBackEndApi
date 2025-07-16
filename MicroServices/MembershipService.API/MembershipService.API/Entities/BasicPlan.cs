@@ -27,8 +27,13 @@ namespace MembershipService.API.Entities
         public Guid? LocationId { get; set; }
         public Location? Location { get; set; } = null!;
 
-        public ICollection<BasicPlanEntitlement> BasicPlanEntitlements { get; set; }
-        public ICollection<BasicPlanRoom> BasicPlanRooms { get; set; }
+        // Danh sách quyền lợi nếu là plan hằng ngày
+        public ICollection<BasicPlanEntitlement>? BasicPlanEntitlements { get; set; }
+
+        // Danh sách phòng nếu là plan lưu trú
+        public ICollection<BasicPlanRoom>? BasicPlanRooms { get; set; }
+
+        // Các liên kết phụ
         public ICollection<ComboPlanDuration> ComboPlanDurations { get; set; }
         public ICollection<ComboPlanBasic> ComboPlanBasics { get; set; }
         public ICollection<Membership> Memberships { get; set; }

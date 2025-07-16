@@ -26,9 +26,9 @@ namespace MembershipService.API.Repositories.Implementations
             var existing = await _context.BasicPlanRooms.FindAsync(room.Id);
             if (existing == null) throw new Exception("BasicPlanRoom not found");
 
-            existing.NightsIncluded = room.NightsIncluded;
-            existing.CustomPricePerNight = room.CustomPricePerNight;
-            existing.TotalPrice = room.TotalPrice;
+            //existing.NightsIncluded = room.NightsIncluded;
+            //existing.CustomPricePerNight = room.CustomPricePerNight;
+            //existing.TotalPrice = room.TotalPrice;
 
             await _context.SaveChangesAsync();
             return existing;
@@ -47,7 +47,7 @@ namespace MembershipService.API.Repositories.Implementations
         public async Task<List<BasicPlanRoom>> GetByBasicPlanIdAsync(Guid basicPlanId)
         {
             return await _context.BasicPlanRooms
-                .Include(r => r.RoomInstance)
+                .Include(r => r.AccommodationOption)
                 .Where(r => r.BasicPlanId == basicPlanId)
                 .ToListAsync();
         }
@@ -55,14 +55,14 @@ namespace MembershipService.API.Repositories.Implementations
         public async Task<BasicPlanRoom?> GetByIdAsync(Guid id)
         {
             return await _context.BasicPlanRooms
-                .Include(r => r.RoomInstance)
+                .Include(r => r.AccommodationOption)
                 .FirstOrDefaultAsync(r => r.Id == id);
         }
 
-        public async Task<bool> ExistsAsync(Guid basicPlanId, Guid roomId)
-        {
-            return await _context.BasicPlanRooms
-                .AnyAsync(r => r.BasicPlanId == basicPlanId && r.RoomInstanceId == roomId);
-        }
+        //public async Task<bool> ExistsAsync(Guid basicPlanId, Guid roomId)
+        //{
+        //    return await _context.BasicPlanRooms
+        //        .AnyAsync(r => r.BasicPlanId == basicPlanId && r.RoomInstanceId == roomId);
+        //}
     }
 }

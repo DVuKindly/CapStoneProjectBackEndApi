@@ -22,9 +22,33 @@ namespace MembershipService.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateBasicPlanRequest request)
         {
-            var result = await _service.CreateAsync(request);
-            return Ok(result);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var result = await _service.CreateAsync(request);
+                return Ok(new
+                {
+                    message = "Gói BasicPlan đã được tạo thành công.",
+                    data = result
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return UnprocessableEntity(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // Log ex if needed
+                return StatusCode(500, new { error = "Đã xảy ra lỗi không xác định. " + ex.Message });
+            }
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBasicPlanRequest request)
@@ -74,11 +98,11 @@ namespace MembershipService.API.Controllers
         [HttpGet("{id}/price")]
         public async Task<IActionResult> GetComboPlanPrice(Guid id)
         {
-            var plan = await _service.GetByIdAsync(id); 
+            var plan = await _service.GetByIdAsync(id);
             if (plan == null)
                 return NotFound("Không tìm thấy gói .");
 
-            return Ok(plan.Price); 
+            return Ok(plan.Price);
         }
         [HttpGet("{id}/duration")]
         public async Task<IActionResult> GetPlanDuration(Guid id)
@@ -89,12 +113,14 @@ namespace MembershipService.API.Controllers
 
             return Ok(duration); // trả trực tiếp DurationDto
         }
-        [HttpGet("{planId}/rooms/{roomInstanceId}/check")]
-        public async Task<IActionResult> CheckRoomBelongsToPlan(Guid planId, Guid roomInstanceId)
-        {
-            var isValid = await _service.IsRoomBelongToPlanAsync(planId, roomInstanceId);
-            return Ok(isValid);
-        }
+
+
+        //[HttpGet("{planId}/rooms/{roomInstanceId}/check")]
+        //public async Task<IActionResult> CheckRoomBelongsToPlan(Guid planId, Guid roomInstanceId)
+        //{
+        //    var isValid = await _service.IsRoomBelongToPlanAsync(planId, roomInstanceId);
+        //    return Ok(isValid);
+        //}
 
 
 

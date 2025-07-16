@@ -163,14 +163,6 @@ namespace MembershipService.API.Data
                 .HasForeignKey(s => s.AccommodationOptionId) 
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // RoomInstance - BasicPlanRoom
-            modelBuilder.Entity<BasicPlanRoom>()
-                .HasOne(s => s.RoomInstance)
-                .WithMany(r => r.BasicPlanRooms) 
-                .HasForeignKey(s => s.RoomInstanceId)
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.Restrict);
-
             // BasicPlan - BasicPlanRoom
             modelBuilder.Entity<BasicPlanRoom>()
                 .HasOne(s => s.BasicPlan)
@@ -266,9 +258,7 @@ namespace MembershipService.API.Data
                 .Property(x => x.PricePerNight)
                 .HasColumnType("decimal(18,4)");
 
-            modelBuilder.Entity<BasicPlanRoom>()
-                .Property(x => x.TotalPrice)
-                .HasColumnType("decimal(18,4)");
+            
 
 
             base.OnModelCreating(modelBuilder);

@@ -58,9 +58,11 @@ builder.Services.AddAutoMapper(typeof(AccommodationOptionProfile).Assembly);
 builder.Services.AddScoped<IRoomInstanceRepository, RoomInstanceRepository>();
 builder.Services.AddScoped<IRoomInstanceService, RoomInstanceService>();
 builder.Services.AddAutoMapper(typeof(RoomInstanceProfile).Assembly);
-// ??ng ký DI cho BasicPlanRoom
+// ??ng ký DI cho BasicPlanOptions
 builder.Services.AddScoped<IBasicPlanRoomRepository, BasicPlanRoomRepository>();
-// ??ng ký DI cho BasicPlanRoom
+builder.Services.AddScoped<IBasicPlanEntitlementRepository, BasicPlanEntitlementRepository>();
+
+
 builder.Services.AddScoped<IBasicPlanTypeRepository, BasicPlanTypeRepository>();
 builder.Services.AddScoped<IBasicPlanTypeService, BasicPlanTypeService>();
 builder.Services.AddAutoMapper(typeof(BasicPlanTypeProfile).Assembly);
@@ -68,6 +70,10 @@ builder.Services.AddAutoMapper(typeof(BasicPlanTypeProfile).Assembly);
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddAutoMapper(typeof(BookingProfile).Assembly);
+// ??ng ký DI cho EntitlementRule
+builder.Services.AddScoped<IEntitlementRuleRepository, EntitlementRuleRepository>();
+builder.Services.AddScoped<IEntitlementRuleService, EntitlementRuleService>();
+builder.Services.AddAutoMapper(typeof(EntitlementRuleProfile).Assembly);
 
 
 

@@ -9,6 +9,6 @@ namespace MembershipService.API.Repositories.Interfaces
         Task<BasicPlanRoom> AddAsync(BasicPlanRoom room);
         Task<BasicPlanRoom> UpdateAsync(BasicPlanRoom room);
         Task<bool> DeleteAsync(Guid id);
-        Task<bool> ExistsAsync(Guid basicPlanId, Guid roomId);
+        //Task<bool> ExistsAsync(Guid basicPlanId, Guid roomId);
     }
 }

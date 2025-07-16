@@ -6,6 +6,7 @@ namespace MembershipService.API.Dtos.Response
     public class BasicPlanResponseDto
     {
         public Guid Id { get; set; }
+        public string BasicPlanTypeCode { get; set; } // <-- Add this
         public string Code { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
@@ -22,14 +23,14 @@ namespace MembershipService.API.Dtos.Response
 
         public Guid? LocationId { get; set; }
         public string? LocationName { get; set; }
-        public Guid AccomodationId { get; set; } = Guid.Empty;
-        public string AccomodationDescription { get; set; } = "test";
+        public List<BasicPlanRoomResponseDto>? Acomodations { get; set; } = new();
+        public List<EntitlementResponseDto>? Entitlements { get; set; } = new();
         public List<PlanDurationResponseDto> PlanDurations { get; set; } = new();
 
         //Vu 
-        public int PackageDurationValue { get; set; }
-        public string PackageDurationUnit { get; set; } = string.Empty;
-        public string DurationDescription { get; set; } = string.Empty;
+        //public int PackageDurationValue { get; set; }
+        //public string PackageDurationUnit { get; set; } = string.Empty;
+        //public string DurationDescription { get; set; } = string.Empty;
         public string PlanSource { get; set; } = "basic";
     }
 
@@ -44,12 +45,15 @@ namespace MembershipService.API.Dtos.Response
 
     public class BasicPlanRoomResponseDto
     {
-        public Guid RoomInstanceId { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public int NightsIncluded { get; set; }
-        public decimal? CustomPricePerNight { get; set; }
-        public decimal? TotalPrice { get; set; }
+        public Guid AccomodationId { get; set; }
+        public string AccomodationDescription { get; set; }
+        public string RoomType { get; set; }
     }
 
+    public class EntitlementResponseDto
+    {
+        public Guid EntitlementId { get; set; }
+
+        public string NextUSerName { get; set; }
+    }
 }

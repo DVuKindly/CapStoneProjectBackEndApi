@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using MembershipService.API.Common.Constants;
 using MembershipService.API.Data;
 using MembershipService.API.Dtos.Request;
 using MembershipService.API.Dtos.Response;
@@ -16,61 +17,99 @@ namespace MembershipService.API.Services.Implementations
         private readonly IBasicPlanRepository _basicPlanRepo;
         private readonly IComboPlanDurationRepository _durationRepo;
         private readonly IBasicPlanRoomRepository _basicPlanRoomRepo;
+        private readonly IBasicPlanTypeRepository _basicPlanTypeRepo;
+        private readonly IBasicPlanEntitlementRepository _basicPlanEntitlementRepo;
         private readonly IMapper _mapper;
         private readonly MembershipDbContext _context;
 
-        public BasicPlanService(
-            IBasicPlanRepository basicPlanRepo,
-            IComboPlanDurationRepository durationRepo,
-            IBasicPlanRoomRepository basicPlanRoomRepo,
-            IMapper mapper,
-            MembershipDbContext context)
+        public BasicPlanService(IBasicPlanRepository basicPlanRepo, IComboPlanDurationRepository durationRepo, IBasicPlanRoomRepository basicPlanRoomRepo, IBasicPlanTypeRepository basicPlanTypeRepo, IBasicPlanEntitlementRepository basicPlanEntitlementRepo, IMapper mapper, MembershipDbContext context)
         {
             _basicPlanRepo = basicPlanRepo;
             _durationRepo = durationRepo;
             _basicPlanRoomRepo = basicPlanRoomRepo;
+            _basicPlanTypeRepo = basicPlanTypeRepo;
+            _basicPlanEntitlementRepo = basicPlanEntitlementRepo;
             _mapper = mapper;
             _context = context;
         }
 
         public async Task<BasicPlanResponseDto> CreateAsync(CreateBasicPlanRequest request)
         {
-            //Console.WriteLine($"Request: {JsonConvert.SerializeObject(request)}");
+            // Lấy BasicPlanType để phân loại theo Code
+            var planType = await _basicPlanTypeRepo.GetByIdAsync(request.BasicPlanTypeId);
+            if (planType == null)
+                throw new InvalidOperationException("Invalid BasicPlanType.");
+
+            var isAccommodation = planType.Code == BasicPlanTypeCodes.Accommodation;
+
+            // Tạo BasicPlan entity
             var basicPlan = _mapper.Map<BasicPlan>(request);
             basicPlan.Code = Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
-            var createdPlan = await _basicPlanRepo.AddAsync(basicPlan);
 
-            if (request.Rooms != null && request.Rooms.Any())
+            var createdPlan = await _basicPlanRepo.AddAsync(basicPlan);
+            if (createdPlan == null || createdPlan.Id == Guid.Empty)
+                throw new InvalidOperationException("Failed to create BasicPlan.");
+
+            // Xử lý loại Accommodation
+            if (isAccommodation)
             {
-                foreach (var room in request.Rooms)
+                if (request.Accomodations == null || !request.Accomodations.Any())
+                    throw new InvalidOperationException("Accommodation plan must include at least one room.");
+
+                foreach (var roomOption in request.Accomodations)
                 {
-                    var roomEntity = _mapper.Map<BasicPlanRoom>(room);
-                    roomEntity.BasicPlanId = createdPlan.Id;
-                    //var roomEntity = new BasicPlanRoom
-                    //{
-                    //    BasicPlanId = createdPlan.Id,
-                    //    AccommodationOptionId = room.AccomodationId,
-                    //    RoomInstanceId = room.RoomInstanceId,  // đổi tên
-                    //    NightsIncluded = room.NightsIncluded,
-                    //    CustomPricePerNight = room.CustomPricePerNight,
-                    //    TotalPrice = room.TotalPrice
-                    //};
-                    await _basicPlanRoomRepo.AddAsync(roomEntity);
+                    var newRoom = new BasicPlanRoom
+                    {
+                        BasicPlanId = createdPlan.Id,
+                        AccommodationOptionId = roomOption.AccomodationId
+                    };
+
+                    var createdRoomOption = await _basicPlanRoomRepo.AddAsync(newRoom);
+                    if (createdRoomOption == null)
+                        throw new InvalidOperationException("Failed to add room to BasicPlan.");
                 }
+
+                if (request.Entitlements != null && request.Entitlements.Any())
+                    throw new InvalidOperationException("Accommodation plan cannot include entitlements.");
             }
+            else // Loại dịch vụ hằng ngày
+            {
+                if (request.Entitlements == null || !request.Entitlements.Any())
+                    throw new InvalidOperationException("Entitlement-based plan must include at least one entitlement.");
+
+                foreach (var entitlement in request.Entitlements)
+                {
+                    var newEntitlement = new BasicPlanEntitlement
+                    {
+                        BasicPlanId = createdPlan.Id,
+                        EntitlementRuleId = entitlement.EntitlementRuleId,
+                        Quantity = entitlement.Quantity
+                    };
+
+                    var createdEnt = await _basicPlanEntitlementRepo.AddAsync(newEntitlement);
+                    if (createdEnt == null)
+                        throw new InvalidOperationException("Failed to add entitlement to BasicPlan.");
+                }
+
+                if (request.Accomodations != null && request.Accomodations.Any())
+                    throw new InvalidOperationException("Entitlement-based plan cannot include room options.");
+            }
+
+            // Xử lý Duration (áp dụng chung)
             if (request.PackageDurations != null && request.PackageDurations.Any())
             {
-                var planDurations = request.PackageDurations
+                var durations = request.PackageDurations
                     .Select(dto =>
                     {
-                        var entity = _mapper.Map<ComboPlanDuration>(dto);
-                        entity.BasicPlanId = createdPlan.Id;
-                        return entity;
+                        var duration = _mapper.Map<ComboPlanDuration>(dto);
+                        duration.BasicPlanId = createdPlan.Id;
+                        return duration;
                     })
                     .ToList();
 
-                await _durationRepo.AddRangeAsync(planDurations);
+                await _durationRepo.AddRangeAsync(durations);
             }
+
             return _mapper.Map<BasicPlanResponseDto>(createdPlan);
         }
 
@@ -138,9 +177,9 @@ namespace MembershipService.API.Services.Implementations
                     Price = p.Price,
                     LocationId = p.LocationId ?? Guid.Empty,
                     LocationName = p.Location?.Name ?? "Không xác định",
-                    PackageDurationValue = firstDuration?.PackageDuration?.Value ?? 0,
-                    PackageDurationUnit = firstDuration?.PackageDuration?.Unit.ToString() ?? string.Empty,
-                    DurationDescription = firstDuration?.PackageDuration?.Description ?? string.Empty,
+                    //PackageDurationValue = firstDuration?.PackageDuration?.Value ?? 0,
+                    //PackageDurationUnit = firstDuration?.PackageDuration?.Unit.ToString() ?? string.Empty,
+                    //DurationDescription = firstDuration?.PackageDuration?.Description ?? string.Empty,
                     PlanSource = "basic"
                 };
             }).ToList();
@@ -191,28 +230,28 @@ namespace MembershipService.API.Services.Implementations
                 Unit = duration.PackageDuration.Unit.ToString()
             };
         }
-        public async Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId)
-        {
-            // 1. Nếu gói đã có RoomInstanceId cụ thể → kiểm tra trùng khớp
-            var hasFixedRoom = await _context.BasicPlanRooms
-                .AnyAsync(x => x.BasicPlanId == planId && x.RoomInstanceId == roomInstanceId);
+        //public async Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId)
+        //{
+        //    // 1. Nếu gói đã có RoomInstanceId cụ thể → kiểm tra trùng khớp
+        //    var hasFixedRoom = await _context.BasicPlanRooms
+        //        .AnyAsync(x => x.BasicPlanId == planId && x.RoomInstanceId == roomInstanceId);
 
-            if (hasFixedRoom)
-                return true;
+        //    if (hasFixedRoom)
+        //        return true;
 
-            // 2. Nếu gói không gán Room → cho phép chọn phòng từ option hợp lệ
-            var allowedOptionIds = await _context.BasicPlanRooms
-                .Where(x => x.BasicPlanId == planId && x.RoomInstanceId == null)
-                .Select(x => x.AccommodationOptionId)
-                .ToListAsync();
+        //    // 2. Nếu gói không gán Room → cho phép chọn phòng từ option hợp lệ
+        //    var allowedOptionIds = await _context.BasicPlanRooms
+        //        .Where(x => x.BasicPlanId == planId && x.RoomInstanceId == null)
+        //        .Select(x => x.AccommodationOptionId)
+        //        .ToListAsync();
 
-            if (!allowedOptionIds.Any())
-                return false;
+        //    if (!allowedOptionIds.Any())
+        //        return false;
 
-            return await _context.Rooms.AnyAsync(r =>
-                r.Id == roomInstanceId &&
-                allowedOptionIds.Contains(r.AccommodationOptionId));
-        }
+        //    return await _context.Rooms.AnyAsync(r =>
+        //        r.Id == roomInstanceId &&
+        //        allowedOptionIds.Contains(r.AccommodationOptionId));
+        //}
 
 
 

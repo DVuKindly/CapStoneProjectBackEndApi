@@ -17,7 +17,7 @@ namespace MembershipService.API.Entities
         public string? DescriptionDetails { get; set; }
         public Floor Floor { get; set; }
 
-        public ICollection<BasicPlanRoom> BasicPlanRooms { get; set; }
+        //public ICollection<BasicPlanRoom> BasicPlanRooms { get; set; }
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }
