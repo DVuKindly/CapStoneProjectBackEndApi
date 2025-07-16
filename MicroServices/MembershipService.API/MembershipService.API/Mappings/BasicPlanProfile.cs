@@ -119,14 +119,6 @@ namespace MembershipService.API.Mappings
 
 
         // Ưu tiên lấy từ RoomInstance.AccommodationOption.Id, nếu không thì fallback sang AccommodationOptionId
-        private static Guid? GetAccommodationIdFlexible(BasicPlan src)
-        {
-            var room = src.BasicPlanRooms?.FirstOrDefault();
-
-            if (room?.RoomInstance?.AccommodationOption != null)
-                return room.RoomInstance.AccommodationOption.Id;
-
-            return room?.AccommodationOptionId;
-        }
+        
     }
 }
