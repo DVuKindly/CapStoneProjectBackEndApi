@@ -59,10 +59,9 @@ namespace UserService.API.DTOs.Requests
         public string? AvatarUrl { get; set; }
         public string? SocialLinks { get; set; }
         public string? Address { get; set; }
-        public string? Interests { get; set; }
-        public string? PersonalityTraits { get; set; }
         public string? Introduction { get; set; }
         public string? CvUrl { get; set; }
         public string? Note { get; set; }
     }
+
 }

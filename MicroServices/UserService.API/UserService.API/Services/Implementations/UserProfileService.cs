@@ -167,8 +167,19 @@ namespace UserService.API.Services.Implementations
                 };
             }
 
-            // Validate interest IDs
-            if (dto.InterestIds != null && dto.InterestIds.Any())
+            if (dto.FullName != null) user.FullName = dto.FullName;
+            if (dto.Phone != null) user.Phone = dto.Phone;
+            if (dto.Gender != null) user.Gender = dto.Gender;
+            if (dto.DOB.HasValue) user.DOB = dto.DOB;
+            if (dto.AvatarUrl != null) user.AvatarUrl = dto.AvatarUrl;
+            if (dto.SocialLinks != null) user.SocialLinks = dto.SocialLinks;
+            if (dto.Address != null) user.Address = dto.Address;
+            if (dto.Introduction != null) user.Introduction = dto.Introduction;
+            if (dto.CvUrl != null) user.CvUrl = dto.CvUrl;
+            if (dto.Note != null) user.Note = dto.Note;
+
+            // Cập nhật InterestIds
+            if (dto.InterestIds != null)
             {
                 var validInterestIds = await _db.Interests
                     .Where(i => dto.InterestIds.Contains(i.Id))
@@ -176,7 +187,6 @@ namespace UserService.API.Services.Implementations
                     .ToListAsync();
 
                 var invalidIds = dto.InterestIds.Except(validInterestIds).ToList();
-
                 if (invalidIds.Any())
                 {
                     return new UserProfileResponseDto
@@ -186,23 +196,29 @@ namespace UserService.API.Services.Implementations
                     };
                 }
 
-                var old = await _db.UserInterests.Where(x => x.UserProfileId == accountId).ToListAsync();
-                _db.UserInterests.RemoveRange(old);
+                var oldInterests = await _db.UserInterests.Where(x => x.UserProfileId == accountId).ToListAsync();
+                _db.UserInterests.RemoveRange(oldInterests);
 
-                foreach (var id in dto.InterestIds)
+                if (dto.InterestIds.Any())
                 {
-                    _db.UserInterests.Add(new UserInterest
+                    foreach (var id in dto.InterestIds)
                     {
-                        UserProfileId = accountId,
-                        InterestId = id
-                    });
+                        _db.UserInterests.Add(new UserInterest
+                        {
+                            UserProfileId = accountId,
+                            InterestId = id
+                        });
+                    }
+                    user.Interests = string.Join(",", dto.InterestIds);
                 }
-
-                user.Interests = string.Join(",", dto.InterestIds);
+                else
+                {
+                    user.Interests = "";
+                }
             }
 
-            // Validate personality trait and skill IDs
-            if (dto.PersonalityTraitIds != null && dto.PersonalityTraitIds.Any())
+            // Cập nhật PersonalityTraitIds (gồm cả Trait và Skill)
+            if (dto.PersonalityTraitIds != null)
             {
                 var allTraitIds = dto.PersonalityTraitIds;
 
@@ -231,41 +247,37 @@ namespace UserService.API.Services.Implementations
                 _db.UserPersonalityTraits.RemoveRange(_db.UserPersonalityTraits.Where(x => x.UserProfileId == accountId));
                 _db.UserSkills.RemoveRange(_db.UserSkills.Where(x => x.UserProfileId == accountId));
 
-                var (skillIds, traitIds) = await SplitTraitsAndSkillsAsync(dto.PersonalityTraitIds);
-
-                foreach (var id in skillIds)
+                if (dto.PersonalityTraitIds.Any())
                 {
-                    _db.UserSkills.Add(new UserSkill
-                    {
-                        UserProfileId = accountId,
-                        SkillId = id
-                    });
-                }
+                    var (skillIds, traitIds) = await SplitTraitsAndSkillsAsync(dto.PersonalityTraitIds);
 
-                foreach (var id in traitIds)
+                    foreach (var id in skillIds)
+                    {
+                        _db.UserSkills.Add(new UserSkill
+                        {
+                            UserProfileId = accountId,
+                            SkillId = id
+                        });
+                    }
+
+                    foreach (var id in traitIds)
+                    {
+                        _db.UserPersonalityTraits.Add(new UserPersonalityTrait
+                        {
+                            UserProfileId = accountId,
+                            PersonalityTraitId = id
+                        });
+                    }
+
+                    user.PersonalityTraits = string.Join(",", dto.PersonalityTraitIds);
+                }
+                else
                 {
-                    _db.UserPersonalityTraits.Add(new UserPersonalityTrait
-                    {
-                        UserProfileId = accountId,
-                        PersonalityTraitId = id
-                    });
+                    user.PersonalityTraits = "";
                 }
-
-                user.PersonalityTraits = string.Join(",", dto.PersonalityTraitIds);
             }
 
-            if (dto.Phone != null) user.Phone = dto.Phone;
-            if (dto.Gender != null) user.Gender = dto.Gender;
-            if (dto.DOB.HasValue) user.DOB = dto.DOB;
-            if (dto.AvatarUrl != null) user.AvatarUrl = dto.AvatarUrl;
-            if (dto.SocialLinks != null) user.SocialLinks = dto.SocialLinks;
-            if (dto.Address != null) user.Address = dto.Address;
-            if (dto.Introduction != null) user.Introduction = dto.Introduction;
-            if (dto.CvUrl != null) user.CvUrl = dto.CvUrl;
-            if (dto.Note != null) user.Note = dto.Note;
-
             user.UpdatedAt = DateTime.UtcNow;
-
             await _db.SaveChangesAsync();
 
             var locationRegion = await _db.LocationRegions
@@ -302,16 +314,19 @@ namespace UserService.API.Services.Implementations
                     OnboardingStatus = user.OnboardingStatus,
                     Note = user.Note,
                     UpdatedAt = user.UpdatedAt,
-                    Interests = dto.InterestIds != null
-                        ? await _db.Interests.Where(i => dto.InterestIds.Contains(i.Id)).Select(i => i.Name).ToListAsync()
-                        : new List<string>(),
+                    Interests = await _db.UserInterests
+                        .Where(i => i.UserProfileId == accountId)
+                        .Include(i => i.Interest)
+                        .Select(i => i.Interest.Name)
+                        .ToListAsync(),
                     PersonalityTraits = personalityNames.Concat(skillNames).ToList(),
                     Introduction = user.Introduction,
                     CvUrl = user.CvUrl
                 }
             };
         }
-            
+
+
 
         public async Task<List<UserProfileShortDto>> GetProfilesByAccountIdsAsync(List<Guid> accountIds)
         {
