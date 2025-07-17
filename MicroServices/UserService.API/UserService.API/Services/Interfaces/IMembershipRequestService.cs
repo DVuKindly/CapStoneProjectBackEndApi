@@ -54,6 +54,7 @@ namespace UserService.API.Services.Interfaces
 
         bool IsUserProfileCompleted(UserProfile user);
 
-
+        // cancel request 
+        Task<BaseResponse> CancelRequestAsync(Guid accountId, Guid requestId);
     }
 }

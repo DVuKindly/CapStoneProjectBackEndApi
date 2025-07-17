@@ -187,4 +187,15 @@ public class MembershipController : ControllerBase
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(claim, out var id) ? id : Guid.Empty;
     }
+    [HttpDelete("{requestId}")]
+    [Authorize]
+    public async Task<IActionResult> CancelRequest(Guid requestId)
+    {
+        var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (accountId == null) return Unauthorized();
+
+        var result = await _membershipRequestService.CancelRequestAsync(Guid.Parse(accountId), requestId);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
 }

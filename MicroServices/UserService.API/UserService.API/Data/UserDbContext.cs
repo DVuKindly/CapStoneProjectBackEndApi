@@ -21,6 +21,8 @@ namespace UserService.API.Data
         public DbSet<Interest> Interests { get; set; }
         public DbSet<PersonalityTrait> PersonalityTraits { get; set; }
         public DbSet<Skill> Skills { get; set; }
+        public DbSet<Feedback> Feedbacks { get; set; }
+        public DbSet<FeedbackDetail> FeedbackDetails { get; set; }
 
         public DbSet<UserInterest> UserInterests { get; set; }
         public DbSet<UserPersonalityTrait> UserPersonalityTraits { get; set; }
@@ -50,6 +52,7 @@ namespace UserService.API.Data
             modelBuilder.Entity<PartnerProfile>().HasOne(p => p.LocationRegion).WithMany(r => r.PartnerProfiles).HasForeignKey(p => p.LocationId).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<ManagerProfile>().HasOne(m => m.LocationRegion).WithMany(r => r.ManagerProfiles).HasForeignKey(m => m.LocationId).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<SupplierProfile>().HasOne(s => s.LocationRegion).WithMany().HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
+
 
             // LocationMapping cấu hình
             modelBuilder.Entity<LocationMapping>()
@@ -131,6 +134,19 @@ namespace UserService.API.Data
                 .WithMany()
                 .HasForeignKey(us => us.SkillId);
 
+            modelBuilder.Entity<Feedback>()
+    .HasOne(f => f.User)
+    .WithMany()
+    .HasForeignKey(f => f.AccountId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+           
+
+            modelBuilder.Entity<FeedbackDetail>()
+                .HasOne(d => d.Feedback)
+                .WithMany(f => f.Details)
+                .HasForeignKey(d => d.FeedbackId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Config max length
             modelBuilder.Entity<PendingMembershipRequest>().Property(p => p.CvUrl).HasMaxLength(500);

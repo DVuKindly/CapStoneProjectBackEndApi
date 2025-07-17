@@ -998,4 +998,29 @@ public class MembershipRequestService : IMembershipRequestService
          && !string.IsNullOrWhiteSpace(user.Introduction)
          && !string.IsNullOrWhiteSpace(user.CvUrl);
     }
+
+    public async Task<BaseResponse> CancelRequestAsync(Guid accountId, Guid requestId)
+    {
+       
+        var request = await _db.PendingMembershipRequests
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.AccountId == accountId);
+
+        if (request == null)
+            return BaseResponse.Fail("Yêu cầu không tồn tại hoặc không thuộc quyền của bạn.");
+
+      
+        if (request.Status != PendingRequestStatus.Pending &&
+            request.Status != PendingRequestStatus.PendingPayment)
+        {
+            return BaseResponse.Fail("Chỉ có thể hủy yêu cầu khi đang chờ xử lý hoặc chờ thanh toán.");
+        }
+
+        _db.PendingMembershipRequests.Remove(request);
+        await _db.SaveChangesAsync();
+
+        return BaseResponse.Ok("Hủy yêu cầu thành công.");
+    }
+
+
+
 }

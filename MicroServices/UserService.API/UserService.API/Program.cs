@@ -73,7 +73,8 @@ builder.Services.AddScoped<IMembershipRequestService, MembershipRequestService>(
 builder.Services.AddScoped<IMembershipService, MembershipService>();
 builder.Services.AddScoped<ICoachProfileRepository, CoachProfileRepository>();
 
-
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+builder.Services.AddScoped<IFeedbackQueryService, FeedbackQueryService>();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
