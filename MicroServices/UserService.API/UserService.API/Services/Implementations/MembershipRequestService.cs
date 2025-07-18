@@ -357,55 +357,62 @@ public class MembershipRequestService : IMembershipRequestService
     {
         var result = new List<PendingMembershipRequestDto>();
 
-        // 1. Lấy user info
-        var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
+        var user = await _db.UserProfiles
+            .Include(u => u.UserInterests).ThenInclude(i => i.Interest)
+            .Include(u => u.UserPersonalityTraits).ThenInclude(p => p.PersonalityTrait)
+            .Include(u => u.UserSkills).ThenInclude(s => s.Skill)
+            .FirstOrDefaultAsync(u => u.AccountId == accountId);
 
-        // 2. Lấy tất cả PendingMembershipRequests
-        var pendingRequests = await _db.PendingMembershipRequests
-            .Where(r => r.AccountId == accountId)
-            .OrderByDescending(r => r.CreatedAt)
-            .ToListAsync();
-
-        // 3. Lấy tất cả Memberships đã mua
         var memberships = await _db.Memberships
             .Where(m => m.AccountId == accountId)
             .OrderByDescending(m => m.PurchasedAt)
             .ToListAsync();
 
-        // 4. Tập hợp tất cả PackageId để gọi MembershipService 1 lần
-        var packageIds = pendingRequests
-            .Where(r => r.PackageId.HasValue)
-            .Select(r => r.PackageId!.Value)
-            .Concat(memberships.Select(m => m.PackageId))
-            .Distinct()
-            .ToList();
+        var paidPackageIds = memberships.Select(m => m.PackageId).ToHashSet();
 
-        var basicPlans = await _membershipServiceClient.GetBasicPlansByIdsAsync(packageIds);
-        var basicPlanDict = basicPlans.ToDictionary(p => p.Id, p => p);
+        var pendingRequests = await _db.PendingMembershipRequests
+            .Where(r => r.AccountId == accountId
+                && (!r.PackageId.HasValue || !paidPackageIds.Contains(r.PackageId.Value)))
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
 
-        // 5. Mapping từ PendingMembershipRequest
+        var allPackageIds = memberships.Select(m => m.PackageId)
+            .Concat(pendingRequests.Where(r => r.PackageId.HasValue).Select(r => r.PackageId!.Value))
+            .Distinct().ToList();
+
+        var plans = await _membershipServiceClient.GetBasicPlansByIdsAsync(allPackageIds);
+        var planDict = plans.ToDictionary(p => p.Id, p => p);
+
+        // 1️⃣ Map từ PendingMembershipRequests
         foreach (var r in pendingRequests)
         {
-            basicPlanDict.TryGetValue(r.PackageId ?? Guid.Empty, out var plan);
+            planDict.TryGetValue(r.PackageId ?? Guid.Empty, out var plan);
 
             result.Add(new PendingMembershipRequestDto
             {
                 RequestId = r.Id,
+                PackageId = r.PackageId,
                 FullName = user?.FullName,
                 RequestedPackageName = r.RequestedPackageName,
+                PackageType = r.PackageType,
+                Amount = r.Amount ?? 0,
+                StartDate = r.StartDate,
+                ExpireAt = r.ExpireAt,
+                Status = r.Status,
+                PaymentStatus = r.PaymentStatus,
+                PaymentMethod = r.PaymentMethod,
+                PaymentTime = r.PaymentTime,
+                StaffNote = r.StaffNote,
+                ApprovedAt = r.ApprovedAt,
                 MessageToStaff = r.MessageToStaff,
                 CreatedAt = r.CreatedAt,
-                LocationName = plan?.LocationName,
+                LocationName = plan?.LocationName ?? "Không rõ",
                 Interests = r.Interests,
                 PersonalityTraits = r.PersonalityTraits,
                 Introduction = r.Introduction,
                 CvUrl = r.CvUrl,
-                PackageType = r.PackageType,
-                Status = r.Status,
-                Amount = (decimal)r.Amount!,
-                PaymentStatus = r.PaymentStatus,
-                PaymentMethod = r.PaymentMethod,
-                PaymentTime = r.PaymentTime,
+                RoomInstanceId = r.RoomInstanceId,
+                RequireBooking = r.RequireBooking,
                 ExtendedProfile = new ExtendedProfileDto
                 {
                     Gender = user?.Gender,
@@ -418,30 +425,41 @@ public class MembershipRequestService : IMembershipRequestService
             });
         }
 
-        // 6. Mapping từ Membership
+        // 2️⃣ Map từ Memberships
         foreach (var m in memberships)
         {
-            basicPlanDict.TryGetValue(m.PackageId, out var plan);
+            planDict.TryGetValue(m.PackageId, out var plan);
+
+            var interestNames = user?.UserInterests?.Select(i => i.Interest.Name).ToList() ?? new();
+            var traitNames = user?.UserPersonalityTraits?.Select(p => p.PersonalityTrait.Name).ToList() ?? new();
+            var skillNames = user?.UserSkills?.Select(s => s.Skill.Name).ToList() ?? new();
 
             result.Add(new PendingMembershipRequestDto
             {
                 RequestId = m.Id,
+                PackageId = m.PackageId,
                 FullName = user?.FullName,
                 RequestedPackageName = m.PackageName,
-                MessageToStaff = null,
-                CreatedAt = m.PurchasedAt,
-                LocationName = plan?.LocationName,
-                Interests = user?.Interests,
-
-                Introduction = user?.Introduction,
-                CvUrl = user?.CvUrl,
+                RoomInstanceId = m.RoomInstanceId,
+                RequireBooking = m.RoomInstanceId != null,
                 PackageType = m.PackageType,
-                Status = "Completed",
                 Amount = m.Amount,
+                StartDate = m.StartDate,
+                ExpireAt = m.ExpireAt,
+                Status = "Completed",
                 PaymentStatus = m.PaymentStatus,
                 PaymentMethod = m.PaymentMethod,
                 PaymentTime = m.PaymentTime,
-                ExpireAt = m.ExpireAt, // ✅ THÊM DÒNG NÀY
+                CreatedAt = m.PurchasedAt,
+                MessageToStaff = null,
+                StaffNote = null,
+                ApprovedAt = null,
+                LocationName = plan?.LocationName ?? "Không rõ",
+                Interests = string.Join(", ", interestNames),
+                PersonalityTraits = string.Join(", ", traitNames.Concat(skillNames)),
+                Introduction = user?.Introduction,
+                CvUrl = user?.CvUrl,
+              
                 ExtendedProfile = new ExtendedProfileDto
                 {
                     Gender = user?.Gender,
@@ -454,9 +472,10 @@ public class MembershipRequestService : IMembershipRequestService
             });
         }
 
-        // 7. Sắp xếp chung theo thời gian
         return result.OrderByDescending(r => r.CreatedAt).ToList();
     }
+
+
 
 
     public async Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId)

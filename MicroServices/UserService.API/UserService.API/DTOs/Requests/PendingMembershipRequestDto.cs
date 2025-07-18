@@ -10,7 +10,7 @@
         public string? PackageType { get; set; } // basic / combo
         public decimal? Amount { get; set; }
         public DateTime? ExpireAt { get; set; }
-
+        public DateTime? StartDate { get; set; }
         // Trạng thái yêu cầu & thanh toán
         public string? Status { get; set; }
         public string? PaymentStatus { get; set; } // Paid / Unpaid
@@ -18,7 +18,7 @@
         public DateTime? PaymentTime { get; set; }
         public string? StaffNote { get; set; }
         public DateTime? ApprovedAt { get; set; }
-
+        public Guid? PackageId { get; set; } 
         // Thông tin thêm
         public string? MessageToStaff { get; set; }
         public DateTime CreatedAt { get; set; }

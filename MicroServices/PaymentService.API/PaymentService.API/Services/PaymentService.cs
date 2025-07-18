@@ -38,7 +38,6 @@ namespace PaymentService.API.Services
 
             try
             {
-                // Gọi API tóm tắt theo IsDirectMembership
                 var summaryUrl = dto.IsDirectMembership
                     ? $"{userServiceBaseUrl}/api/user/memberships/summary-direct/{dto.RequestId}"
                     : $"{userServiceBaseUrl}/api/user/memberships/payment-summary/{dto.RequestId}";
@@ -47,45 +46,29 @@ namespace PaymentService.API.Services
             }
             catch (Exception ex)
             {
-                return new BaseResponse
-                {
-                    Success = false,
-                    Message = $"Lỗi khi gọi UserService: {ex.Message}"
-                };
+                return BaseResponse.Fail($"Lỗi khi gọi UserService: {ex.Message}");
             }
 
             if (summary == null || summary.Status != "PendingPayment")
             {
-                return new BaseResponse
-                {
-                    Success = false,
-                    Message = "Không thể tạo thanh toán vì yêu cầu không hợp lệ hoặc đã thanh toán."
-                };
+                return BaseResponse.Fail("Không thể tạo thanh toán vì yêu cầu không hợp lệ hoặc đã thanh toán.");
             }
 
             var amountVnd = (long)(summary.Amount * 100);
             if (amountVnd <= 0)
-            {
-                return new BaseResponse
-                {
-                    Success = false,
-                    Message = "Số tiền thanh toán không hợp lệ."
-                };
-            }
+                return BaseResponse.Fail("Số tiền thanh toán không hợp lệ.");
 
             string txnRef = Guid.NewGuid().ToString("N").Substring(0, 20);
             string returnUrl = !string.IsNullOrWhiteSpace(dto.ReturnUrl)
                 ? dto.ReturnUrl
                 : _config["VNPay:ReturnUrl"] ?? throw new InvalidOperationException("Thiếu cấu hình VNPay:ReturnUrl");
 
-
-            // Khi tạo payment request
-            bool isDirect = !summary.IsCombo; // combo => IsDirectMembership = false, basic => true
+            bool isDirect = !summary.IsCombo;
 
             var paymentRequest = new PaymentRequest
             {
                 AccountId = summary.AccountId,
-                MembershipRequestId = summary.MembershipRequestId, // ID của PendingMembershipRequest hoặc Membership
+                MembershipRequestId = summary.MembershipRequestId,
                 Amount = summary.Amount,
                 PaymentMethod = dto.PaymentMethod,
                 ReturnUrl = returnUrl,
@@ -96,19 +79,15 @@ namespace PaymentService.API.Services
                 IsDirectMembership = isDirect
             };
 
-
-
             _db.PaymentRequests.Add(paymentRequest);
             await _db.SaveChangesAsync();
-
-            // Cấu hình VNPay
             var vnPay = new VnPayLibrary();
             vnPay.AddRequestData("vnp_Version", VnPayLibrary.VERSION);
             vnPay.AddRequestData("vnp_Command", "pay");
             vnPay.AddRequestData("vnp_TmnCode", _config["VNPay:TmnCode"]);
             vnPay.AddRequestData("vnp_Amount", amountVnd.ToString(CultureInfo.InvariantCulture));
             vnPay.AddRequestData("vnp_CurrCode", "VND");
-            vnPay.AddRequestData("vnp_TxnRef", paymentRequest.RequestCode);
+            vnPay.AddRequestData("vnp_TxnRef", txnRef);
             vnPay.AddRequestData("vnp_OrderInfo", $"Thanh toán gói {summary.RequestedPackageName}");
             vnPay.AddRequestData("vnp_OrderType", "other");
             vnPay.AddRequestData("vnp_Locale", "vn");
@@ -122,9 +101,10 @@ namespace PaymentService.API.Services
 
             var vnpUrl = _config["VNPay:BaseUrl"];
             var hashSecret = _config["VNPay:HashSecret"];
-            bool encodeHash = bool.Parse(_config["VNPay:HashEncodeUrl"] ?? "true");
+            bool encodeHash = _config.GetValue<bool>("VNPay:HashEncodeUrl");
 
             string redirectUrl = vnPay.CreateRequestUrl(vnpUrl, hashSecret, encodeHash);
+
 
             return new BaseResponse
             {
@@ -138,6 +118,7 @@ namespace PaymentService.API.Services
                 }
             };
         }
+
 
 
 
