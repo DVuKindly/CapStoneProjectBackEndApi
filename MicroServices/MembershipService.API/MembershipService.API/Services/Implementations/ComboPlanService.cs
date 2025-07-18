@@ -108,6 +108,15 @@ namespace MembershipService.API.Services.Implementations
                 Unit = duration.PackageDuration.Unit.ToString()
             };
         }
+        public async Task<List<ComboPlanResponseDto>> GetByIdsAsync(List<Guid> ids)
+        {
+            var plans = await _context.ComboPlans
+                .Where(p => ids.Contains(p.Id))
+                .Include(p => p.Location)
+                .ToListAsync();
+
+            return _mapper.Map<List<ComboPlanResponseDto>>(plans);
+        }
 
 
         public async Task<bool> DeleteAsync(Guid id) => await _planRepo.DeleteAsync(id);

@@ -19,6 +19,7 @@ namespace UserService.API.Services.Interfaces
 
         Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime startDate, DateTime endDate);
 
+        Task<List<ComboPlanResponse>> GetComboPlansByIdsAsync(List<Guid> ids);
 
         Task<bool> CreateBookingAsync(
       Guid accountId,

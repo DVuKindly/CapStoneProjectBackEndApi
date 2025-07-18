@@ -231,6 +231,20 @@ public class MembershipServiceClient : IMembershipServiceClient
             return false;
         }
     }
+    public async Task<List<ComboPlanResponse>> GetComboPlansByIdsAsync(List<Guid> ids)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/comboplans/batch", ids);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<ComboPlanResponse>>() ?? new();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[MembershipService] Exception in GetComboPlansByIdsAsync");
+            return new();
+        }
+    }
 
 
 

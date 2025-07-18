@@ -1,6 +1,6 @@
 ﻿namespace UserService.API.DTOs.Responses
 {
-    public class BasicPlanResponse
+    public class BasicPlanResponse : IPlanResponse
     {
         public Guid Id { get; set; }
 
@@ -22,6 +22,6 @@
 
         public string LocationName { get; set; } = string.Empty;
 
-        public List<Guid> NextUServiceIds { get; set; } = new(); 
+        public List<Guid> NextUServiceIds { get; set; } = new();
     }
 }

@@ -376,12 +376,30 @@ public class MembershipRequestService : IMembershipRequestService
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
 
-        var allPackageIds = memberships.Select(m => m.PackageId)
-            .Concat(pendingRequests.Where(r => r.PackageId.HasValue).Select(r => r.PackageId!.Value))
-            .Distinct().ToList();
+        // Tách Basic và Combo PlanId
+        var basicIds = new List<Guid>();
+        var comboIds = new List<Guid>();
 
-        var plans = await _membershipServiceClient.GetBasicPlansByIdsAsync(allPackageIds);
-        var planDict = plans.ToDictionary(p => p.Id, p => p);
+        var allRequests = memberships.Select(m => (m.PackageId, m.PackageType))
+            .Concat(pendingRequests
+                .Where(r => r.PackageId.HasValue)
+                .Select(r => (r.PackageId!.Value, r.PackageType)));
+
+        foreach (var (id, type) in allRequests.Distinct())
+        {
+            if (type?.ToLower() == "basic")
+                basicIds.Add(id);
+            else if (type?.ToLower() == "combo")
+                comboIds.Add(id);
+        }
+
+        // Gọi cả hai API
+        var basicPlans = await _membershipServiceClient.GetBasicPlansByIdsAsync(basicIds);
+        var comboPlans = await _membershipServiceClient.GetComboPlansByIdsAsync(comboIds);
+
+        var planDict = basicPlans.Cast<IPlanResponse>()
+            .Concat(comboPlans)
+            .ToDictionary(p => p.Id, p => p);
 
         // 1️⃣ Map từ PendingMembershipRequests
         foreach (var r in pendingRequests)
@@ -459,7 +477,6 @@ public class MembershipRequestService : IMembershipRequestService
                 PersonalityTraits = string.Join(", ", traitNames.Concat(skillNames)),
                 Introduction = user?.Introduction,
                 CvUrl = user?.CvUrl,
-              
                 ExtendedProfile = new ExtendedProfileDto
                 {
                     Gender = user?.Gender,
@@ -474,6 +491,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         return result.OrderByDescending(r => r.CreatedAt).ToList();
     }
+
 
 
 
