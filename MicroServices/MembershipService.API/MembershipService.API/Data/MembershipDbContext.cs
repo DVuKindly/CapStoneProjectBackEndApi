@@ -1,5 +1,6 @@
 ﻿using System.Reflection.Emit;
 using MembershipService.API.Entities;
+using MembershipService.API.Enums;
 using MembershipService.API.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 
@@ -380,6 +381,117 @@ namespace MembershipService.API.Data
                 new BedTypeOption { Id = 3, Name = "Queen" },
                 new BedTypeOption { Id = 4, Name = "King" }
             );
+
+            modelBuilder.Entity<PackageDuration>().HasData(
+                new PackageDuration
+                {
+                    Id = 1,
+                    Value = 1,
+                    Unit = DurationUnit.Month,
+                    Description = "1 tháng",
+                    CreatedAt = new DateTime(2024, 1, 1)
+                },
+                new PackageDuration
+                {
+                    Id = 2,
+                    Value = 3,
+                    Unit = DurationUnit.Month,
+                    Description = "3 tháng",
+                    CreatedAt = new DateTime(2024, 1, 1)
+                },
+                new PackageDuration
+                {
+                    Id = 3,
+                    Value = 6,
+                    Unit = DurationUnit.Month,
+                    Description = "6 tháng",
+                    CreatedAt = new DateTime(2024, 1, 1)
+                }
+            );
+
+            modelBuilder.Entity<BasicPlanType>().HasData(
+                new BasicPlanType
+                {
+                    Id = Guid.Parse("60000000-0000-0000-0000-000000000001"),
+                    Code = "LIVING",
+                    Name = "Living",
+                    Description = "Các gói dịch vụ liên quan đến chỗ ở",
+                    CreatedAt = new DateTime(2024, 1, 1)
+                },
+                new BasicPlanType
+                {
+                    Id = Guid.Parse("60000000-0000-0000-0000-000000000003"),
+                    Code = "LIFE_ACTIVITY",
+                    Name = "Life Activity",
+                    Description = "Các hoạt động trải nghiệm, xã hội, giải trí",
+                    CreatedAt = new DateTime(2024, 1, 1)
+                }
+            );
+
+            modelBuilder.Entity<BasicPlanCategory>().HasData(
+                new BasicPlanCategory
+                {
+                    Id = 1,
+                    Name = "Dài hạn",
+                    Description = "Áp dụng cho các gói từ 1 tháng trở lên",
+                    BasicPlanTypeId = Guid.Parse("60000000-0000-0000-0000-000000000001") // LIVING
+                },
+                new BasicPlanCategory
+                {
+                    Id = 2,
+                    Name = "Ngắn hạn",
+                    Description = "Dành cho nhu cầu ngắn ngày hoặc linh hoạt",
+                    BasicPlanTypeId = Guid.Parse("60000000-0000-0000-0000-000000000001")
+                },
+                new BasicPlanCategory
+                {
+                    Id = 3,
+                    Name = "Theo sự kiện",
+                    Description = "Dành riêng cho các gói hoạt động theo sự kiện cụ thể",
+                    BasicPlanTypeId = Guid.Parse("60000000-0000-0000-0000-000000000001") 
+                }
+            );
+
+            modelBuilder.Entity<BasicPlanLevel>().HasData(
+                new BasicPlanLevel
+                {
+                    Id = 1,
+                    Name = "Cơ bản",
+                    BasicPlanTypeId = Guid.Parse("60000000-0000-0000-0000-000000000001") // LIVING
+                },
+                new BasicPlanLevel
+                {
+                    Id = 2,
+                    Name = "Tiêu chuẩn",
+                    BasicPlanTypeId = Guid.Parse("60000000-0000-0000-0000-000000000001")
+                },
+                new BasicPlanLevel
+                {
+                    Id = 3,
+                    Name = "Cao cấp",
+                    BasicPlanTypeId = Guid.Parse("60000000-0000-0000-0000-000000000001")
+                }
+            );
+
+            modelBuilder.Entity<PlanTargetAudience>().HasData(
+                new PlanTargetAudience
+                {
+                    Id = 1,
+                    Name = "Cá nhân"
+                },
+                new PlanTargetAudience
+                {
+                    Id = 2,
+                    Name = "Nhóm"
+                },
+                new PlanTargetAudience
+                {
+                    Id = 3,
+                    Name = "Doanh nghiệp"
+                }
+            );
+
+
 
             base.OnModelCreating(modelBuilder);
         }
