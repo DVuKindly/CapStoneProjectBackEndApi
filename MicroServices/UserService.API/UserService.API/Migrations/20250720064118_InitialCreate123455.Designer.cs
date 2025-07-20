@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UserService.API.Data;
 
@@ -11,9 +12,11 @@ using UserService.API.Data;
 namespace UserService.API.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    partial class UserDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250720064118_InitialCreate123455")]
+    partial class InitialCreate123455
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -247,9 +250,6 @@ namespace UserService.API.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal?>("AddOnsFee")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal?>("Amount")
                         .HasColumnType("decimal(18,2)");
 
@@ -268,6 +268,9 @@ namespace UserService.API.Migrations
 
                     b.Property<DateTime?>("ExpireAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("ExtraFee")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Interests")
                         .HasMaxLength(1000)
@@ -990,9 +993,6 @@ namespace UserService.API.Migrations
 
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal?>("AddOnsFee")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");

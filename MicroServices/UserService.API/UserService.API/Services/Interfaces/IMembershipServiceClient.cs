@@ -9,6 +9,7 @@ namespace UserService.API.Services.Interfaces
         Task<List<BasicPlanResponse>> GetBasicPlansByIdsAsync(List<Guid> ids);
 
         Task<ComboPlanDto?> GetComboPlanByIdAsync(Guid id);
+        Task<decimal> GetExtraFeeForRoomAsync(Guid roomInstanceId);
 
         Task<decimal> GetPlanPriceAsync(Guid planId, string planType);
         Task<PlanPriceInfoDto?> GetPlanPriceInfoAsync(Guid planId, string planType);

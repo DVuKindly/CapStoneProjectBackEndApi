@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using Newtonsoft.Json;
+using System.Net.Http.Json;
 using System.Text.Json;
 using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
@@ -50,6 +51,21 @@ public class MembershipServiceClient : IMembershipServiceClient
             _logger.LogError(ex, "[MembershipService] Exception in GetBasicPlansByIdsAsync");
             return new();
         }
+    }
+    public async Task<decimal> GetExtraFeeForRoomAsync(Guid roomInstanceId)
+    {
+        var response = await _httpClient.GetAsync($"/api/internal/rooms/{roomInstanceId}/extra-fee");
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception("Failed to retrieve extra fee from MembershipService.");
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonConvert.DeserializeObject<BaseResponse<decimal>>(content);
+
+        if (result == null || !result.Success)
+            throw new Exception("Invalid response when getting extra fee.");
+
+        return result.Data;
     }
 
     public async Task<ComboPlanDto?> GetComboPlanByIdAsync(Guid id)

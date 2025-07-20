@@ -189,6 +189,7 @@ public class MembershipRequestService : IMembershipRequestService
                 RequestedPackageName = r.RequestedPackageName,
                 PackageType = r.PackageType,
                 Amount = r.Amount,
+                AddOnsFee = r.AddOnsFee, // ✅ THÊM DÒNG NÀY
                 ExpireAt = r.ExpireAt,
                 Status = r.Status,
                 PaymentStatus = r.PaymentStatus,
@@ -220,6 +221,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         return result;
     }
+
 
 
 
@@ -316,6 +318,7 @@ public class MembershipRequestService : IMembershipRequestService
             RequestedPackageName = request.RequestedPackageName,
             PackageType = request.PackageType,
             Amount = membership?.Amount ?? request.Amount,
+            AddOnsFee = request.AddOnsFee,
             ExpireAt = membership?.ExpireAt ?? request.ExpireAt,
             Status = request.Status,
             PaymentStatus = request.PaymentStatus,
@@ -618,6 +621,7 @@ public class MembershipRequestService : IMembershipRequestService
                 RequestedPackageName = r.RequestedPackageName,
                 PackageType = r.PackageType,
                 Amount = membership?.Amount ?? r.Amount,
+                AddOnsFee = r.AddOnsFee,
                 ExpireAt = membership?.ExpireAt ?? r.ExpireAt,
                 Status = r.Status,
                 PaymentStatus = r.PaymentStatus,
@@ -700,6 +704,7 @@ public class MembershipRequestService : IMembershipRequestService
         Guid locationId;
         string name;
         decimal price;
+        decimal extraFee = 0;
 
         var selectedStartDate = dto.SelectedStartDate?.Date ?? DateTime.UtcNow.Date;
 
@@ -716,6 +721,7 @@ public class MembershipRequestService : IMembershipRequestService
             locationId = plan.LocationId ?? Guid.Empty;
             name = plan.Name;
 
+            // ✅ Check Booking Logic
             if (dto.RequireBooking)
             {
                 if (dto.RoomInstanceId == null)
@@ -730,6 +736,10 @@ public class MembershipRequestService : IMembershipRequestService
 
                 if (isBooked)
                     return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
+
+                // ✅ Get Extra Fee from MembershipService
+                extraFee = await _membershipServiceClient.GetExtraFeeForRoomAsync(dto.RoomInstanceId.Value);
+                price += extraFee;
             }
 
             var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate);
@@ -737,6 +747,7 @@ public class MembershipRequestService : IMembershipRequestService
             request.PackageDurationUnit = duration.Unit;
             request.RequireBooking = dto.RequireBooking;
             request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
+            request.AddOnsFee = dto.RequireBooking ? extraFee : null;
 
             _db.PendingMembershipRequests.Add(request);
             await _db.SaveChangesAsync();
@@ -795,7 +806,6 @@ public class MembershipRequestService : IMembershipRequestService
             locationId = combo.LocationId ?? Guid.Empty;
             name = combo.Name;
 
-            // ✅ THÊM VALIDATION ĐẶT PHÒNG CHO COMBO
             if (dto.RequireBooking)
             {
                 if (dto.RoomInstanceId == null)
@@ -805,8 +815,10 @@ public class MembershipRequestService : IMembershipRequestService
 
                 if (isBooked)
                     return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
-            }
 
+                extraFee = await _membershipServiceClient.GetExtraFeeForRoomAsync(dto.RoomInstanceId.Value);
+                price += extraFee;
+            }
 
             var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate);
             request.PackageDurationValue = duration.Value;
@@ -814,6 +826,7 @@ public class MembershipRequestService : IMembershipRequestService
             request.Status = "Pending";
             request.RequireBooking = dto.RequireBooking;
             request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
+            request.AddOnsFee = dto.RequireBooking ? extraFee : null;
 
             _db.PendingMembershipRequests.Add(request);
             await _db.SaveChangesAsync();
@@ -827,6 +840,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         return BaseResponse.Fail("Unexpected error occurred.");
     }
+
 
 
 
@@ -931,8 +945,6 @@ public class MembershipRequestService : IMembershipRequestService
         {
             expireAt = CalculateExpireDate(paidTime, durationValue.Value, durationUnit);
         }
-
-        // ✅ Tạo bản ghi Membership
         var membership = new Membership
         {
             Id = Guid.NewGuid(),
@@ -941,23 +953,23 @@ public class MembershipRequestService : IMembershipRequestService
             PackageName = request.RequestedPackageName ?? "Gói không tên",
             PackageType = request.PackageType?.ToLower() ?? "basic",
             Amount = request.Amount ?? 0,
+            AddOnsFee = request.AddOnsFee, // ✅ THÊM DÒNG NÀY
             LocationId = request.LocationId ?? Guid.Empty,
             PurchasedAt = paidTime,
             UsedForRoleUpgrade = request.PackageType?.ToLower() == "combo",
 
-            // Thông tin thanh toán
             PaymentMethod = request.PaymentMethod,
             PaymentStatus = request.PaymentStatus,
             PaymentNote = request.PaymentNote,
             PaymentTime = request.PaymentTime,
             PaymentTransactionId = request.PaymentTransactionId,
 
-            // Thời hạn
             PackageDurationValue = durationValue,
             PackageDurationUnit = durationUnit,
             ExpireAt = expireAt,
             RoomInstanceId = request.RequireBooking == true ? request.RoomInstanceId : null
         };
+
 
         _db.Memberships.Add(membership);
         await _db.SaveChangesAsync();

@@ -19,6 +19,10 @@ public class PendingMembershipRequest
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal? Amount { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? AddOnsFee { get; set; }
+
     public DateTime? StartDate { get; set; }
 
     [MaxLength(1000)]
@@ -61,6 +65,7 @@ public class PendingMembershipRequest
     public string? PaymentTransactionId { get; set; }
     public string PackageType { get; set; } = null!;
     public int? PackageDurationValue { get; set; }
+   
 
     [MaxLength(50)]
     public string? PackageDurationUnit { get; set; }
