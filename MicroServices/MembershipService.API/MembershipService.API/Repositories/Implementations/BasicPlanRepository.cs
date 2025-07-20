@@ -58,16 +58,16 @@ namespace MembershipService.API.Repositories.Implementations
                         PlanDurationDescription = cd.PackageDuration.Description
                     }).ToList(),
 
-                    Acomodations = bp.BasicPlanType.Code == "Accomodation"
+                    Acomodations = bp.BasicPlanType.Code == "Accommodation"
                         ? bp.BasicPlanRooms.Select(r => new BasicPlanRoomResponseDto
                         {
                             AccomodationId = r.AccommodationOption.Id,
                             AccomodationDescription = r.AccommodationOption.Description,
                             RoomType = r.AccommodationOption.RoomType.Name
                         }).ToList()
-                        : new List<BasicPlanRoomResponseDto>(),
+: new List<BasicPlanRoomResponseDto>(),
 
-                    Entitlements = bp.BasicPlanType.Code != "Accomodation"
+                    Entitlements = bp.BasicPlanType.Code != "Accommodation"
                         ? bp.BasicPlanEntitlements.Select(e => new EntitlementResponseDto
                         {
                             EntitlementId = e.EntitlementRule.Id,

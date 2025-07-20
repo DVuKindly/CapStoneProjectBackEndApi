@@ -1,4 +1,6 @@
-﻿namespace UserService.API.DTOs.Responses
+﻿using System.Text.Json.Serialization;
+
+namespace UserService.API.DTOs.Responses
 {
     public class ComboPlanResponse : IPlanResponse
     {
@@ -12,8 +14,10 @@
 
         public decimal TotalPrice { get; set; }
 
+        [JsonPropertyName("propertyName")]
         public string? LocationName { get; set; }
 
+        [JsonPropertyName("propertyId")]
         public Guid? LocationId { get; set; }
     }
 }

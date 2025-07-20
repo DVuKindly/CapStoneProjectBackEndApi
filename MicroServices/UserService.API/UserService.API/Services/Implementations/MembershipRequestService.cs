@@ -14,6 +14,8 @@ public class MembershipRequestService : IMembershipRequestService
     private readonly UserDbContext _db;
     private readonly IAuthServiceClient _authServiceClient;
     private readonly IMembershipServiceClient _membershipServiceClient;
+    private readonly ILogger<MembershipRequestService> _logger;
+
     private readonly IPaymentServiceClient _paymentServiceClient;
 
     public MembershipRequestService(UserDbContext db, IAuthServiceClient authServiceClient, IMembershipServiceClient membershipServiceClient, IPaymentServiceClient paymentServiceClient)
@@ -707,7 +709,10 @@ public class MembershipRequestService : IMembershipRequestService
         decimal price;
         decimal extraFee = 0;
 
-        var selectedStartDate = dto.SelectedStartDate?.Date ?? DateTime.UtcNow.Date;
+        var selectedStartDate = dto.SelectedStartDate.HasValue
+      ? DateTime.SpecifyKind(dto.SelectedStartDate.Value, DateTimeKind.Utc).Date
+      : DateTime.UtcNow.Date;
+
 
         // === BASIC PACKAGE ===
         if (packageType == "basic")
@@ -890,21 +895,27 @@ public class MembershipRequestService : IMembershipRequestService
     public async Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(MarkPaidRequestDto dto)
     {
         if (dto == null || dto.RequestId == Guid.Empty)
-            return BaseResponse.Fail("Dữ liệu không hợp lệ.");
+            return BaseResponse.Fail("Invalid request data.");
 
         var request = await _db.PendingMembershipRequests
             .Include(r => r.UserProfile)
             .FirstOrDefaultAsync(r => r.Id == dto.RequestId);
 
         if (request == null)
-            return BaseResponse.Fail("Không tìm thấy yêu cầu đăng ký.");
+            return BaseResponse.Fail("Membership request not found.");
 
         if (request.Status == "Completed")
-            return BaseResponse.Fail("Yêu cầu đã được xử lý trước đó.");
+            return BaseResponse.Fail("This request has already been processed.");
+
+        if (!request.StartDate.HasValue)
+        {
+            Console.WriteLine($"❌ Missing StartDate in request {request.Id}");
+            return BaseResponse.Fail("Start date is required for activation.");
+        }
 
         var paidTime = dto.PaidTime ?? DateTime.UtcNow;
 
-        // ✅ Cập nhật trạng thái thanh toán
+        // ✅ Update request payment status
         request.PaymentStatus = "Paid";
         request.PaymentMethod = dto.PaymentMethod ?? "Unknown";
         request.PaymentTransactionId = dto.PaymentTransactionId;
@@ -912,12 +923,11 @@ public class MembershipRequestService : IMembershipRequestService
         request.PaymentNote = dto.PaymentNote;
         request.Status = "Completed";
 
-        // ✅ Cập nhật trạng thái onboarding
+        // ✅ Update user onboarding status
         if (request.UserProfile != null)
         {
             request.UserProfile.OnboardingStatus = "ApprovedMember";
 
-            // ✅ CHỈ combo mới nâng role
             if (request.PackageType?.ToLower() == "combo" && request.UserProfile.RoleType != "member")
             {
                 request.UserProfile.RoleType = "member";
@@ -927,38 +937,36 @@ public class MembershipRequestService : IMembershipRequestService
                     var promoted = await _authServiceClient.PromoteUserToMemberAsync(request.AccountId);
                     if (!promoted)
                     {
-                        Console.WriteLine("⚠️ Đã xác nhận thanh toán nhưng không thể nâng vai trò.");
+                        Console.WriteLine(" Payment confirmed, but promotion to 'member' failed.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"🚨 Lỗi nâng vai trò: {ex.Message}");
+                    Console.WriteLine($" Promotion error: {ex.Message}");
                 }
-            }
-            else
-            {
-                Console.WriteLine("ℹ️ Gói không yêu cầu nâng role hoặc user đã là member.");
             }
         }
 
-        // ✅ Tính thời hạn sử dụng gói
+        // ✅ Calculate expiration date based on request.StartDate
         int? durationValue = request.PackageDurationValue;
         string? durationUnit = request.PackageDurationUnit;
         DateTime? expireAt = null;
 
         if (durationValue.HasValue && !string.IsNullOrWhiteSpace(durationUnit))
         {
-            expireAt = CalculateExpireDate(paidTime, durationValue.Value, durationUnit);
+            expireAt = CalculateExpireDate(request.StartDate.Value, durationValue.Value, durationUnit);
         }
+
+        // ✅ Create Membership
         var membership = new Membership
         {
             Id = Guid.NewGuid(),
             AccountId = request.AccountId,
             PackageId = request.PackageId ?? Guid.Empty,
-            PackageName = request.RequestedPackageName ?? "Gói không tên",
+            PackageName = request.RequestedPackageName ?? "Unnamed package",
             PackageType = request.PackageType?.ToLower() ?? "basic",
             Amount = request.Amount ?? 0,
-            AddOnsFee = request.AddOnsFee, // ✅ THÊM DÒNG NÀY
+            AddOnsFee = request.AddOnsFee,
             LocationId = request.LocationId ?? Guid.Empty,
             PurchasedAt = paidTime,
             UsedForRoleUpgrade = request.PackageType?.ToLower() == "combo",
@@ -971,48 +979,48 @@ public class MembershipRequestService : IMembershipRequestService
 
             PackageDurationValue = durationValue,
             PackageDurationUnit = durationUnit,
+            StartDate = request.StartDate.Value, // ✅ Set from request
             ExpireAt = expireAt,
             RoomInstanceId = request.RequireBooking == true ? request.RoomInstanceId : null
         };
 
-
         _db.Memberships.Add(membership);
         await _db.SaveChangesAsync();
 
-        // ✅ Tạo booking nếu có yêu cầu và đủ thông tin
+        // ✅ Create booking if needed
         bool bookingCreated = false;
 
         if (request.RequireBooking == true && request.RoomInstanceId.HasValue)
         {
             try
             {
-                if (request.PackageDurationValue.HasValue && !string.IsNullOrWhiteSpace(request.PackageDurationUnit))
+                if (durationValue.HasValue && !string.IsNullOrWhiteSpace(durationUnit))
                 {
                     bookingCreated = await _membershipServiceClient.CreateBookingAsync(
                         accountId: request.AccountId,
                         roomInstanceId: request.RoomInstanceId.Value,
-                        startDate: request.StartDate ?? DateTime.UtcNow.Date,
-                        durationValue: request.PackageDurationValue.Value,
-                        durationUnit: request.PackageDurationUnit
+                        startDate: request.StartDate.Value,
+                        durationValue: durationValue.Value,
+                        durationUnit: durationUnit
                     );
                 }
                 else
                 {
-                    Console.WriteLine("⚠️ Không đủ thông tin thời hạn gói để tạo booking.");
+                    Console.WriteLine(" Not enough data to calculate booking end date.");
                 }
 
                 if (!bookingCreated)
                 {
-                    Console.WriteLine("⚠️ Đã thanh toán nhưng không thể tạo booking phòng.");
+                    Console.WriteLine(" Booking creation failed after payment.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"🚨 Lỗi tạo booking: {ex.Message}");
+                Console.WriteLine($" Booking error: {ex.Message}");
             }
         }
 
-        return BaseResponse.Ok("Đã xác nhận thanh toán và cập nhật Membership thành công.", new
+        return BaseResponse.Ok("Payment confirmed and membership created successfully.", new
         {
             MembershipId = membership.Id,
             PackageName = membership.PackageName,
@@ -1022,6 +1030,8 @@ public class MembershipRequestService : IMembershipRequestService
             BookingCreated = bookingCreated
         });
     }
+
+
 
 
 
