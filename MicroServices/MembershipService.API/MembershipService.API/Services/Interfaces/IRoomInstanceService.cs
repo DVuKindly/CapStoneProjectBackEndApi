@@ -13,5 +13,8 @@ namespace MembershipService.API.Services.Interfaces
         Task<RoomInstanceResponse> CreateAsync(CreateRoomInstanceRequest request);
         Task<RoomInstanceResponse> UpdateAsync(Guid id, UpdateRoomInstanceRequest request);
         Task<bool> DeleteAsync(Guid id);
+        Task<decimal> GetAddOnFeeAsync(Guid roomInstanceId);
+
+
     }
 }

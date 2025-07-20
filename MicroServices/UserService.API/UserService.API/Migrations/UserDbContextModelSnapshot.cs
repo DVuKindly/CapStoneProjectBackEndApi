@@ -22,6 +22,38 @@ namespace UserService.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("City", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Cities");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Thủ đô Việt Nam",
+                            Name = "Hà Nội"
+                        });
+                });
+
             modelBuilder.Entity("CoachProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -69,18 +101,20 @@ namespace UserService.API.Migrations
                     b.ToTable("CoachProfiles");
                 });
 
-            modelBuilder.Entity("LocationRegion", b =>
+            modelBuilder.Entity("Location", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CityId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -89,29 +123,19 @@ namespace UserService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LocationRegions");
+                    b.HasIndex("CityId");
+
+                    b.HasIndex("CityId1");
+
+                    b.ToTable("Locations");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
+                            Id = new Guid("20000000-0000-0000-0000-000000000001"),
+                            CityId = new Guid("10000000-0000-0000-0000-000000000001"),
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Hà Nội",
-                            Name = "Hà Nội"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Hải Phòng",
-                            Name = "Hải Phòng"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Đà Nẵng",
-                            Name = "Đà Nẵng"
+                            Name = "Hoàng Cầu"
                         });
                 });
 
@@ -223,6 +247,9 @@ namespace UserService.API.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("AddOnsFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal?>("Amount")
                         .HasColumnType("decimal(18,2)");
 
@@ -251,9 +278,6 @@ namespace UserService.API.Migrations
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<Guid?>("LocationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("LocationRegionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("MessageToStaff")
@@ -301,6 +325,9 @@ namespace UserService.API.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<Guid?>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("RequestedPackageName")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -326,7 +353,7 @@ namespace UserService.API.Migrations
 
                     b.HasIndex("AccountId");
 
-                    b.HasIndex("LocationRegionId");
+                    b.HasIndex("PropertyId");
 
                     b.ToTable("PendingMembershipRequests");
                 });
@@ -379,6 +406,65 @@ namespace UserService.API.Migrations
                     b.HasIndex("LocationId");
 
                     b.ToTable("PendingThirdPartyRequests");
+                });
+
+            modelBuilder.Entity("Property", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LocationId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("LocationId1");
+
+                    b.ToTable("Propertys");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu 1",
+                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Name = "Hoàng Cầu Cơ sở 1"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu 2",
+                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Name = "Hoàng Cầu Cơ sở 2"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu 3",
+                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Name = "Hoàng Cầu Cơ sở 3"
+                        });
                 });
 
             modelBuilder.Entity("StaffProfile", b =>
@@ -439,6 +525,71 @@ namespace UserService.API.Migrations
                     b.ToTable("StaffProfiles");
                 });
 
+            modelBuilder.Entity("UserService.API.Entities.Feedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("MembershipId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OverallRating")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("MembershipId");
+
+                    b.ToTable("Feedbacks");
+                });
+
+            modelBuilder.Entity("UserService.API.Entities.FeedbackDetail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("FeedbackId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ServiceTargetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ServiceType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeedbackId");
+
+                    b.ToTable("FeedbackDetails");
+                });
+
             modelBuilder.Entity("UserService.API.Entities.Interest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -458,16 +609,346 @@ namespace UserService.API.Migrations
                         new
                         {
                             Id = new Guid("20000000-0000-0000-0000-000000000001"),
-                            Name = "Basketball"
+                            Name = "Adventure travel"
                         },
                         new
                         {
                             Id = new Guid("20000000-0000-0000-0000-000000000002"),
-                            Name = "Travel"
+                            Name = "Alternative energy"
                         },
                         new
                         {
                             Id = new Guid("20000000-0000-0000-0000-000000000003"),
+                            Name = "Alternative medicine"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000004"),
+                            Name = "Animal welfare"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000005"),
+                            Name = "Astronomy"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000006"),
+                            Name = "Athletics"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000007"),
+                            Name = "Backpacking"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000008"),
+                            Name = "Badminton"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000009"),
+                            Name = "Baseball"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000010"),
+                            Name = "Basketball"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000011"),
+                            Name = "Beer tasting"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000012"),
+                            Name = "Bicycling"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000013"),
+                            Name = "Board games"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000014"),
+                            Name = "Bowling"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000015"),
+                            Name = "Brunch"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000016"),
+                            Name = "Camping"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000017"),
+                            Name = "Clubbing"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000018"),
+                            Name = "Comedy"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000019"),
+                            Name = "Conservation"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000020"),
+                            Name = "Cooking"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000021"),
+                            Name = "Crafts"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000022"),
+                            Name = "DIY – Do it Yourself"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000023"),
+                            Name = "Dancing"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000024"),
+                            Name = "Dining out"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000025"),
+                            Name = "Diving"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000026"),
+                            Name = "Drinking"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000027"),
+                            Name = "Education technology"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000028"),
+                            Name = "Entrepreneurship"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000029"),
+                            Name = "Environmental awareness"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000030"),
+                            Name = "Fencing"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000031"),
+                            Name = "Film"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000032"),
+                            Name = "Finance technology"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000033"),
+                            Name = "Fishing"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000034"),
+                            Name = "Fitness"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000035"),
+                            Name = "Frisbee"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000036"),
+                            Name = "Gaming"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000037"),
+                            Name = "Golf"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000038"),
+                            Name = "Happy hour"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000039"),
+                            Name = "Healing"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000040"),
+                            Name = "Hiking"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000041"),
+                            Name = "History"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000042"),
+                            Name = "Holistic health"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000043"),
+                            Name = "Horse riding"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000044"),
+                            Name = "Human rights"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000045"),
+                            Name = "Hunting"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000046"),
+                            Name = "Ice skating"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000047"),
+                            Name = "Innovation"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000048"),
+                            Name = "International travel"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000049"),
+                            Name = "Internet startups"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000050"),
+                            Name = "Investing"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000051"),
+                            Name = "Karaoke"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000052"),
+                            Name = "Kayaking"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000053"),
+                            Name = "Languages"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000054"),
+                            Name = "Literature"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000055"),
+                            Name = "Local culture"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000056"),
+                            Name = "Marketing"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000057"),
+                            Name = "Martial arts"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000058"),
+                            Name = "Meditation"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000059"),
+                            Name = "Mountain biking"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000060"),
+                            Name = "Music"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000061"),
+                            Name = "Natural parks"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000062"),
+                            Name = "Networking"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000063"),
+                            Name = "Neuroscience"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000064"),
+                            Name = "Nightlife"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000065"),
+                            Name = "Nutrition"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000066"),
+                            Name = "Outdoor adventure"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000067"),
+                            Name = "Outdoor sports"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000068"),
+                            Name = "Painting"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000069"),
                             Name = "Photography"
                         });
                 });
@@ -483,10 +964,10 @@ namespace UserService.API.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<Guid>("LocationRegionId")
+                    b.Property<Guid>("MembershipLocationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("MembershipLocationId")
+                    b.Property<Guid>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RegionName")
@@ -495,7 +976,7 @@ namespace UserService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationRegionId", "MembershipLocationId")
+                    b.HasIndex("PropertyId", "MembershipLocationId")
                         .IsUnique();
 
                     b.ToTable("LocationMappings");
@@ -509,6 +990,9 @@ namespace UserService.API.Migrations
 
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("AddOnsFee")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
@@ -622,6 +1106,56 @@ namespace UserService.API.Migrations
                         {
                             Id = new Guid("30000000-0000-0000-0000-000000000002"),
                             Name = "Optimistic"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000003"),
+                            Name = "Extrovert"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000004"),
+                            Name = "Realistic"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000005"),
+                            Name = "Ambitious"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000006"),
+                            Name = "Easygoing"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000007"),
+                            Name = "Thoughtful"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000008"),
+                            Name = "Energetic"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000009"),
+                            Name = "Creative"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000010"),
+                            Name = "Reliable"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000011"),
+                            Name = "Adventurous"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000012"),
+                            Name = "Compassionate"
                         });
                 });
 
@@ -644,12 +1178,122 @@ namespace UserService.API.Migrations
                         new
                         {
                             Id = new Guid("40000000-0000-0000-0000-000000000001"),
-                            Name = "Web Development"
+                            Name = "A/B testing"
                         },
                         new
                         {
                             Id = new Guid("40000000-0000-0000-0000-000000000002"),
-                            Name = "Project Management"
+                            Name = "AI"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000003"),
+                            Name = "API development"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000004"),
+                            Name = "Accounting"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000005"),
+                            Name = "Administrative support"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000006"),
+                            Name = "Advertising"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000007"),
+                            Name = "Affiliate marketing"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000008"),
+                            Name = "Android development"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000009"),
+                            Name = "Animators"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000010"),
+                            Name = "Audio production"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000011"),
+                            Name = "Back-end development"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000012"),
+                            Name = "Blogging"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000013"),
+                            Name = "Bookkeeping"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000014"),
+                            Name = "Brand strategy"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000015"),
+                            Name = "Branding"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000016"),
+                            Name = "Business development"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000017"),
+                            Name = "CRM management"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000018"),
+                            Name = "Communication"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000019"),
+                            Name = "Community management"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000020"),
+                            Name = "Content"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000021"),
+                            Name = "Content marketing"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000022"),
+                            Name = "Copyediting"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000023"),
+                            Name = "Copywriting"
+                        },
+                        new
+                        {
+                            Id = new Guid("40000000-0000-0000-0000-000000000024"),
+                            Name = "Creative writing"
                         });
                 });
 
@@ -753,6 +1397,9 @@ namespace UserService.API.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -823,6 +1470,8 @@ namespace UserService.API.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
+                    b.HasIndex("CityId");
+
                     b.HasIndex("LocationId");
 
                     b.ToTable("UserProfiles");
@@ -854,6 +1503,21 @@ namespace UserService.API.Migrations
                     b.Navigation("UserProfile");
                 });
 
+            modelBuilder.Entity("Location", b =>
+                {
+                    b.HasOne("City", "City")
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("City", null)
+                        .WithMany("Locations")
+                        .HasForeignKey("CityId1");
+
+                    b.Navigation("City");
+                });
+
             modelBuilder.Entity("ManagerProfile", b =>
                 {
                     b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
@@ -862,12 +1526,12 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("ManagerProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
 
                     b.Navigation("UserProfile");
                 });
@@ -880,12 +1544,12 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("PartnerProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
 
                     b.Navigation("UserProfile");
                 });
@@ -898,20 +1562,34 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", null)
+                    b.HasOne("Property", null)
                         .WithMany("PendingMembershipRequests")
-                        .HasForeignKey("LocationRegionId");
+                        .HasForeignKey("PropertyId");
 
                     b.Navigation("UserProfile");
                 });
 
             modelBuilder.Entity("PendingThirdPartyRequest", b =>
                 {
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("PendingThirdPartyRequests")
                         .HasForeignKey("LocationId");
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
+                });
+
+            modelBuilder.Entity("Property", b =>
+                {
+                    b.HasOne("Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Location", null)
+                        .WithMany("Properties")
+                        .HasForeignKey("LocationId1");
+
+                    b.Navigation("Location");
                 });
 
             modelBuilder.Entity("StaffProfile", b =>
@@ -922,25 +1600,53 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("StaffProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
 
                     b.Navigation("UserProfile");
                 });
 
-            modelBuilder.Entity("UserService.API.Entities.LocationMapping", b =>
+            modelBuilder.Entity("UserService.API.Entities.Feedback", b =>
                 {
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("UserService.API.Entities.UserProfile", "User")
                         .WithMany()
-                        .HasForeignKey("LocationRegionId")
+                        .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("LocationRegion");
+                    b.HasOne("UserService.API.Entities.Membership", "Membership")
+                        .WithMany()
+                        .HasForeignKey("MembershipId");
+
+                    b.Navigation("Membership");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("UserService.API.Entities.FeedbackDetail", b =>
+                {
+                    b.HasOne("UserService.API.Entities.Feedback", "Feedback")
+                        .WithMany("Details")
+                        .HasForeignKey("FeedbackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feedback");
+                });
+
+            modelBuilder.Entity("UserService.API.Entities.LocationMapping", b =>
+                {
+                    b.HasOne("Property", "Property")
+                        .WithMany()
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("UserService.API.Entities.Membership", b =>
@@ -969,12 +1675,12 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
 
                     b.Navigation("UserProfile");
                 });
@@ -1019,12 +1725,18 @@ namespace UserService.API.Migrations
 
             modelBuilder.Entity("UserService.API.Entities.UserProfile", b =>
                 {
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("City", "City")
+                        .WithMany()
+                        .HasForeignKey("CityId");
+
+                    b.HasOne("Property", "Property")
                         .WithMany("UserProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("City");
+
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("UserService.API.Entities.UserSkill", b =>
@@ -1046,7 +1758,17 @@ namespace UserService.API.Migrations
                     b.Navigation("UserProfile");
                 });
 
-            modelBuilder.Entity("LocationRegion", b =>
+            modelBuilder.Entity("City", b =>
+                {
+                    b.Navigation("Locations");
+                });
+
+            modelBuilder.Entity("Location", b =>
+                {
+                    b.Navigation("Properties");
+                });
+
+            modelBuilder.Entity("Property", b =>
                 {
                     b.Navigation("ManagerProfiles");
 
@@ -1059,6 +1781,11 @@ namespace UserService.API.Migrations
                     b.Navigation("StaffProfiles");
 
                     b.Navigation("UserProfiles");
+                });
+
+            modelBuilder.Entity("UserService.API.Entities.Feedback", b =>
+                {
+                    b.Navigation("Details");
                 });
 
             modelBuilder.Entity("UserService.API.Entities.UserProfile", b =>

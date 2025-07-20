@@ -6,6 +6,7 @@
         public Guid? LocationId { get; set; }
         public string? LocationName { get; set; }
         public string? RoleType { get; set; }
-    }
 
+        public Guid? CityId { get; set; } 
+    }
 }

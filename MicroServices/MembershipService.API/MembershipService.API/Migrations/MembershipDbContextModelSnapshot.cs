@@ -853,6 +853,9 @@ namespace MembershipService.API.Migrations
                     b.Property<Guid>("AccommodationOptionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("AddOnFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 

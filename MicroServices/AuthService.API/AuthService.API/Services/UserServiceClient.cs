@@ -58,6 +58,7 @@ public class UserServiceClient : IUserServiceClient
                 profilePayload.Department = extra.Department;
                 profilePayload.Address = extra.Address;
                 profilePayload.ManagerId = extra.ManagerId;
+                profilePayload.CityId = extra.CityId;
             }
 
             var normalizedRole = roleType.ToLowerInvariant();
@@ -102,6 +103,12 @@ public class UserServiceClient : IUserServiceClient
 
         var locations = await response.Content.ReadFromJsonAsync<List<LocationDto>>();
         return locations ?? new();
+    }
+    public async Task<string?> GetLocationDisplayNameAsync(Guid propertyId)
+    {
+        var response = await _httpClient.GetAsync($"bff/api/user/locations/{propertyId}/display-name");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadAsStringAsync();
     }
 
     public async Task<string?> GetLocationNameAsync(Guid locationId)
@@ -181,5 +188,18 @@ public class UserServiceClient : IUserServiceClient
         var result = await response.Content.ReadFromJsonAsync<UserProfileShortDto>();
         return result;
     }
+    public async Task<bool> IsValidCityAsync(Guid cityId)
+    {
+        var response = await _httpClient.GetAsync($"/bff/api/user/cities/{cityId}/exists");
+        return response.IsSuccessStatusCode;
+    }
+
+
+    public async Task<bool> IsPropertyInCityAsync(Guid propertyId, Guid cityId)
+    {
+        var response = await _httpClient.GetAsync($"/bff/api/user/locations/{propertyId}/in-city/{cityId}");
+        return response.IsSuccessStatusCode;
+    }
+
 
 }

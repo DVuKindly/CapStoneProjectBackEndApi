@@ -13,7 +13,7 @@ namespace UserService.API.Data
         public DbSet<ManagerProfile> ManagerProfiles { get; set; }
         public DbSet<SupplierProfile> SupplierProfiles { get; set; }
         public DbSet<PartnerProfile> PartnerProfiles { get; set; }
-        public DbSet<LocationRegion> LocationRegions { get; set; }
+        public DbSet<Property> Propertys { get; set; }
         public DbSet<PendingMembershipRequest> PendingMembershipRequests { get; set; }
         public DbSet<PendingThirdPartyRequest> PendingThirdPartyRequests { get; set; }
         public DbSet<LocationMapping> LocationMappings { get; set; }
@@ -21,11 +21,15 @@ namespace UserService.API.Data
         public DbSet<Interest> Interests { get; set; }
         public DbSet<PersonalityTrait> PersonalityTraits { get; set; }
         public DbSet<Skill> Skills { get; set; }
+        public DbSet<Feedback> Feedbacks { get; set; }
+        public DbSet<FeedbackDetail> FeedbackDetails { get; set; }
 
         public DbSet<UserInterest> UserInterests { get; set; }
         public DbSet<UserPersonalityTrait> UserPersonalityTraits { get; set; }
         public DbSet<UserSkill> UserSkills { get; set; }
 
+        public DbSet<City> Cities { get; set; }
+        public DbSet<Location> Locations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -44,12 +48,13 @@ namespace UserService.API.Data
             modelBuilder.Entity<SupplierProfile>().HasOne(s => s.UserProfile).WithMany().HasForeignKey(s => s.AccountId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<PendingMembershipRequest>().HasOne(p => p.UserProfile).WithMany().HasForeignKey(p => p.AccountId).OnDelete(DeleteBehavior.Restrict);
 
-            // LocationRegion quan hệ
-            modelBuilder.Entity<UserProfile>().HasOne(u => u.LocationRegion).WithMany(r => r.UserProfiles).HasForeignKey(u => u.LocationId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<StaffProfile>().HasOne(s => s.LocationRegion).WithMany(r => r.StaffProfiles).HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<PartnerProfile>().HasOne(p => p.LocationRegion).WithMany(r => r.PartnerProfiles).HasForeignKey(p => p.LocationId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<ManagerProfile>().HasOne(m => m.LocationRegion).WithMany(r => r.ManagerProfiles).HasForeignKey(m => m.LocationId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<SupplierProfile>().HasOne(s => s.LocationRegion).WithMany().HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
+            // Property quan hệ
+            modelBuilder.Entity<UserProfile>().HasOne(u => u.Property).WithMany(r => r.UserProfiles).HasForeignKey(u => u.LocationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<StaffProfile>().HasOne(s => s.Property).WithMany(r => r.StaffProfiles).HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<PartnerProfile>().HasOne(p => p.Property).WithMany(r => r.PartnerProfiles).HasForeignKey(p => p.LocationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ManagerProfile>().HasOne(m => m.Property).WithMany(r => r.ManagerProfiles).HasForeignKey(m => m.LocationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<SupplierProfile>().HasOne(s => s.Property).WithMany().HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
+
 
             // LocationMapping cấu hình
             modelBuilder.Entity<LocationMapping>()
@@ -77,13 +82,13 @@ namespace UserService.API.Data
             modelBuilder.Entity<Membership>().Property(m => m.Amount).HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<LocationMapping>()
-                .HasIndex(x => new { x.LocationRegionId, x.MembershipLocationId })
+                .HasIndex(x => new { x.PropertyId, x.MembershipLocationId })
                 .IsUnique();
 
             modelBuilder.Entity<LocationMapping>()
-                .HasOne(l => l.LocationRegion)
+                .HasOne(l => l.Property)
                 .WithMany()
-                .HasForeignKey(l => l.LocationRegionId)
+                .HasForeignKey(l => l.PropertyId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<LocationMapping>()
@@ -131,6 +136,30 @@ namespace UserService.API.Data
                 .WithMany()
                 .HasForeignKey(us => us.SkillId);
 
+            modelBuilder.Entity<Feedback>()
+    .HasOne(f => f.User)
+    .WithMany()
+    .HasForeignKey(f => f.AccountId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Property>()
+     .HasOne(p => p.Location)
+     .WithMany()
+     .HasForeignKey(p => p.LocationId)
+     .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Location>()
+                .HasOne(l => l.City)
+                .WithMany()
+                .HasForeignKey(l => l.CityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            modelBuilder.Entity<FeedbackDetail>()
+                .HasOne(d => d.Feedback)
+                .WithMany(f => f.Details)
+                .HasForeignKey(d => d.FeedbackId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Config max length
             modelBuilder.Entity<PendingMembershipRequest>().Property(p => p.CvUrl).HasMaxLength(500);
@@ -147,29 +176,53 @@ namespace UserService.API.Data
             modelBuilder.Entity<UserProfile>().Property(p => p.PersonalityTraits).HasMaxLength(1000);
             modelBuilder.Entity<UserProfile>().Property(p => p.Introduction).HasMaxLength(2000);
             modelBuilder.Entity<UserProfile>().Property(p => p.CvUrl).HasMaxLength(500);
-             modelBuilder.Entity<LocationRegion>().HasData(
-                new LocationRegion
+            var cityHanoi = new City
+            {
+                Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
+                Name = "Hà Nội",
+                Description = "Thủ đô Việt Nam",
+                CreatedAt = new DateTime(2024, 1, 1)
+            };
+
+            var locationHoangCau = new Location
+            {
+                Id = Guid.Parse("20000000-0000-0000-0000-000000000001"),
+                Name = "Hoàng Cầu",
+                CityId = cityHanoi.Id,
+                CreatedAt = new DateTime(2024, 1, 1)
+            };
+
+            modelBuilder.Entity<City>().HasData(cityHanoi);
+            modelBuilder.Entity<Location>().HasData(locationHoangCau);
+
+            modelBuilder.Entity<Property>().HasData(
+                new Property
                 {
-                    Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
-                    Name = "Hà Nội",
-                    Description = "Khu vực Hà Nội",
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000001"),
+                    Name = "Hoàng Cầu Cơ sở 1",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 1",
+                    LocationId = locationHoangCau.Id,
                     CreatedAt = new DateTime(2024, 1, 1)
                 },
-                new LocationRegion
+                new Property
                 {
-                    Id = Guid.Parse("10000000-0000-0000-0000-000000000002"),
-                    Name = "Hải Phòng",
-                    Description = "Khu vực Hải Phòng",
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000002"),
+                    Name = "Hoàng Cầu Cơ sở 2",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 2",
+                    LocationId = locationHoangCau.Id,
                     CreatedAt = new DateTime(2024, 1, 1)
                 },
-                new LocationRegion
+                new Property
                 {
-                    Id = Guid.Parse("10000000-0000-0000-0000-000000000003"),
-                    Name = "Đà Nẵng",
-                    Description = "Khu vực Đà Nẵng",
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000003"),
+                    Name = "Hoàng Cầu Cơ sở 3",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 3",
+                    LocationId = locationHoangCau.Id,
                     CreatedAt = new DateTime(2024, 1, 1)
                 }
             );
+
+
             modelBuilder.Entity<Interest>().HasData(
          new Interest { Id = Guid.Parse("20000000-0000-0000-0000-000000000001"), Name = "Adventure travel" },
          new Interest { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), Name = "Alternative energy" },
@@ -245,14 +298,49 @@ namespace UserService.API.Data
 
 
             modelBuilder.Entity<PersonalityTrait>().HasData(
-                new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000001"), Name = "Introvert" },
-                new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000002"), Name = "Optimistic" }
-            );
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000001"), Name = "Introvert" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000002"), Name = "Optimistic" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000003"), Name = "Extrovert" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000004"), Name = "Realistic" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000005"), Name = "Ambitious" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000006"), Name = "Easygoing" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000007"), Name = "Thoughtful" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000008"), Name = "Energetic" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000009"), Name = "Creative" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000010"), Name = "Reliable" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000011"), Name = "Adventurous" },
+       new PersonalityTrait { Id = Guid.Parse("30000000-0000-0000-0000-000000000012"), Name = "Compassionate" }
+   );
+
 
             modelBuilder.Entity<Skill>().HasData(
-                new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000001"), Name = "Web Development" },
-                new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000002"), Name = "Project Management" }
-            );
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000001"), Name = "A/B testing" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000002"), Name = "AI" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000003"), Name = "API development" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000004"), Name = "Accounting" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000005"), Name = "Administrative support" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000006"), Name = "Advertising" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000007"), Name = "Affiliate marketing" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000008"), Name = "Android development" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000009"), Name = "Animators" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000010"), Name = "Audio production" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000011"), Name = "Back-end development" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000012"), Name = "Blogging" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000013"), Name = "Bookkeeping" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000014"), Name = "Brand strategy" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000015"), Name = "Branding" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000016"), Name = "Business development" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000017"), Name = "CRM management" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000018"), Name = "Communication" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000019"), Name = "Community management" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000020"), Name = "Content" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000021"), Name = "Content marketing" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000022"), Name = "Copyediting" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000023"), Name = "Copywriting" },
+             new Skill { Id = Guid.Parse("40000000-0000-0000-0000-000000000024"), Name = "Creative writing" }
+       
+         );
+
 
 
         }

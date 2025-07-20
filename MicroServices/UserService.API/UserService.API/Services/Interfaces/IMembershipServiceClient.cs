@@ -9,6 +9,7 @@ namespace UserService.API.Services.Interfaces
         Task<List<BasicPlanResponse>> GetBasicPlansByIdsAsync(List<Guid> ids);
 
         Task<ComboPlanDto?> GetComboPlanByIdAsync(Guid id);
+        Task<decimal> GetAddOnFee(Guid roomInstanceId);
 
         Task<decimal> GetPlanPriceAsync(Guid planId, string planType);
         Task<PlanPriceInfoDto?> GetPlanPriceInfoAsync(Guid planId, string planType);
@@ -17,7 +18,9 @@ namespace UserService.API.Services.Interfaces
 
         Task<bool> IsRoomBelongToPlanAsync(Guid planId, Guid roomInstanceId);
 
-        Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime selectedStartDate);
+        Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime startDate, DateTime endDate);
+
+        Task<List<ComboPlanResponse>> GetComboPlansByIdsAsync(List<Guid> ids);
 
         Task<bool> CreateBookingAsync(
       Guid accountId,

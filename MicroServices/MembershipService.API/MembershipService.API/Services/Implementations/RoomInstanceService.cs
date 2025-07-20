@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using MembershipService.API.Data;
 using MembershipService.API.Dtos.Request;
 using MembershipService.API.Dtos.Response;
 using MembershipService.API.Entities;
@@ -11,11 +12,13 @@ namespace MembershipService.API.Services.Implementations
     {
         private readonly IRoomInstanceRepository _repository;
         private readonly IMapper _mapper;
+        private readonly MembershipDbContext _db;
 
-        public RoomInstanceService(IRoomInstanceRepository repository, IMapper mapper)
+        public RoomInstanceService(IRoomInstanceRepository repository, IMapper mapper , MembershipDbContext db)
         {
             _repository = repository;
             _mapper = mapper;
+            _db = db;
         }
 
         public async Task<List<RoomInstanceResponse>> GetByAccommodationOptionIdAsync(Guid optionId)
@@ -68,5 +71,14 @@ namespace MembershipService.API.Services.Implementations
         {
             return await _repository.DeleteAsync(id);
         }
+
+        public async Task<decimal> GetAddOnFeeAsync(Guid roomInstanceId)
+        {
+            var room = await _db.Rooms.FindAsync(roomInstanceId);
+            if (room == null) throw new Exception("Room not found.");
+            return room.AddOnFee ?? 0;
+        }
+
+
     }
 }

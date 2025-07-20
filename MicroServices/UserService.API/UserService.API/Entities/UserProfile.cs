@@ -58,6 +58,9 @@ namespace UserService.API.Entities
 
         [MaxLength(1000)]
         public string? Note { get; set; }
+        public Guid? CityId { get; set; } // ✅ Dành cho admin
+        [ForeignKey("CityId")]
+        public City? City { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -68,7 +71,7 @@ namespace UserService.API.Entities
         public Guid? CreatedByAdminId { get; set; }
 
         [ForeignKey("LocationId")]
-        public virtual LocationRegion? LocationRegion { get; set; }
+        public virtual Property? Property { get; set; }
 
         public ICollection<UserInterest> UserInterests { get; set; } = new List<UserInterest>();
         public ICollection<UserPersonalityTrait> UserPersonalityTraits { get; set; } = new List<UserPersonalityTrait>();

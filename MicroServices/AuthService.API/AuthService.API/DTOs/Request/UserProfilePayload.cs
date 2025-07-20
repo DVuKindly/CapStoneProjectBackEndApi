@@ -14,8 +14,8 @@
         public Guid LocationId { get; set; }
         public string? OnboardingStatus { get; set; }
         public string? Note { get; set; }
-    
 
+        public Guid? CityId { get; set; } // thêm mới
         // Staff
         public string? Level { get; set; }
         public string? Department { get; set; }

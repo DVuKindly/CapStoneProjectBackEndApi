@@ -59,6 +59,12 @@ namespace MembershipService.API.Controllers
 
             return Ok(duration); // trả trực tiếp DurationDto
         }
+        [HttpPost("batch")]
+        public async Task<IActionResult> GetComboPlansByIds([FromBody] List<Guid> ids)
+        {
+            var result = await _service.GetByIdsAsync(ids);
+            return Ok(result);
+        }
 
 
     }

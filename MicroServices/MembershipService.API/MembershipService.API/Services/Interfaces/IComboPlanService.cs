@@ -12,6 +12,7 @@ namespace MembershipService.API.Services.Interfaces
         Task<bool> DeleteAsync(Guid id);
         //vũ code 
         Task<DurationDto?> GetPlanDurationAsync(Guid planId);
+        Task<List<ComboPlanResponseDto>> GetByIdsAsync(List<Guid> ids);
 
     }
 }

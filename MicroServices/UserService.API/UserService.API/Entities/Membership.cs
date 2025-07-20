@@ -23,6 +23,8 @@ namespace UserService.API.Entities
 
         [Required]
         public decimal Amount { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? AddOnsFee { get; set; }
 
         public DateTime PurchasedAt { get; set; } = DateTime.UtcNow;
         public DateTime? StartDate { get; set; } = DateTime.UtcNow;

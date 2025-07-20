@@ -1,6 +1,7 @@
 ﻿using SharedKernel.DTOsChung.Request;
 using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
+using UserService.API.Entities;
 
 namespace UserService.API.Services.Interfaces
 {
@@ -12,5 +13,7 @@ namespace UserService.API.Services.Interfaces
         Task<BaseResponse> MarkRequestAsPaidAndApprovedAsync(MarkPaidRequestDto dto);
         Task<MembershipRequestSummaryDto?> GetMembershipSummaryAsync(Guid membershipId);
         Task<DurationDto?> GetPlanDurationAsync(Guid planId, string planType);
+
+
     }
 }

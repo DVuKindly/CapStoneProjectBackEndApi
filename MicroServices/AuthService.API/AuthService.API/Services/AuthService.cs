@@ -131,7 +131,8 @@ namespace AuthService.API.Services
 
             if (user.LocationId.HasValue)
             {
-                locationName = await _userServiceClient.GetLocationNameAsync(user.LocationId.Value);
+                locationName = await _userServiceClient.GetLocationDisplayNameAsync(user.LocationId.Value);
+
             }
 
             return new AuthResponse
@@ -524,18 +525,16 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> RegisterAdminAsync(RegisterBySuperAdminRequest request)
         {
-            // ✅ Validate location via UserService
-            var isValidLocation = await _userServiceClient.IsValidLocationAsync(request.LocationId);
-            if (!isValidLocation)
+            var isValidCity = await _userServiceClient.IsValidCityAsync(request.CityId);
+            if (!isValidCity)
             {
                 return new AuthResponse
                 {
                     Success = false,
-                    Message = AuthMessages.InvalidLocation
+                    Message = AuthMessages.InvalidCity
                 };
             }
 
-            // 🔍 Check if email already exists
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
@@ -546,7 +545,6 @@ namespace AuthService.API.Services
                 };
             }
 
-            // 🧾 Create user
             var user = new UserAuth
             {
                 UserId = Guid.NewGuid(),
@@ -558,19 +556,13 @@ namespace AuthService.API.Services
                 IsLocked = false,
                 EmailVerified = request.SkipEmailVerification,
                 EmailVerificationToken = request.SkipEmailVerification ? null : Guid.NewGuid().ToString(),
-                EmailVerificationExpiry = request.SkipEmailVerification ? null : DateTime.UtcNow.AddHours(24),
-                LocationId = request.LocationId
+                EmailVerificationExpiry = request.SkipEmailVerification ? null : DateTime.UtcNow.AddHours(24)
             };
 
-            // 🔑 Assign role "admin"
             var role = await _userRepository.GetRoleByKeyAsync("admin");
             if (role == null)
             {
-                return new AuthResponse
-                {
-                    Success = false,
-                    Message = AuthMessages.RoleInvalid
-                };
+                return new AuthResponse { Success = false, Message = AuthMessages.RoleInvalid };
             }
 
             user.UserRoles = new List<UserRole>
@@ -581,48 +573,37 @@ namespace AuthService.API.Services
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            // 👤 Get creator info
             var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsed) ? parsed : null;
 
-            // 👑 Determine onboarding status
-            var currentUserRole = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
-            var onboardingStatus = currentUserRole == "super_admin" ? "AdminSystem" : "AdminLocation";
-
-            // 📦 Send profile to UserService
             var profile = new UserProfilePayload
             {
                 AccountId = user.UserId,
                 FullName = user.UserName,
                 Email = user.Email,
                 RoleType = "admin",
-                LocationId = request.LocationId,
-                OnboardingStatus = onboardingStatus,
+                CityId = request.CityId,
+                OnboardingStatus = "AdminSystem",
                 Note = "CreatedBySuperAdmin",
                 CreatedByAdminId = createdByAdminId
             };
 
             await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, "admin", profile);
 
-            // ✉️ Send email verification if needed
             if (!request.SkipEmailVerification && user.EmailVerificationToken != null)
             {
                 await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
             }
 
-            
             return new AuthResponse
             {
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
-                Message = request.SkipEmailVerification
-                    ? AuthMessages.AdminCreatedAndVerified
-                    : AuthMessages.AdminCreatedNeedVerify,
-                AccessToken = string.Empty,
-                RefreshToken = string.Empty
+                Message = request.SkipEmailVerification ? AuthMessages.AdminCreatedAndVerified : AuthMessages.AdminCreatedNeedVerify
             };
         }
+
 
 
 
@@ -711,21 +692,39 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> RegisterSystemAccountAsync(AdminAccountRegisterAdapter request)
         {
-            var currentUserLocation = _httpContextAccessor.HttpContext?.User?.FindFirst("location")?.Value;
+            var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             var currentUserRole = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;
 
-            if (currentUserRole == "admin")
+            // ✅ Nếu người tạo là admin thì kiểm tra phân quyền theo City
+            if (currentUserRole == "admin" && currentUserId != null)
             {
-                if (string.IsNullOrEmpty(currentUserLocation) || currentUserLocation != request.LocationId.ToString())
+                var adminProfile = await _userServiceClient.GetUserProfileShortDtoByIdAsync(Guid.Parse(currentUserId));
+                if (adminProfile?.CityId == null)
                 {
                     return new AuthResponse
                     {
                         Success = false,
-                        Message = AuthMessages.UnauthorizedLocationCreation
+                        Message = AuthMessages.AdminCityNotAssigned
+                    };
+                }
+
+                // Kiểm tra LocationId (Property) có thuộc CityId của admin không
+                var isPropertyInCity = await _userServiceClient.IsPropertyInCityAsync(
+                    request.LocationId,
+                    adminProfile.CityId.Value
+                );
+
+                if (!isPropertyInCity)
+                {
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = AuthMessages.PropertyNotInAdminCity
                     };
                 }
             }
 
+            // ✅ Kiểm tra LocationId tồn tại
             var isValidLocation = await _userServiceClient.IsValidLocationAsync(request.LocationId);
             if (!isValidLocation)
             {
@@ -736,6 +735,7 @@ namespace AuthService.API.Services
                 };
             }
 
+            // ✅ Check email trùng
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
@@ -746,6 +746,7 @@ namespace AuthService.API.Services
                 };
             }
 
+            // ✅ Tạo tài khoản
             var resetToken = Guid.NewGuid().ToString();
 
             var user = new UserAuth
@@ -756,7 +757,7 @@ namespace AuthService.API.Services
                 PasswordHash = null,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                LocationId = request.LocationId,
+                LocationId = request.LocationId, // ✅ đây là PropertyId
                 IsLocked = false,
                 EmailVerified = true,
                 EmailVerificationToken = null,
@@ -783,7 +784,7 @@ namespace AuthService.API.Services
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            // ✅ Tạo profile
             Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsedGuid) ? parsedGuid : null;
 
             var profile = new UserProfilePayload
@@ -799,6 +800,7 @@ namespace AuthService.API.Services
             if (request.RoleKey == "admin")
                 profile.OnboardingStatus = "AdminLocation";
 
+            // ✅ Map profileInfo theo loại
             switch (request.ProfileInfo)
             {
                 case StaffProfileInfoRequest staff:
@@ -851,7 +853,6 @@ namespace AuthService.API.Services
             }
 
             await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, request.RoleKey, profile);
-
             await _emailService.SendSetPasswordEmailAsync(user.Email, resetToken);
 
             return new AuthResponse
@@ -864,6 +865,7 @@ namespace AuthService.API.Services
                 RefreshToken = string.Empty
             };
         }
+
 
 
 

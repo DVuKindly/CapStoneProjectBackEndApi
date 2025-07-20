@@ -7,11 +7,11 @@ using UserService.API.DTOs.Requests;
 [ApiController]
 [Route("api/user/locations")]
 
-public class LocationRegionController : ControllerBase
+public class PropertyController : ControllerBase
 {
     private readonly UserDbContext _db;
 
-    public LocationRegionController(UserDbContext db)
+    public PropertyController(UserDbContext db)
     {
         _db = db;
     }
@@ -19,27 +19,48 @@ public class LocationRegionController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var locations = await _db.LocationRegions
-            .Select(x => new {
-                x.Id,
-                x.Name,
-                x.Description
-            })
-            .ToListAsync();
+        var locations = await _db.Propertys
+    .Include(p => p.Location)
+    .ThenInclude(l => l.City)
+    .ToListAsync(); // vật hóa ra danh sách trong RAM
 
-        return Ok(locations);
+        var result = locations.Select(p => new
+        {
+            p.Id,
+            p.Name,
+            p.Description,
+            LocationName = p.Location?.Name ?? "UnKnow",
+            CityName = p.Location?.City?.Name ?? "UnKnow"
+        }).ToList();
+
+        return Ok(result);
     }
+    [HttpGet("{id}/display-name")]
+    public async Task<IActionResult> GetDisplayName(Guid id)
+    {
+        var property = await _db.Propertys
+            .Include(p => p.Location)
+            .ThenInclude(l => l.City)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (property == null) return NotFound();
+
+        var displayName = $"{property.Name}, {property.Location?.Name}, {property.Location?.City?.Name}";
+        return Ok(displayName);
+    }
+
+
     [HttpGet("{id}/exists")]
     public async Task<IActionResult> Exists(Guid id)
     {
-        var exists = await _db.LocationRegions.AnyAsync(l => l.Id == id);
+        var exists = await _db.Propertys.AnyAsync(l => l.Id == id);
         return exists ? Ok() : NotFound();
     }
     [Authorize(Roles = "super_admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateLocationDto dto)
     {
-        var location = new LocationRegion
+        var location = new Property
         {
             Id = Guid.NewGuid(),
             Name = dto.Name,
@@ -47,7 +68,7 @@ public class LocationRegionController : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        _db.LocationRegions.Add(location);
+        _db.Propertys.Add(location);
         await _db.SaveChangesAsync();
 
         return Ok(new
@@ -58,6 +79,15 @@ public class LocationRegionController : ControllerBase
         });
     }
 
+    [HttpGet("{propertyId}/in-city/{cityId}")]
+    public async Task<IActionResult> IsPropertyInCity(Guid propertyId, Guid cityId)
+    {
+        var exists = await _db.Propertys
+            .Include(p => p.Location)
+            .AnyAsync(p => p.Id == propertyId && p.Location != null && p.Location.CityId == cityId);
+
+        return exists ? Ok() : NotFound();
+    }
 
 
 }

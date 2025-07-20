@@ -23,7 +23,7 @@ namespace UserService.API.DTOs.Requests
         public string? Department { get; set; }
         public string? Level { get; set; }
         public Guid? ManagerId { get; set; }
-
+        public Guid? CityId { get; set; } // thêm mới
         // Coach
         public string? CoachType { get; set; }
         public string? Specialty { get; set; }

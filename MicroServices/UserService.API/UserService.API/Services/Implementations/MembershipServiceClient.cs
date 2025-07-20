@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using Newtonsoft.Json;
+using System.Net.Http.Json;
 using System.Text.Json;
 using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
@@ -51,6 +52,22 @@ public class MembershipServiceClient : IMembershipServiceClient
             return new();
         }
     }
+    public async Task<decimal> GetAddOnFee(Guid roomInstanceId)
+    {
+        var response = await _httpClient.GetAsync($"/api/roominstances/{roomInstanceId}/extra-fee");
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception("Failed to retrieve add-on fee from MembershipService.");
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonConvert.DeserializeObject<BaseResponse<decimal>>(content);
+
+        if (result == null || !result.Success)
+            throw new Exception("Invalid response when getting add-on fee.");
+
+        return result.Data;
+    }
+
 
     public async Task<ComboPlanDto?> GetComboPlanByIdAsync(Guid id)
     {
@@ -219,11 +236,11 @@ public class MembershipServiceClient : IMembershipServiceClient
         }
     }
 
-    public async Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime selectedStartDate)
+    public async Task<bool> IsRoomBookedAsync(Guid roomInstanceId, DateTime startDate, DateTime endDate)
     {
         try
         {
-            var response = await _httpClient.GetAsync($"/api/bookings/check?roomId={roomInstanceId}&startDate={selectedStartDate:O}");
+            var response = await _httpClient.GetAsync($"/api/bookings/check?roomId={roomInstanceId}&startDate={startDate:O}&endDate={endDate:O}");
             return response.IsSuccessStatusCode && await response.Content.ReadFromJsonAsync<bool>();
         }
         catch
@@ -231,6 +248,21 @@ public class MembershipServiceClient : IMembershipServiceClient
             return false;
         }
     }
+    public async Task<List<ComboPlanResponse>> GetComboPlansByIdsAsync(List<Guid> ids)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/comboplans/batch", ids);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<ComboPlanResponse>>() ?? new();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[MembershipService] Exception in GetComboPlansByIdsAsync");
+            return new();
+        }
+    }
+
 
 
 }

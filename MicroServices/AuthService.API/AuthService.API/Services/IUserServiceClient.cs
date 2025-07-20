@@ -19,7 +19,11 @@ namespace AuthService.API.Services
       
         Task<UserProfileShortDto?> GetUserProfileShortDtoByIdAsync(Guid accountId);
         Task<List<UserProfileShortDto>> GetUserProfilesByRoleKeysAsync(string[] roleKeys);
+        Task<bool> IsValidCityAsync(Guid cityId);
+        Task<bool> IsPropertyInCityAsync(Guid propertyId, Guid cityId);
+        Task<string?> GetLocationDisplayNameAsync(Guid locationId);
 
     }
-
 }
+
+

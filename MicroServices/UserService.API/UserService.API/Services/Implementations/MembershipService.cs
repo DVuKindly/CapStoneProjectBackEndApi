@@ -180,22 +180,29 @@ namespace UserService.API.Services.Implementations
                 return new MembershipResponseDto
                 {
                     Id = m.Id,
+                    PendingRequestId = m.PendingRequestId,
                     PackageName = m.PackageName,
                     PackageType = m.PackageType,
+                    PackageId = m.PackageId,
+                    RoomInstanceId = m.RoomInstanceId,
+
                     Amount = m.Amount,
                     PaymentStatus = m.PaymentStatus ?? "Pending",
                     PaymentMethod = m.PaymentMethod,
                     PurchasedAt = m.PurchasedAt,
                     ExpireAt = expireAt,
+                    StartDate = m.StartDate,
+
                     PackageDurationValue = m.PackageDurationValue,
                     PackageDurationUnit = m.PackageDurationUnit,
+             
+
                     IsActive = m.IsActive,
-                    UsedForRoleUpgrade = m.UsedForRoleUpgrade,
-                    PlanSource = m.PlanSource,
-                    PendingRequestId = m.PendingRequestId
+                    UsedForRoleUpgrade = m.UsedForRoleUpgrade
                 };
             }).ToList();
         }
+
 
         public async Task CheckAndDowngradeExpiredMembershipsAsync()
         {

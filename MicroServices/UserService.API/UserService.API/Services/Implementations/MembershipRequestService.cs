@@ -16,7 +16,7 @@ public class MembershipRequestService : IMembershipRequestService
     private readonly IMembershipServiceClient _membershipServiceClient;
     private readonly IPaymentServiceClient _paymentServiceClient;
 
-    public MembershipRequestService(UserDbContext db , IAuthServiceClient authServiceClient, IMembershipServiceClient membershipServiceClient, IPaymentServiceClient paymentServiceClient)
+    public MembershipRequestService(UserDbContext db, IAuthServiceClient authServiceClient, IMembershipServiceClient membershipServiceClient, IPaymentServiceClient paymentServiceClient)
     {
         _membershipServiceClient = membershipServiceClient;
         _db = db;
@@ -189,6 +189,7 @@ public class MembershipRequestService : IMembershipRequestService
                 RequestedPackageName = r.RequestedPackageName,
                 PackageType = r.PackageType,
                 Amount = r.Amount,
+                AddOnsFee = r.AddOnsFee, // ✅ THÊM DÒNG NÀY
                 ExpireAt = r.ExpireAt,
                 Status = r.Status,
                 PaymentStatus = r.PaymentStatus,
@@ -220,6 +221,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         return result;
     }
+
 
 
 
@@ -298,7 +300,7 @@ public class MembershipRequestService : IMembershipRequestService
             .FirstOrDefaultAsync();
 
         // 4. Lấy tên location
-        var locationName = await _db.LocationRegions
+        var locationName = await _db.Propertys
             .Where(l => l.Id == request.LocationId)
             .Select(l => l.Name)
             .FirstOrDefaultAsync();
@@ -316,6 +318,7 @@ public class MembershipRequestService : IMembershipRequestService
             RequestedPackageName = request.RequestedPackageName,
             PackageType = request.PackageType,
             Amount = membership?.Amount ?? request.Amount,
+            AddOnsFee = request.AddOnsFee,
             ExpireAt = membership?.ExpireAt ?? request.ExpireAt,
             Status = request.Status,
             PaymentStatus = request.PaymentStatus,
@@ -357,55 +360,80 @@ public class MembershipRequestService : IMembershipRequestService
     {
         var result = new List<PendingMembershipRequestDto>();
 
-        // 1. Lấy user info
-        var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AccountId == accountId);
+        var user = await _db.UserProfiles
+            .Include(u => u.UserInterests).ThenInclude(i => i.Interest)
+            .Include(u => u.UserPersonalityTraits).ThenInclude(p => p.PersonalityTrait)
+            .Include(u => u.UserSkills).ThenInclude(s => s.Skill)
+            .FirstOrDefaultAsync(u => u.AccountId == accountId);
 
-        // 2. Lấy tất cả PendingMembershipRequests
-        var pendingRequests = await _db.PendingMembershipRequests
-            .Where(r => r.AccountId == accountId)
-            .OrderByDescending(r => r.CreatedAt)
-            .ToListAsync();
-
-        // 3. Lấy tất cả Memberships đã mua
         var memberships = await _db.Memberships
             .Where(m => m.AccountId == accountId)
             .OrderByDescending(m => m.PurchasedAt)
             .ToListAsync();
 
-        // 4. Tập hợp tất cả PackageId để gọi MembershipService 1 lần
-        var packageIds = pendingRequests
-            .Where(r => r.PackageId.HasValue)
-            .Select(r => r.PackageId!.Value)
-            .Concat(memberships.Select(m => m.PackageId))
-            .Distinct()
-            .ToList();
+        var paidPackageIds = memberships.Select(m => m.PackageId).ToHashSet();
 
-        var basicPlans = await _membershipServiceClient.GetBasicPlansByIdsAsync(packageIds);
-        var basicPlanDict = basicPlans.ToDictionary(p => p.Id, p => p);
+        var pendingRequests = await _db.PendingMembershipRequests
+            .Where(r => r.AccountId == accountId
+                && (!r.PackageId.HasValue || !paidPackageIds.Contains(r.PackageId.Value)))
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
 
-        // 5. Mapping từ PendingMembershipRequest
+        // Tách Basic và Combo PlanId
+        var basicIds = new List<Guid>();
+        var comboIds = new List<Guid>();
+
+        var allRequests = memberships.Select(m => (m.PackageId, m.PackageType))
+            .Concat(pendingRequests
+                .Where(r => r.PackageId.HasValue)
+                .Select(r => (r.PackageId!.Value, r.PackageType)));
+
+        foreach (var (id, type) in allRequests.Distinct())
+        {
+            if (type?.ToLower() == "basic")
+                basicIds.Add(id);
+            else if (type?.ToLower() == "combo")
+                comboIds.Add(id);
+        }
+
+        // Gọi cả hai API
+        var basicPlans = await _membershipServiceClient.GetBasicPlansByIdsAsync(basicIds);
+        var comboPlans = await _membershipServiceClient.GetComboPlansByIdsAsync(comboIds);
+
+        var planDict = basicPlans.Cast<IPlanResponse>()
+            .Concat(comboPlans)
+            .ToDictionary(p => p.Id, p => p);
+
+        // 1️⃣ Map từ PendingMembershipRequests
         foreach (var r in pendingRequests)
         {
-            basicPlanDict.TryGetValue(r.PackageId ?? Guid.Empty, out var plan);
+            planDict.TryGetValue(r.PackageId ?? Guid.Empty, out var plan);
 
             result.Add(new PendingMembershipRequestDto
             {
                 RequestId = r.Id,
+                PackageId = r.PackageId,
                 FullName = user?.FullName,
                 RequestedPackageName = r.RequestedPackageName,
+                PackageType = r.PackageType,
+                Amount = r.Amount ?? 0,
+                StartDate = r.StartDate,
+                ExpireAt = r.ExpireAt,
+                Status = r.Status,
+                PaymentStatus = r.PaymentStatus,
+                PaymentMethod = r.PaymentMethod,
+                PaymentTime = r.PaymentTime,
+                StaffNote = r.StaffNote,
+                ApprovedAt = r.ApprovedAt,
                 MessageToStaff = r.MessageToStaff,
                 CreatedAt = r.CreatedAt,
-                LocationName = plan?.LocationName,
+                LocationName = plan?.LocationName ?? "Không rõ",
                 Interests = r.Interests,
                 PersonalityTraits = r.PersonalityTraits,
                 Introduction = r.Introduction,
                 CvUrl = r.CvUrl,
-                PackageType = r.PackageType,
-                Status = r.Status,
-                Amount = (decimal)r.Amount!,
-                PaymentStatus = r.PaymentStatus,
-                PaymentMethod = r.PaymentMethod,
-                PaymentTime = r.PaymentTime,
+                RoomInstanceId = r.RoomInstanceId,
+                RequireBooking = r.RequireBooking,
                 ExtendedProfile = new ExtendedProfileDto
                 {
                     Gender = user?.Gender,
@@ -418,30 +446,40 @@ public class MembershipRequestService : IMembershipRequestService
             });
         }
 
-        // 6. Mapping từ Membership
+        // 2️⃣ Map từ Memberships
         foreach (var m in memberships)
         {
-            basicPlanDict.TryGetValue(m.PackageId, out var plan);
+            planDict.TryGetValue(m.PackageId, out var plan);
+
+            var interestNames = user?.UserInterests?.Select(i => i.Interest.Name).ToList() ?? new();
+            var traitNames = user?.UserPersonalityTraits?.Select(p => p.PersonalityTrait.Name).ToList() ?? new();
+            var skillNames = user?.UserSkills?.Select(s => s.Skill.Name).ToList() ?? new();
 
             result.Add(new PendingMembershipRequestDto
             {
                 RequestId = m.Id,
+                PackageId = m.PackageId,
                 FullName = user?.FullName,
                 RequestedPackageName = m.PackageName,
-                MessageToStaff = null,
-                CreatedAt = m.PurchasedAt,
-                LocationName = plan?.LocationName,
-                Interests = user?.Interests,
-              
-                Introduction = user?.Introduction,
-                CvUrl = user?.CvUrl,
+                RoomInstanceId = m.RoomInstanceId,
+                RequireBooking = m.RoomInstanceId != null,
                 PackageType = m.PackageType,
-                Status = "Completed",
                 Amount = m.Amount,
+                StartDate = m.StartDate,
+                ExpireAt = m.ExpireAt,
+                Status = "Completed",
                 PaymentStatus = m.PaymentStatus,
                 PaymentMethod = m.PaymentMethod,
                 PaymentTime = m.PaymentTime,
-                ExpireAt = m.ExpireAt, // ✅ THÊM DÒNG NÀY
+                CreatedAt = m.PurchasedAt,
+                MessageToStaff = null,
+                StaffNote = null,
+                ApprovedAt = null,
+                LocationName = plan?.LocationName ?? "Không rõ",
+                Interests = string.Join(", ", interestNames),
+                PersonalityTraits = string.Join(", ", traitNames.Concat(skillNames)),
+                Introduction = user?.Introduction,
+                CvUrl = user?.CvUrl,
                 ExtendedProfile = new ExtendedProfileDto
                 {
                     Gender = user?.Gender,
@@ -454,9 +492,11 @@ public class MembershipRequestService : IMembershipRequestService
             });
         }
 
-        // 7. Sắp xếp chung theo thời gian
         return result.OrderByDescending(r => r.CreatedAt).ToList();
     }
+
+
+
 
 
     public async Task<MembershipRequestSummaryDto?> GetMembershipRequestSummaryAsync(Guid requestId)
@@ -485,9 +525,10 @@ public class MembershipRequestService : IMembershipRequestService
                 AccountId = request.AccountId,
                 PackageId = request.PackageId,
                 RequestedPackageName = request.RequestedPackageName,
-                Amount = amount,
+                Amount = request.Amount ?? 0, 
                 Status = request.Status
             };
+
         }
 
         // 2️⃣ Nếu không có request, thử tra trong bảng Memberships (trường hợp thanh toán trực tiếp)
@@ -557,7 +598,7 @@ public class MembershipRequestService : IMembershipRequestService
             .ToDictionary(g => g.Key, g => g.OrderByDescending(m => m.PurchasedAt).First());
 
         // 5. Lấy tên khu vực
-        var regionName = await _db.LocationRegions
+        var regionName = await _db.Propertys
             .Where(l => l.Id == staffLocationId)
             .Select(l => l.Name)
             .FirstOrDefaultAsync() ?? string.Empty;
@@ -581,6 +622,7 @@ public class MembershipRequestService : IMembershipRequestService
                 RequestedPackageName = r.RequestedPackageName,
                 PackageType = r.PackageType,
                 Amount = membership?.Amount ?? r.Amount,
+                AddOnsFee = r.AddOnsFee,
                 ExpireAt = membership?.ExpireAt ?? r.ExpireAt,
                 Status = r.Status,
                 PaymentStatus = r.PaymentStatus,
@@ -663,9 +705,11 @@ public class MembershipRequestService : IMembershipRequestService
         Guid locationId;
         string name;
         decimal price;
+        decimal extraFee = 0;
 
         var selectedStartDate = dto.SelectedStartDate?.Date ?? DateTime.UtcNow.Date;
 
+        // === BASIC PACKAGE ===
         if (packageType == "basic")
         {
             var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
@@ -678,6 +722,7 @@ public class MembershipRequestService : IMembershipRequestService
             locationId = plan.LocationId ?? Guid.Empty;
             name = plan.Name;
 
+            // ✅ Check Booking Logic
             if (dto.RequireBooking)
             {
                 if (dto.RoomInstanceId == null)
@@ -687,16 +732,23 @@ public class MembershipRequestService : IMembershipRequestService
                 if (!roomValid)
                     return BaseResponse.Fail("Selected room does not belong to this package.");
 
-                var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate);
+                var endDate = CalculateExpireDate(selectedStartDate, duration.Value, duration.Unit);
+                var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate, endDate);
+
                 if (isBooked)
                     return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
+
+                // ✅ Get Extra Fee from MembershipService
+                extraFee = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
+                price += extraFee;
             }
 
-            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate);
+            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate, extraFee);
             request.PackageDurationValue = duration.Value;
             request.PackageDurationUnit = duration.Unit;
             request.RequireBooking = dto.RequireBooking;
             request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
+            request.AddOnsFee = dto.RequireBooking ? extraFee : null;
 
             _db.PendingMembershipRequests.Add(request);
             await _db.SaveChangesAsync();
@@ -742,6 +794,7 @@ public class MembershipRequestService : IMembershipRequestService
             });
         }
 
+        // === COMBO PACKAGE ===
         if (packageType == "combo")
         {
             var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
@@ -754,10 +807,27 @@ public class MembershipRequestService : IMembershipRequestService
             locationId = combo.LocationId ?? Guid.Empty;
             name = combo.Name;
 
+            if (dto.RequireBooking)
+            {
+                if (dto.RoomInstanceId == null)
+                    return BaseResponse.Fail("RoomInstanceId is required.");
+                var endDate = CalculateExpireDate(selectedStartDate, duration.Value, duration.Unit);
+                var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate, endDate);
+
+                if (isBooked)
+                    return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
+
+                extraFee = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
+                price += extraFee;
+            }
+
             var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate);
             request.PackageDurationValue = duration.Value;
             request.PackageDurationUnit = duration.Unit;
             request.Status = "Pending";
+            request.RequireBooking = dto.RequireBooking;
+            request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
+            request.AddOnsFee = dto.RequireBooking ? extraFee : null;
 
             _db.PendingMembershipRequests.Add(request);
             await _db.SaveChangesAsync();
@@ -774,16 +844,20 @@ public class MembershipRequestService : IMembershipRequestService
 
 
 
+
+
     private PendingMembershipRequest BuildRequest(
-       Guid accountId,
-       Guid packageId,
-       string name,
-       decimal price,
-       Guid locationId,
-       UserProfile user,
-       string? messageToStaff,
-       string packageType,
-       DateTime startDate)
+    Guid accountId,
+    Guid packageId,
+    string name,
+    decimal totalAmount, 
+    Guid locationId,
+    UserProfile user,
+    string? messageToStaff,
+    string packageType,
+    DateTime startDate,
+    decimal? addOnsFee = null 
+)
     {
         var traitNames = user.UserPersonalityTraits.Select(p => p.PersonalityTrait.Name);
         var skillNames = user.UserSkills.Select(s => s.Skill.Name);
@@ -795,7 +869,8 @@ public class MembershipRequestService : IMembershipRequestService
             AccountId = accountId,
             PackageId = packageId,
             RequestedPackageName = name ?? "Unknown",
-            Amount = price,
+            Amount = totalAmount, 
+            AddOnsFee = addOnsFee, 
             LocationId = locationId,
             Interests = string.Join(",", user.UserInterests.Select(i => i.Interest.Name)),
             PersonalityTraits = string.Join(",", combinedTraits),
@@ -807,6 +882,7 @@ public class MembershipRequestService : IMembershipRequestService
             StartDate = startDate
         };
     }
+
 
 
 
@@ -874,8 +950,6 @@ public class MembershipRequestService : IMembershipRequestService
         {
             expireAt = CalculateExpireDate(paidTime, durationValue.Value, durationUnit);
         }
-
-        // ✅ Tạo bản ghi Membership
         var membership = new Membership
         {
             Id = Guid.NewGuid(),
@@ -884,23 +958,23 @@ public class MembershipRequestService : IMembershipRequestService
             PackageName = request.RequestedPackageName ?? "Gói không tên",
             PackageType = request.PackageType?.ToLower() ?? "basic",
             Amount = request.Amount ?? 0,
+            AddOnsFee = request.AddOnsFee, // ✅ THÊM DÒNG NÀY
             LocationId = request.LocationId ?? Guid.Empty,
             PurchasedAt = paidTime,
             UsedForRoleUpgrade = request.PackageType?.ToLower() == "combo",
 
-            // Thông tin thanh toán
             PaymentMethod = request.PaymentMethod,
             PaymentStatus = request.PaymentStatus,
             PaymentNote = request.PaymentNote,
             PaymentTime = request.PaymentTime,
             PaymentTransactionId = request.PaymentTransactionId,
 
-            // Thời hạn
             PackageDurationValue = durationValue,
             PackageDurationUnit = durationUnit,
             ExpireAt = expireAt,
             RoomInstanceId = request.RequireBooking == true ? request.RoomInstanceId : null
         };
+
 
         _db.Memberships.Add(membership);
         await _db.SaveChangesAsync();
@@ -964,5 +1038,43 @@ public class MembershipRequestService : IMembershipRequestService
             _ => start
         };
     }
+
+    bool IMembershipRequestService.IsUserProfileCompleted(UserProfile user)
+    {
+        return !string.IsNullOrWhiteSpace(user.FullName)
+         && !string.IsNullOrWhiteSpace(user.Phone)
+         && !string.IsNullOrWhiteSpace(user.Gender)
+         && user.DOB.HasValue
+         && !string.IsNullOrWhiteSpace(user.AvatarUrl)
+         && user.UserInterests != null && user.UserInterests.Any()
+         && ((user.UserPersonalityTraits != null && user.UserPersonalityTraits.Any())
+             || (user.UserSkills != null && user.UserSkills.Any()))
+         && !string.IsNullOrWhiteSpace(user.Introduction)
+         && !string.IsNullOrWhiteSpace(user.CvUrl);
+    }
+
+    public async Task<BaseResponse> CancelRequestAsync(Guid accountId, Guid requestId)
+    {
+       
+        var request = await _db.PendingMembershipRequests
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.AccountId == accountId);
+
+        if (request == null)
+            return BaseResponse.Fail("Yêu cầu không tồn tại hoặc không thuộc quyền của bạn.");
+
+      
+        if (request.Status != PendingRequestStatus.Pending &&
+            request.Status != PendingRequestStatus.PendingPayment)
+        {
+            return BaseResponse.Fail("Chỉ có thể hủy yêu cầu khi đang chờ xử lý hoặc chờ thanh toán.");
+        }
+
+        _db.PendingMembershipRequests.Remove(request);
+        await _db.SaveChangesAsync();
+
+        return BaseResponse.Ok("Hủy yêu cầu thành công.");
+    }
+
+
 
 }
