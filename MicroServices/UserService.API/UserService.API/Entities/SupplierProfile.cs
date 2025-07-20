@@ -43,8 +43,8 @@ namespace UserService.API.Entities
         [ForeignKey("AccountId")]
         public virtual UserProfile? UserProfile { get; set; }
 
-        // 🔁 Navigation tới LocationRegion
+        // 🔁 Navigation tới Property
         [ForeignKey("LocationId")]
-        public virtual LocationRegion? LocationRegion { get; set; }
+        public virtual Property? Property { get; set; }
     }
 }

@@ -39,7 +39,10 @@
             public const string SystemAccountCreated = "The {0} account has been created. Please check your email to set the password.";
             public const string InvalidToken = "Invalid or non-existent token.";
             public const string TokenExpired = "Token has expired.";
-  
+
+            public const string InvalidCity = "Invalid City.";
+            public static string PropertyNotInAdminCity => "You do not have permission to create an account for this property because it is not under your assigned city.";
+            public static string AdminCityNotAssigned => "Your admin profile is missing a City assignment.";
 
         }
     }

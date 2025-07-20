@@ -12,8 +12,8 @@ using UserService.API.Data;
 namespace UserService.API.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250717111739_AddFeedbackEntities2")]
-    partial class AddFeedbackEntities2
+    [Migration("20250720050307_InitialCreate12")]
+    partial class InitialCreate12
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,29 @@ namespace UserService.API.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("City", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Cities");
+                });
 
             modelBuilder.Entity("CoachProfile", b =>
                 {
@@ -72,18 +95,17 @@ namespace UserService.API.Migrations
                     b.ToTable("CoachProfiles");
                 });
 
-            modelBuilder.Entity("LocationRegion", b =>
+            modelBuilder.Entity("Location", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CityId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -92,30 +114,9 @@ namespace UserService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LocationRegions");
+                    b.HasIndex("CityId");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Hà Nội",
-                            Name = "Hà Nội"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Hải Phòng",
-                            Name = "Hải Phòng"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực Đà Nẵng",
-                            Name = "Đà Nẵng"
-                        });
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("ManagerProfile", b =>
@@ -256,9 +257,6 @@ namespace UserService.API.Migrations
                     b.Property<Guid?>("LocationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("LocationRegionId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("MessageToStaff")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -304,6 +302,9 @@ namespace UserService.API.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<Guid?>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("RequestedPackageName")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -329,7 +330,7 @@ namespace UserService.API.Migrations
 
                     b.HasIndex("AccountId");
 
-                    b.HasIndex("LocationRegionId");
+                    b.HasIndex("PropertyId");
 
                     b.ToTable("PendingMembershipRequests");
                 });
@@ -382,6 +383,57 @@ namespace UserService.API.Migrations
                     b.HasIndex("LocationId");
 
                     b.ToTable("PendingThirdPartyRequests");
+                });
+
+            modelBuilder.Entity("Property", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
+
+                    b.ToTable("Propertys");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu ",
+                            Name = "Hoàng Cầu Cơ sở 1"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu",
+                            Name = "Hoàng Cầu Cơ sở 2"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu",
+                            Name = "Hoàng Cầu Cơ sở 3"
+                        });
                 });
 
             modelBuilder.Entity("StaffProfile", b =>
@@ -881,10 +933,10 @@ namespace UserService.API.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<Guid>("LocationRegionId")
+                    b.Property<Guid>("MembershipLocationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("MembershipLocationId")
+                    b.Property<Guid>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RegionName")
@@ -893,7 +945,7 @@ namespace UserService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationRegionId", "MembershipLocationId")
+                    b.HasIndex("PropertyId", "MembershipLocationId")
                         .IsUnique();
 
                     b.ToTable("LocationMappings");
@@ -1412,6 +1464,17 @@ namespace UserService.API.Migrations
                     b.Navigation("UserProfile");
                 });
 
+            modelBuilder.Entity("Location", b =>
+                {
+                    b.HasOne("City", "City")
+                        .WithMany("Locations")
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("City");
+                });
+
             modelBuilder.Entity("ManagerProfile", b =>
                 {
                     b.HasOne("UserService.API.Entities.UserProfile", "UserProfile")
@@ -1420,12 +1483,12 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("ManagerProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
 
                     b.Navigation("UserProfile");
                 });
@@ -1438,12 +1501,12 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("PartnerProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
 
                     b.Navigation("UserProfile");
                 });
@@ -1456,20 +1519,29 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", null)
+                    b.HasOne("Property", null)
                         .WithMany("PendingMembershipRequests")
-                        .HasForeignKey("LocationRegionId");
+                        .HasForeignKey("PropertyId");
 
                     b.Navigation("UserProfile");
                 });
 
             modelBuilder.Entity("PendingThirdPartyRequest", b =>
                 {
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("PendingThirdPartyRequests")
                         .HasForeignKey("LocationId");
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
+                });
+
+            modelBuilder.Entity("Property", b =>
+                {
+                    b.HasOne("Location", "Location")
+                        .WithMany("Properties")
+                        .HasForeignKey("LocationId");
+
+                    b.Navigation("Location");
                 });
 
             modelBuilder.Entity("StaffProfile", b =>
@@ -1480,12 +1552,12 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("StaffProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
 
                     b.Navigation("UserProfile");
                 });
@@ -1520,13 +1592,13 @@ namespace UserService.API.Migrations
 
             modelBuilder.Entity("UserService.API.Entities.LocationMapping", b =>
                 {
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany()
-                        .HasForeignKey("LocationRegionId")
+                        .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("UserService.API.Entities.Membership", b =>
@@ -1555,12 +1627,12 @@ namespace UserService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
 
                     b.Navigation("UserProfile");
                 });
@@ -1605,12 +1677,12 @@ namespace UserService.API.Migrations
 
             modelBuilder.Entity("UserService.API.Entities.UserProfile", b =>
                 {
-                    b.HasOne("LocationRegion", "LocationRegion")
+                    b.HasOne("Property", "Property")
                         .WithMany("UserProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("LocationRegion");
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("UserService.API.Entities.UserSkill", b =>
@@ -1632,7 +1704,17 @@ namespace UserService.API.Migrations
                     b.Navigation("UserProfile");
                 });
 
-            modelBuilder.Entity("LocationRegion", b =>
+            modelBuilder.Entity("City", b =>
+                {
+                    b.Navigation("Locations");
+                });
+
+            modelBuilder.Entity("Location", b =>
+                {
+                    b.Navigation("Properties");
+                });
+
+            modelBuilder.Entity("Property", b =>
                 {
                     b.Navigation("ManagerProfiles");
 

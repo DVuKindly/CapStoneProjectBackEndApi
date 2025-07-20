@@ -13,7 +13,7 @@ namespace UserService.API.Data
         public DbSet<ManagerProfile> ManagerProfiles { get; set; }
         public DbSet<SupplierProfile> SupplierProfiles { get; set; }
         public DbSet<PartnerProfile> PartnerProfiles { get; set; }
-        public DbSet<LocationRegion> LocationRegions { get; set; }
+        public DbSet<Property> Propertys { get; set; }
         public DbSet<PendingMembershipRequest> PendingMembershipRequests { get; set; }
         public DbSet<PendingThirdPartyRequest> PendingThirdPartyRequests { get; set; }
         public DbSet<LocationMapping> LocationMappings { get; set; }
@@ -28,6 +28,8 @@ namespace UserService.API.Data
         public DbSet<UserPersonalityTrait> UserPersonalityTraits { get; set; }
         public DbSet<UserSkill> UserSkills { get; set; }
 
+        public DbSet<City> Cities { get; set; }
+        public DbSet<Location> Locations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,12 +48,12 @@ namespace UserService.API.Data
             modelBuilder.Entity<SupplierProfile>().HasOne(s => s.UserProfile).WithMany().HasForeignKey(s => s.AccountId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<PendingMembershipRequest>().HasOne(p => p.UserProfile).WithMany().HasForeignKey(p => p.AccountId).OnDelete(DeleteBehavior.Restrict);
 
-            // LocationRegion quan hệ
-            modelBuilder.Entity<UserProfile>().HasOne(u => u.LocationRegion).WithMany(r => r.UserProfiles).HasForeignKey(u => u.LocationId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<StaffProfile>().HasOne(s => s.LocationRegion).WithMany(r => r.StaffProfiles).HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<PartnerProfile>().HasOne(p => p.LocationRegion).WithMany(r => r.PartnerProfiles).HasForeignKey(p => p.LocationId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<ManagerProfile>().HasOne(m => m.LocationRegion).WithMany(r => r.ManagerProfiles).HasForeignKey(m => m.LocationId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<SupplierProfile>().HasOne(s => s.LocationRegion).WithMany().HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
+            // Property quan hệ
+            modelBuilder.Entity<UserProfile>().HasOne(u => u.Property).WithMany(r => r.UserProfiles).HasForeignKey(u => u.LocationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<StaffProfile>().HasOne(s => s.Property).WithMany(r => r.StaffProfiles).HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<PartnerProfile>().HasOne(p => p.Property).WithMany(r => r.PartnerProfiles).HasForeignKey(p => p.LocationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ManagerProfile>().HasOne(m => m.Property).WithMany(r => r.ManagerProfiles).HasForeignKey(m => m.LocationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<SupplierProfile>().HasOne(s => s.Property).WithMany().HasForeignKey(s => s.LocationId).OnDelete(DeleteBehavior.SetNull);
 
 
             // LocationMapping cấu hình
@@ -80,13 +82,13 @@ namespace UserService.API.Data
             modelBuilder.Entity<Membership>().Property(m => m.Amount).HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<LocationMapping>()
-                .HasIndex(x => new { x.LocationRegionId, x.MembershipLocationId })
+                .HasIndex(x => new { x.PropertyId, x.MembershipLocationId })
                 .IsUnique();
 
             modelBuilder.Entity<LocationMapping>()
-                .HasOne(l => l.LocationRegion)
+                .HasOne(l => l.Property)
                 .WithMany()
-                .HasForeignKey(l => l.LocationRegionId)
+                .HasForeignKey(l => l.PropertyId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<LocationMapping>()
@@ -140,7 +142,18 @@ namespace UserService.API.Data
     .HasForeignKey(f => f.AccountId)
     .OnDelete(DeleteBehavior.Cascade);
 
-           
+            modelBuilder.Entity<Property>()
+     .HasOne(p => p.Location)
+     .WithMany()
+     .HasForeignKey(p => p.LocationId)
+     .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Location>()
+                .HasOne(l => l.City)
+                .WithMany()
+                .HasForeignKey(l => l.CityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             modelBuilder.Entity<FeedbackDetail>()
                 .HasOne(d => d.Feedback)
@@ -163,29 +176,53 @@ namespace UserService.API.Data
             modelBuilder.Entity<UserProfile>().Property(p => p.PersonalityTraits).HasMaxLength(1000);
             modelBuilder.Entity<UserProfile>().Property(p => p.Introduction).HasMaxLength(2000);
             modelBuilder.Entity<UserProfile>().Property(p => p.CvUrl).HasMaxLength(500);
-             modelBuilder.Entity<LocationRegion>().HasData(
-                new LocationRegion
+            var cityHanoi = new City
+            {
+                Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
+                Name = "Hà Nội",
+                Description = "Thủ đô Việt Nam",
+                CreatedAt = new DateTime(2024, 1, 1)
+            };
+
+            var locationHoangCau = new Location
+            {
+                Id = Guid.Parse("20000000-0000-0000-0000-000000000001"),
+                Name = "Hoàng Cầu",
+                CityId = cityHanoi.Id,
+                CreatedAt = new DateTime(2024, 1, 1)
+            };
+
+            modelBuilder.Entity<City>().HasData(cityHanoi);
+            modelBuilder.Entity<Location>().HasData(locationHoangCau);
+
+            modelBuilder.Entity<Property>().HasData(
+                new Property
                 {
-                    Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
-                    Name = "Hà Nội",
-                    Description = "Khu vực Hà Nội",
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000001"),
+                    Name = "Hoàng Cầu Cơ sở 1",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 1",
+                    LocationId = locationHoangCau.Id,
                     CreatedAt = new DateTime(2024, 1, 1)
                 },
-                new LocationRegion
+                new Property
                 {
-                    Id = Guid.Parse("10000000-0000-0000-0000-000000000002"),
-                    Name = "Hải Phòng",
-                    Description = "Khu vực Hải Phòng",
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000002"),
+                    Name = "Hoàng Cầu Cơ sở 2",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 2",
+                    LocationId = locationHoangCau.Id,
                     CreatedAt = new DateTime(2024, 1, 1)
                 },
-                new LocationRegion
+                new Property
                 {
-                    Id = Guid.Parse("10000000-0000-0000-0000-000000000003"),
-                    Name = "Đà Nẵng",
-                    Description = "Khu vực Đà Nẵng",
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000003"),
+                    Name = "Hoàng Cầu Cơ sở 3",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 3",
+                    LocationId = locationHoangCau.Id,
                     CreatedAt = new DateTime(2024, 1, 1)
                 }
             );
+
+
             modelBuilder.Entity<Interest>().HasData(
          new Interest { Id = Guid.Parse("20000000-0000-0000-0000-000000000001"), Name = "Adventure travel" },
          new Interest { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), Name = "Alternative energy" },

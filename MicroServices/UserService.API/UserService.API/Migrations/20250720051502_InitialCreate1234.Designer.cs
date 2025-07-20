@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UserService.API.Data;
 
@@ -11,9 +12,11 @@ using UserService.API.Data;
 namespace UserService.API.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    partial class UserDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250720051502_InitialCreate1234")]
+    partial class InitialCreate1234
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -110,9 +113,6 @@ namespace UserService.API.Migrations
                     b.Property<Guid>("CityId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("CityId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -124,8 +124,6 @@ namespace UserService.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CityId");
-
-                    b.HasIndex("CityId1");
 
                     b.ToTable("Locations");
 
@@ -421,9 +419,6 @@ namespace UserService.API.Migrations
                     b.Property<Guid?>("LocationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("LocationId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -432,8 +427,6 @@ namespace UserService.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LocationId");
-
-                    b.HasIndex("LocationId1");
 
                     b.ToTable("Propertys");
 
@@ -1500,14 +1493,10 @@ namespace UserService.API.Migrations
             modelBuilder.Entity("Location", b =>
                 {
                     b.HasOne("City", "City")
-                        .WithMany()
+                        .WithMany("Locations")
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("City", null)
-                        .WithMany("Locations")
-                        .HasForeignKey("CityId1");
 
                     b.Navigation("City");
                 });
@@ -1575,13 +1564,8 @@ namespace UserService.API.Migrations
             modelBuilder.Entity("Property", b =>
                 {
                     b.HasOne("Location", "Location")
-                        .WithMany()
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("Location", null)
                         .WithMany("Properties")
-                        .HasForeignKey("LocationId1");
+                        .HasForeignKey("LocationId");
 
                     b.Navigation("Location");
                 });

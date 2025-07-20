@@ -45,6 +45,7 @@ namespace UserService.API.Services.Implementations
                     FullName = request.FullName,
                     RoleType = request.RoleType,
                     LocationId = request.LocationId == Guid.Empty ? null : request.LocationId,
+                    CityId = request.CityId,
                     IsCompleted = false,
                     Interests = string.Join(",", request.InterestIds ?? new List<Guid>()),
                     PersonalityTraits = string.Join(",", request.PersonalityTraitIds ?? new List<Guid>()),
@@ -108,7 +109,7 @@ namespace UserService.API.Services.Implementations
         public async Task<UserProfileDto> GetProfileAsync(Guid accountId)
         {
             var user = await _db.UserProfiles
-                .Include(u => u.LocationRegion)
+                .Include(u => u.Property)
                 .FirstOrDefaultAsync(u => u.AccountId == accountId);
 
             if (user == null) return null!;
@@ -141,7 +142,7 @@ namespace UserService.API.Services.Implementations
                 AvatarUrl = user.AvatarUrl,
                 SocialLinks = user.SocialLinks,
                 LocationId = user.LocationId,
-                LocationName = user.LocationRegion?.Name,
+                LocationName = user.Property?.Name,
                 Address = user.Address,
                 OnboardingStatus = user.OnboardingStatus,
                 Note = user.Note,
@@ -155,7 +156,7 @@ namespace UserService.API.Services.Implementations
         public async Task<UserProfileResponseDto> UpdateProfileAsync(Guid accountId, UpdateUserProfileDto dto)
         {
             var user = await _db.UserProfiles
-                .Include(u => u.LocationRegion)
+                .Include(u => u.Property)
                 .FirstOrDefaultAsync(u => u.AccountId == accountId);
 
             if (user == null)
@@ -280,7 +281,7 @@ namespace UserService.API.Services.Implementations
             user.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
-            var locationRegion = await _db.LocationRegions
+            var Property = await _db.Propertys
                 .FirstOrDefaultAsync(r => r.Id == user.LocationId);
 
             var personalityNames = await _db.UserPersonalityTraits
@@ -310,7 +311,7 @@ namespace UserService.API.Services.Implementations
                     SocialLinks = user.SocialLinks,
                     Address = user.Address,
                     LocationId = user.LocationId,
-                    LocationName = locationRegion?.Name,
+                    LocationName = Property?.Name,
                     OnboardingStatus = user.OnboardingStatus,
                     Note = user.Note,
                     UpdatedAt = user.UpdatedAt,
@@ -332,12 +333,12 @@ namespace UserService.API.Services.Implementations
         {
             var profiles = await _db.UserProfiles
                 .Where(p => accountIds.Contains(p.AccountId))
-                .Include(p => p.LocationRegion)
+                .Include(p => p.Property)
                 .Select(p => new UserProfileShortDto
                 {
                     AccountId = p.AccountId,
                     LocationId = p.LocationId,
-                    LocationName = p.LocationRegion != null ? p.LocationRegion.Name : null,
+                    LocationName = p.Property != null ? p.Property.Name : null,
                     RoleType = p.RoleType
                 })
                 .ToListAsync();
@@ -376,7 +377,7 @@ namespace UserService.API.Services.Implementations
         public async Task<List<UserProfileShortDto>> GetProfilesByRoleKeysAsync(string[] roleKeys)
         {
             var profiles = await _db.UserProfiles
-                .Include(p => p.LocationRegion)
+                .Include(p => p.Property)
                 .Where(p => roleKeys.Contains(p.RoleType))
                 .ToListAsync();
 
@@ -385,7 +386,7 @@ namespace UserService.API.Services.Implementations
                 AccountId = p.AccountId,
                 RoleType = p.RoleType,
                 LocationId = p.LocationId,
-                LocationName = p.LocationRegion?.Name ?? ""
+                LocationName = p.Property?.Name ?? ""
             }).ToList();
         }
 
@@ -397,11 +398,15 @@ namespace UserService.API.Services.Implementations
                 {
                     AccountId = x.AccountId,
                     LocationId = x.LocationId,
-                    LocationName = x.LocationRegion.Name,
-                    RoleType = x.RoleType
+                    LocationName = x.Property.Name,
+                    RoleType = x.RoleType,
+                    CityId = x.CityId // 👈 THÊM DÒNG NÀY
                 })
                 .FirstOrDefaultAsync();
         }
+
+
+
 
         public async Task<UserProfile?> GetCurrentUserProfileAsync(Guid accountId)
         {

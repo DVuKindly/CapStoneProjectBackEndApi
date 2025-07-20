@@ -46,5 +46,5 @@ public class StaffProfile
     public virtual UserProfile? UserProfile { get; set; }
 
     [ForeignKey("LocationId")]
-    public virtual LocationRegion? LocationRegion { get; set; }
+    public virtual Property? Property { get; set; }
 }

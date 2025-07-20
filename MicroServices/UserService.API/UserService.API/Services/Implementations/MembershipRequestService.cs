@@ -298,7 +298,7 @@ public class MembershipRequestService : IMembershipRequestService
             .FirstOrDefaultAsync();
 
         // 4. Lấy tên location
-        var locationName = await _db.LocationRegions
+        var locationName = await _db.Propertys
             .Where(l => l.Id == request.LocationId)
             .Select(l => l.Name)
             .FirstOrDefaultAsync();
@@ -594,7 +594,7 @@ public class MembershipRequestService : IMembershipRequestService
             .ToDictionary(g => g.Key, g => g.OrderByDescending(m => m.PurchasedAt).First());
 
         // 5. Lấy tên khu vực
-        var regionName = await _db.LocationRegions
+        var regionName = await _db.Propertys
             .Where(l => l.Id == staffLocationId)
             .Select(l => l.Name)
             .FirstOrDefaultAsync() ?? string.Empty;

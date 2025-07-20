@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UserService.API.Data;
 
@@ -11,9 +12,11 @@ using UserService.API.Data;
 namespace UserService.API.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    partial class UserDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250720045800_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,38 +24,6 @@ namespace UserService.API.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("City", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Cities");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Thủ đô Việt Nam",
-                            Name = "Hà Nội"
-                        });
-                });
 
             modelBuilder.Entity("CoachProfile", b =>
                 {
@@ -99,44 +70,6 @@ namespace UserService.API.Migrations
                     b.HasIndex("AccountId");
 
                     b.ToTable("CoachProfiles");
-                });
-
-            modelBuilder.Entity("Location", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CityId1")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CityId");
-
-                    b.HasIndex("CityId1");
-
-                    b.ToTable("Locations");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("20000000-0000-0000-0000-000000000001"),
-                            CityId = new Guid("10000000-0000-0000-0000-000000000001"),
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Hoàng Cầu"
-                        });
                 });
 
             modelBuilder.Entity("ManagerProfile", b =>
@@ -418,12 +351,6 @@ namespace UserService.API.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<Guid?>("LocationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("LocationId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -431,35 +358,28 @@ namespace UserService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId");
-
-                    b.HasIndex("LocationId1");
-
                     b.ToTable("Propertys");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("30000000-0000-0000-0000-000000000001"),
+                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực trụ sở chính Hoàng Cầu 1",
-                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu ",
                             Name = "Hoàng Cầu Cơ sở 1"
                         },
                         new
                         {
-                            Id = new Guid("30000000-0000-0000-0000-000000000002"),
+                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực trụ sở chính Hoàng Cầu 2",
-                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu",
                             Name = "Hoàng Cầu Cơ sở 2"
                         },
                         new
                         {
-                            Id = new Guid("30000000-0000-0000-0000-000000000003"),
+                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Khu vực trụ sở chính Hoàng Cầu 3",
-                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu",
                             Name = "Hoàng Cầu Cơ sở 3"
                         });
                 });
@@ -1391,9 +1311,6 @@ namespace UserService.API.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<Guid?>("CityId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1464,8 +1381,6 @@ namespace UserService.API.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.HasIndex("CityId");
-
                     b.HasIndex("LocationId");
 
                     b.ToTable("UserProfiles");
@@ -1495,21 +1410,6 @@ namespace UserService.API.Migrations
                         .IsRequired();
 
                     b.Navigation("UserProfile");
-                });
-
-            modelBuilder.Entity("Location", b =>
-                {
-                    b.HasOne("City", "City")
-                        .WithMany()
-                        .HasForeignKey("CityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("City", null)
-                        .WithMany("Locations")
-                        .HasForeignKey("CityId1");
-
-                    b.Navigation("City");
                 });
 
             modelBuilder.Entity("ManagerProfile", b =>
@@ -1570,20 +1470,6 @@ namespace UserService.API.Migrations
                         .HasForeignKey("LocationId");
 
                     b.Navigation("Property");
-                });
-
-            modelBuilder.Entity("Property", b =>
-                {
-                    b.HasOne("Location", "Location")
-                        .WithMany()
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("Location", null)
-                        .WithMany("Properties")
-                        .HasForeignKey("LocationId1");
-
-                    b.Navigation("Location");
                 });
 
             modelBuilder.Entity("StaffProfile", b =>
@@ -1719,16 +1605,10 @@ namespace UserService.API.Migrations
 
             modelBuilder.Entity("UserService.API.Entities.UserProfile", b =>
                 {
-                    b.HasOne("City", "City")
-                        .WithMany()
-                        .HasForeignKey("CityId");
-
                     b.HasOne("Property", "Property")
                         .WithMany("UserProfiles")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("City");
 
                     b.Navigation("Property");
                 });
@@ -1750,16 +1630,6 @@ namespace UserService.API.Migrations
                     b.Navigation("Skill");
 
                     b.Navigation("UserProfile");
-                });
-
-            modelBuilder.Entity("City", b =>
-                {
-                    b.Navigation("Locations");
-                });
-
-            modelBuilder.Entity("Location", b =>
-                {
-                    b.Navigation("Properties");
                 });
 
             modelBuilder.Entity("Property", b =>

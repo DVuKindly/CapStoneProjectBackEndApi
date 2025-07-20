@@ -15,9 +15,7 @@ namespace AuthService.API.DTOs.Request
         public string Password { get; set; } = null!;
 
 
-
-        [Required]
-        public Guid LocationId { get; set; }
+        public Guid CityId { get; set; } 
 
         public bool SkipEmailVerification { get; set; } = true;
 
