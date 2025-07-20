@@ -6,10 +6,11 @@ namespace MembershipService.API.Repositories.Interfaces
     {
         Task<List<RoomInstance>> GetByAccommodationOptionIdAsync(Guid optionId);
         Task<List<RoomInstance>> GetAllAsync();
-        //Task<List<RoomInstance>> GetByBasicPlanIdAsync(Guid planId);
-        Task<List<RoomInstance>> GetByLocationIdAsync(Guid locationId);
+        Task<List<RoomInstance>> GetByPropertyIdAsync(Guid PropertyId);
         Task<RoomInstance?> GetByIdAsync(Guid id);
         Task<RoomInstance> CreateAsync(RoomInstance entity);
+        Task<bool> IsRoomCodeDuplicateAsync(Guid accommodationOptionId, string roomCode);
+        Task<RoomInstance> GetByIdWithNavigationAsync(Guid id);
         Task<RoomInstance> UpdateAsync(RoomInstance entity);
         Task<bool> DeleteAsync(Guid id);
     }

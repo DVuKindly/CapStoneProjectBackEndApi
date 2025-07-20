@@ -26,7 +26,7 @@ namespace MembershipService.API.Repositories.Implementations
         {
             return await _context.NextUServices
                 .Include(x => x.Ecosystem)
-                .Include(x => x.Location)
+                .Include(x => x.Property)
                 .Include(x => x.MediaGallery)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
@@ -35,7 +35,7 @@ namespace MembershipService.API.Repositories.Implementations
         {
             return await _context.NextUServices
                 .Include(x => x.Ecosystem)
-                .Include(x => x.Location)
+                .Include(x => x.Property)
                 .Include(x => x.MediaGallery)
                 .ToListAsync();
         }
@@ -61,7 +61,7 @@ namespace MembershipService.API.Repositories.Implementations
             return await _context.NextUServices
                 .Where(x => x.ServiceType == type)
                 .Include(x => x.Ecosystem)
-                .Include(x => x.Location)
+                .Include(x => x.Property)
                 .Include(x => x.MediaGallery)
                 .ToListAsync();
         }

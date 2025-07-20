@@ -32,7 +32,7 @@ namespace MembershipService.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Locations",
+                name: "Propertys",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -46,7 +46,7 @@ namespace MembershipService.API.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Locations", x => x.Id);
+                    table.PrimaryKey("PK_Propertys", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -111,7 +111,7 @@ namespace MembershipService.API.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ServiceType = table.Column<int>(type: "int", nullable: false),
                     EcosystemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PropertyId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -127,9 +127,9 @@ namespace MembershipService.API.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_NextUServices_Locations_LocationId",
-                        column: x => x.LocationId,
-                        principalTable: "Locations",
+                        name: "FK_NextUServices_Propertys_PropertyId",
+                        column: x => x.PropertyId,
+                        principalTable: "Propertys",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -145,7 +145,7 @@ namespace MembershipService.API.Migrations
                     DiscountRate = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsSuggested = table.Column<bool>(type: "bit", nullable: false),
                     VerifyBuy = table.Column<bool>(type: "bit", nullable: false),
-                    LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PropertyId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PackageLevelId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -156,9 +156,9 @@ namespace MembershipService.API.Migrations
                 {
                     table.PrimaryKey("PK_ComboPlans", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ComboPlans_Locations_LocationId",
-                        column: x => x.LocationId,
-                        principalTable: "Locations",
+                        name: "FK_ComboPlans_Propertys_PropertyId",
+                        column: x => x.PropertyId,
+                        principalTable: "Propertys",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -180,7 +180,7 @@ namespace MembershipService.API.Migrations
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     VerifyBuy = table.Column<bool>(type: "bit", nullable: false),
                     PlanCategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PropertyId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -190,9 +190,9 @@ namespace MembershipService.API.Migrations
                 {
                     table.PrimaryKey("PK_BasicPlans", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_BasicPlans_Locations_LocationId",
-                        column: x => x.LocationId,
-                        principalTable: "Locations",
+                        name: "FK_BasicPlans_Propertys_PropertyId",
+                        column: x => x.PropertyId,
+                        principalTable: "Propertys",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -529,7 +529,7 @@ namespace MembershipService.API.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Locations",
+                table: "Propertys",
                 columns: new[] { "Id", "Code", "CreatedAt", "CreatedBy", "Description", "Name", "UpdatedAt", "UpdatedBy" },
                 values: new object[,]
                 {
@@ -564,9 +564,9 @@ namespace MembershipService.API.Migrations
                 column: "RoomInstanceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BasicPlans_LocationId",
+                name: "IX_BasicPlans_PropertyId",
                 table: "BasicPlans",
-                column: "LocationId");
+                column: "PropertyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BasicPlans_PlanCategoryId",
@@ -604,9 +604,9 @@ namespace MembershipService.API.Migrations
                 column: "PackageDurationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ComboPlans_LocationId",
+                name: "IX_ComboPlans_PropertyId",
                 table: "ComboPlans",
-                column: "LocationId");
+                column: "PropertyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ComboPlans_PackageLevelId",
@@ -649,9 +649,9 @@ namespace MembershipService.API.Migrations
                 column: "EcosystemId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_NextUServices_LocationId",
+                name: "IX_NextUServices_PropertyId",
                 table: "NextUServices",
-                column: "LocationId");
+                column: "PropertyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rooms_AccommodationOptionId",
@@ -717,7 +717,7 @@ namespace MembershipService.API.Migrations
                 name: "Ecosystems");
 
             migrationBuilder.DropTable(
-                name: "Locations");
+                name: "Propertys");
         }
     }
 }

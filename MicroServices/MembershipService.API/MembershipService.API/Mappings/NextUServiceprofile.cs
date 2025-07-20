@@ -13,7 +13,7 @@ namespace MembershipService.API.Mappings
             CreateMap<UpdateNextUServiceRequest, NextUService>();
             CreateMap<NextUService, NextUServiceResponseDto>()
                 .ForMember(dest => dest.EcosystemName, opt => opt.MapFrom(src => src.Ecosystem.Name))
-                .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : ""))
+                .ForMember(dest => dest.PropertyName, opt => opt.MapFrom(src => src.Property != null ? src.Property.Name : ""))
                 .ForMember(dest => dest.MediaGalleryId, opt => opt.MapFrom(src => src.MediaGallery.Select(m => m.Id).ToList()));
         }
     }

@@ -24,8 +24,8 @@ namespace MembershipService.API.Entities
         public int TargetAudienceId { get; set; }
         public PlanTargetAudience PlanTargetAudience { get; set; }
 
-        public Guid? LocationId { get; set; }
-        public Location? Location { get; set; } = null!;
+        public Guid? PropertyId { get; set; }
+        public Property? Property { get; set; } = null!;
 
         // Danh sách quyền lợi nếu là plan hằng ngày
         public ICollection<BasicPlanEntitlement>? BasicPlanEntitlements { get; set; }

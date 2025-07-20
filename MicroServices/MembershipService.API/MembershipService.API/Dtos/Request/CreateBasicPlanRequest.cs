@@ -31,7 +31,7 @@ namespace MembershipService.API.Dtos.Request
         public int TargetAudienceId { get; set; }
 
         [Required]
-        public Guid LocationId { get; set; }
+        public Guid PropertyId { get; set; }
 
         public List<BasicPlanRoomDto>? Accomodations { get; set; } = new();
         public List<PlanEntitlementDto>? Entitlements { get; set; } = new();

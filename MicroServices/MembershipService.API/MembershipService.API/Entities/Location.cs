@@ -1,18 +1,25 @@
-﻿using MembershipService.API.Entities.Common;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace MembershipService.API.Entities
 {
-    public class Location : AuditableEntity
+    [Table("Locations")]
+    public class Location
     {
-        public Guid Id { get; set; }              
-        public string Code { get; set; } = null!; 
-        public string Name { get; set; } = null!; 
-        public string? Description { get; set; }
+        [Key]
+        public Guid Id { get; set; }
 
-        
-        public ICollection<BasicPlan>? BasicPlans { get; set; }
-        public ICollection<ComboPlan>? ComboPlans { get; set; }
-        public ICollection<NextUService>? NextUServices { get; set; }
-        public ICollection<AccommodationOption> AccommodationOptions { get; set; }
+        [Required, MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        public Guid CityId { get; set; }
+
+        [ForeignKey("CityId")]
+        public City City { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // 🔁 Navigation
+        public ICollection<Property> Properties { get; set; } = new List<Property>();
     }
 }

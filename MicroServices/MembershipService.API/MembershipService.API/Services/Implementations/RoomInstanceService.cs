@@ -5,6 +5,7 @@ using MembershipService.API.Dtos.Response;
 using MembershipService.API.Entities;
 using MembershipService.API.Repositories.Interfaces;
 using MembershipService.API.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace MembershipService.API.Services.Implementations
 {
@@ -33,14 +34,9 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<List<RoomInstanceResponse>>(entities);
         }
 
-        //public async Task<List<RoomInstanceResponse>> GetByBasicPlanIdAsync(Guid planId)
-        //{
-        //    var entities = await _repository.GetByBasicPlanIdAsync(planId);
-        //    return _mapper.Map<List<RoomInstanceResponse>>(entities);
-        //}
-        public async Task<List<RoomInstanceResponse>> GetByLocationIdAsync(Guid locationId)
+        public async Task<List<RoomInstanceResponse>> GetByPropertyIdAsync(Guid PropertyId)
         {
-            var entities = await _repository.GetByLocationIdAsync(locationId);
+            var entities = await _repository.GetByPropertyIdAsync(PropertyId);
             return _mapper.Map<List<RoomInstanceResponse>>(entities);
         }
 
@@ -52,10 +48,22 @@ namespace MembershipService.API.Services.Implementations
 
         public async Task<RoomInstanceResponse> CreateAsync(CreateRoomInstanceRequest request)
         {
+            //  Check trùng RoomCode trong cùng AccommodationOptionId
+            if (await _repository.IsRoomCodeDuplicateAsync(request.AccommodationOptionId, request.RoomCode))
+            {
+                throw new InvalidOperationException($"Room code '{request.RoomCode}' already exists.");
+            }
+
+            // Map sang entity và tạo
             var entity = _mapper.Map<RoomInstance>(request);
             var created = await _repository.CreateAsync(entity);
-            return _mapper.Map<RoomInstanceResponse>(created);
+
+            // Load lại từ DB với Include đầy đủ
+            var fullEntity = await _repository.GetByIdWithNavigationAsync(created.Id);
+
+            return _mapper.Map<RoomInstanceResponse>(fullEntity);
         }
+
 
         public async Task<RoomInstanceResponse> UpdateAsync(Guid id, UpdateRoomInstanceRequest request)
         {

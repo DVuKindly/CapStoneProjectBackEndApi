@@ -62,7 +62,7 @@ namespace MembershipService.API.Repositories.Implementations
             return await _context.EntitlementRules
                 .Where(r => ruleIds.Contains(r.Id))
                 .Include(r => r.NextUService) // ✅ Include đúng tên navigation
-                    .ThenInclude(svc => svc.Location)
+                    .ThenInclude(svc => svc.Property)
                 .ToListAsync();
         }
 

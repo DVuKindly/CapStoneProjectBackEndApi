@@ -88,7 +88,7 @@ namespace MembershipService.API.Migrations
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<Guid>(
-                name: "LocationId",
+                name: "PropertyId",
                 table: "AccommodationOptions",
                 type: "uniqueidentifier",
                 nullable: true);
@@ -204,9 +204,9 @@ namespace MembershipService.API.Migrations
                 column: "TargetAudienceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AccommodationOptions_LocationId",
+                name: "IX_AccommodationOptions_PropertyId",
                 table: "AccommodationOptions",
-                column: "LocationId");
+                column: "PropertyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AccommodationOptions_RoomTypeId",
@@ -224,10 +224,10 @@ namespace MembershipService.API.Migrations
                 column: "BasicPlanTypeId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_AccommodationOptions_Locations_LocationId",
+                name: "FK_AccommodationOptions_Propertys_PropertyId",
                 table: "AccommodationOptions",
-                column: "LocationId",
-                principalTable: "Locations",
+                column: "PropertyId",
+                principalTable: "Propertys",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
 
@@ -284,7 +284,7 @@ namespace MembershipService.API.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_AccommodationOptions_Locations_LocationId",
+                name: "FK_AccommodationOptions_Propertys_PropertyId",
                 table: "AccommodationOptions");
 
             migrationBuilder.DropForeignKey(
@@ -343,7 +343,7 @@ namespace MembershipService.API.Migrations
                 table: "BasicPlans");
 
             migrationBuilder.DropIndex(
-                name: "IX_AccommodationOptions_LocationId",
+                name: "IX_AccommodationOptions_PropertyId",
                 table: "AccommodationOptions");
 
             migrationBuilder.DropIndex(
@@ -371,7 +371,7 @@ namespace MembershipService.API.Migrations
                 table: "BasicPlans");
 
             migrationBuilder.DropColumn(
-                name: "LocationId",
+                name: "PropertyId",
                 table: "AccommodationOptions");
 
             migrationBuilder.RenameColumn(

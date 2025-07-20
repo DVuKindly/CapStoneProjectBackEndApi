@@ -46,8 +46,8 @@ namespace MembershipService.API.Repositories.Implementations
                     PlanLevelName = bp.BasicPlanLevel.Name,
                     TargetAudienceId = bp.TargetAudienceId,
                     TargetAudienceName = bp.PlanTargetAudience.Name,
-                    LocationId = bp.LocationId,
-                    LocationName = bp.Location != null ? bp.Location.Name : null,
+                    PropertyId = bp.PropertyId,
+                    PropertyName = bp.Property != null ? bp.Property.Name : null,
 
                     PlanDurations = bp.ComboPlanDurations.Select(cd => new PlanDurationResponseDto
                     {
@@ -103,8 +103,8 @@ namespace MembershipService.API.Repositories.Implementations
                     TargetAudienceId = bp.TargetAudienceId,
                     TargetAudienceName = bp.PlanTargetAudience.Name,
 
-                    LocationId = bp.LocationId,
-                    LocationName = bp.Location != null ? bp.Location.Name : null,
+                    PropertyId = bp.PropertyId,
+                    PropertyName = bp.Property != null ? bp.Property.Name : null,
 
                     PlanDurations = bp.ComboPlanDurations.Select(cd => new PlanDurationResponseDto
                     {
@@ -149,7 +149,7 @@ namespace MembershipService.API.Repositories.Implementations
                 .Include(x => x.BasicPlanEntitlements)
                     .ThenInclude(e => e.EntitlementRule)
                     .ThenInclude(er => er.NextUService)
-                .Include(x => x.Location)
+                .Include(x => x.Property)
                 .Include(x => x.BasicPlanType)
                 .Include(x => x.BasicPlanCategory)
                 .Include(x => x.BasicPlanLevel)

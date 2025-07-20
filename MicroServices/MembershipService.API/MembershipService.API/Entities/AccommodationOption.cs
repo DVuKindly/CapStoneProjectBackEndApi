@@ -9,8 +9,8 @@ namespace MembershipService.API.Entities
         public Guid NextUServiceId { get; set; }
         public NextUService NextUService { get; set; }
 
-        public Guid? LocationId { get; set; }
-        public Location? Location { get; set; } = null!;
+        public Guid? PropertyId { get; set; }
+        public Property? Property { get; set; } = null!;
 
         public int RoomTypeId { get; set; }
         public RoomType? RoomType { get; set; } = null!;

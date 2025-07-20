@@ -12,8 +12,8 @@ namespace MembershipService.API.Entities
         public bool IsSuggested { get; set; }
         public bool VerifyBuy { get; set; }
 
-        public Guid? LocationId { get; set; }
-        public Location? Location { get; set; } = null!;
+        public Guid? PropertyId { get; set; }
+        public Property? Property { get; set; } = null!;
 
         public Guid PackageLevelId { get; set; }
         public PackageLevel PackageLevel { get; set; }

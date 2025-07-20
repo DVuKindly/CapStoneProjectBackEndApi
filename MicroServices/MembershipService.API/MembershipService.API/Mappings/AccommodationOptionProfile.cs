@@ -13,8 +13,8 @@ namespace MembershipService.API.Mappings
             CreateMap<AccommodationOption, AccommodationOptionResponse>()
                 .ForMember(dest => dest.RoomTypeName,
                     opt => opt.MapFrom(src => src.RoomType != null ? src.RoomType.Name : null))
-                .ForMember(dest => dest.LocationName,
-                    opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
+                .ForMember(dest => dest.PropertyName,
+                    opt => opt.MapFrom(src => src.Property != null ? src.Property.Name : null))
                 .ForMember(dest => dest.NextUServiceName,
                     opt => opt.MapFrom(src => src.NextUService != null ? src.NextUService.Name : null));
 

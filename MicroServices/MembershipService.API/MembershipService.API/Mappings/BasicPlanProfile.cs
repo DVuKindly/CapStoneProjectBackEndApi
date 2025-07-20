@@ -44,7 +44,7 @@ namespace MembershipService.API.Mappings
                 .ForMember(dest => dest.BasicPlanCategory, opt => opt.Ignore())
                 .ForMember(dest => dest.BasicPlanLevel, opt => opt.Ignore())
                 .ForMember(dest => dest.PlanTargetAudience, opt => opt.Ignore())
-                .ForMember(dest => dest.Location, opt => opt.Ignore())
+                .ForMember(dest => dest.Property, opt => opt.Ignore())
                 .ForMember(dest => dest.ComboPlanBasics, opt => opt.Ignore())
                 .ForMember(dest => dest.Memberships, opt => opt.Ignore())
                 .ForMember(dest => dest.MembershipHistories, opt => opt.Ignore());
@@ -61,7 +61,7 @@ namespace MembershipService.API.Mappings
             CreateMap<BasicPlan, BasicPlanResponseDto>()
                 .ForMember(dest => dest.BasicPlanType, opt => opt.MapFrom(src => src.BasicPlanType != null ? src.BasicPlanType.Name : null))
                 .ForMember(dest => dest.BasicPlanTypeCode, opt => opt.MapFrom(src => src.BasicPlanType != null ? src.BasicPlanType.Code : null))
-                .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location != null ? src.Location.Name : null))
+                .ForMember(dest => dest.PropertyName, opt => opt.MapFrom(src => src.Property != null ? src.Property.Name : null))
                 .ForMember(dest => dest.PlanLevelName, opt => opt.MapFrom(src => src.BasicPlanLevel != null ? src.BasicPlanLevel.Name : null))
                 .ForMember(dest => dest.TargetAudienceName, opt => opt.MapFrom(src => src.PlanTargetAudience != null ? src.PlanTargetAudience.Name : null))
                 .ForMember(dest => dest.PlanCategoryName, opt => opt.MapFrom(src => src.BasicPlanCategory != null ? src.BasicPlanCategory.Name : null))

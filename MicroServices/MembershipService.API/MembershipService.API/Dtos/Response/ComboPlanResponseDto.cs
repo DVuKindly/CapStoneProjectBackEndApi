@@ -11,8 +11,8 @@ namespace MembershipService.API.Dtos.Response
         public decimal DiscountRate { get; set; }
         public bool IsSuggested { get; set; }
         public bool VerifyBuy { get; set; }
-        public Guid? LocationId { get; set; }
-        public string LocationName { get; set; }
+        public Guid? PropertyId { get; set; }
+        public string PropertyName { get; set; }
         public Guid PackageLevelId { get; set; }
         public string PackageLevelName { get; set; }
 
