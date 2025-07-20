@@ -138,16 +138,16 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<BasicPlanResponseDto>(basicPlan);
         }
 
-        public async Task<List<BasicPlanResponseDto>> GetByTypeIdAsync(Guid typeId)
-        {
-            return await _basicPlanRepo.GetByTypeIdAsync(typeId);
-        }
-
         public async Task<List<BasicPlanResponseDto>> GetAllAsync()
         {
             var plans = await _basicPlanRepo.GetAllAsync();
             return _mapper.Map<List<BasicPlanResponseDto>>(plans);
         }
+        public async Task<List<BasicPlanResponseDto>> GetByTypeIdAsync(Guid typeId)
+        {
+            return await _basicPlanRepo.GetByTypeIdAsync(typeId);
+        }
+        
 
         public async Task<bool> DeleteAsync(Guid id)
         {
