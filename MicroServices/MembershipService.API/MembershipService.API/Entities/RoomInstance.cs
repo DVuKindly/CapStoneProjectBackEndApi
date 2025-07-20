@@ -9,6 +9,7 @@ namespace MembershipService.API.Entities
 
         public Guid AccommodationOptionId { get; set; }
         public AccommodationOption AccommodationOption { get; set; }
+        public decimal? AddOnFee { get; set; }
 
         public string RoomCode { get; set; } = null!;
         public string RoomName { get; set; }
@@ -19,5 +20,7 @@ namespace MembershipService.API.Entities
 
         //public ICollection<BasicPlanRoom> BasicPlanRooms { get; set; }
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
+        
     }
 }

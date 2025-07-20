@@ -20,15 +20,36 @@ public class PropertyController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var locations = await _db.Propertys
-            .Select(x => new {
-                x.Id,
-                x.Name,
-                x.Description
-            })
-            .ToListAsync();
+    .Include(p => p.Location)
+    .ThenInclude(l => l.City)
+    .ToListAsync(); // vật hóa ra danh sách trong RAM
 
-        return Ok(locations);
+        var result = locations.Select(p => new
+        {
+            p.Id,
+            p.Name,
+            p.Description,
+            LocationName = p.Location?.Name ?? "UnKnow",
+            CityName = p.Location?.City?.Name ?? "UnKnow"
+        }).ToList();
+
+        return Ok(result);
     }
+    [HttpGet("{id}/display-name")]
+    public async Task<IActionResult> GetDisplayName(Guid id)
+    {
+        var property = await _db.Propertys
+            .Include(p => p.Location)
+            .ThenInclude(l => l.City)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (property == null) return NotFound();
+
+        var displayName = $"{property.Name}, {property.Location?.Name}, {property.Location?.City?.Name}";
+        return Ok(displayName);
+    }
+
+
     [HttpGet("{id}/exists")]
     public async Task<IActionResult> Exists(Guid id)
     {

@@ -525,9 +525,10 @@ public class MembershipRequestService : IMembershipRequestService
                 AccountId = request.AccountId,
                 PackageId = request.PackageId,
                 RequestedPackageName = request.RequestedPackageName,
-                Amount = amount,
+                Amount = request.Amount ?? 0, 
                 Status = request.Status
             };
+
         }
 
         // 2️⃣ Nếu không có request, thử tra trong bảng Memberships (trường hợp thanh toán trực tiếp)
@@ -738,11 +739,11 @@ public class MembershipRequestService : IMembershipRequestService
                     return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
 
                 // ✅ Get Extra Fee from MembershipService
-                extraFee = await _membershipServiceClient.GetExtraFeeForRoomAsync(dto.RoomInstanceId.Value);
+                extraFee = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
                 price += extraFee;
             }
 
-            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate);
+            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate, extraFee);
             request.PackageDurationValue = duration.Value;
             request.PackageDurationUnit = duration.Unit;
             request.RequireBooking = dto.RequireBooking;
@@ -816,7 +817,7 @@ public class MembershipRequestService : IMembershipRequestService
                 if (isBooked)
                     return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
 
-                extraFee = await _membershipServiceClient.GetExtraFeeForRoomAsync(dto.RoomInstanceId.Value);
+                extraFee = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
                 price += extraFee;
             }
 
@@ -846,15 +847,17 @@ public class MembershipRequestService : IMembershipRequestService
 
 
     private PendingMembershipRequest BuildRequest(
-       Guid accountId,
-       Guid packageId,
-       string name,
-       decimal price,
-       Guid locationId,
-       UserProfile user,
-       string? messageToStaff,
-       string packageType,
-       DateTime startDate)
+    Guid accountId,
+    Guid packageId,
+    string name,
+    decimal totalAmount, 
+    Guid locationId,
+    UserProfile user,
+    string? messageToStaff,
+    string packageType,
+    DateTime startDate,
+    decimal? addOnsFee = null 
+)
     {
         var traitNames = user.UserPersonalityTraits.Select(p => p.PersonalityTrait.Name);
         var skillNames = user.UserSkills.Select(s => s.Skill.Name);
@@ -866,7 +869,8 @@ public class MembershipRequestService : IMembershipRequestService
             AccountId = accountId,
             PackageId = packageId,
             RequestedPackageName = name ?? "Unknown",
-            Amount = price,
+            Amount = totalAmount, 
+            AddOnsFee = addOnsFee, 
             LocationId = locationId,
             Interests = string.Join(",", user.UserInterests.Select(i => i.Interest.Name)),
             PersonalityTraits = string.Join(",", combinedTraits),
@@ -878,6 +882,7 @@ public class MembershipRequestService : IMembershipRequestService
             StartDate = startDate
         };
     }
+
 
 
 

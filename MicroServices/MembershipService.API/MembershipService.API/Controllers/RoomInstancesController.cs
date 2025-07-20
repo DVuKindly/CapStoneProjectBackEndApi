@@ -71,5 +71,14 @@ namespace MembershipService.API.Controllers
             var success = await _service.DeleteAsync(id);
             return success ? NoContent() : NotFound();
         }
+
+        [HttpGet("{roomInstanceId}/extra-fee")]
+        public async Task<IActionResult> GetExtraFee(Guid roomInstanceId)
+        {
+            var fee = await _service.GetAddOnFeeAsync(roomInstanceId);
+            return Ok(new { success = true, data = fee });
+        }
+
+
     }
 }

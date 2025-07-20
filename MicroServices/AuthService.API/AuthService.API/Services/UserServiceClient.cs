@@ -104,6 +104,12 @@ public class UserServiceClient : IUserServiceClient
         var locations = await response.Content.ReadFromJsonAsync<List<LocationDto>>();
         return locations ?? new();
     }
+    public async Task<string?> GetLocationDisplayNameAsync(Guid propertyId)
+    {
+        var response = await _httpClient.GetAsync($"bff/api/user/locations/{propertyId}/display-name");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadAsStringAsync();
+    }
 
     public async Task<string?> GetLocationNameAsync(Guid locationId)
     {

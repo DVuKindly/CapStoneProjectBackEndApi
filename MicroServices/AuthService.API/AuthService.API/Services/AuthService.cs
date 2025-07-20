@@ -131,7 +131,8 @@ namespace AuthService.API.Services
 
             if (user.LocationId.HasValue)
             {
-                locationName = await _userServiceClient.GetLocationNameAsync(user.LocationId.Value);
+                locationName = await _userServiceClient.GetLocationDisplayNameAsync(user.LocationId.Value);
+
             }
 
             return new AuthResponse

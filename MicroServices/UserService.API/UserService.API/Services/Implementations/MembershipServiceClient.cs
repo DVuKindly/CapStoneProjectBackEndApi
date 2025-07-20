@@ -52,21 +52,22 @@ public class MembershipServiceClient : IMembershipServiceClient
             return new();
         }
     }
-    public async Task<decimal> GetExtraFeeForRoomAsync(Guid roomInstanceId)
+    public async Task<decimal> GetAddOnFee(Guid roomInstanceId)
     {
-        var response = await _httpClient.GetAsync($"/api/internal/rooms/{roomInstanceId}/extra-fee");
+        var response = await _httpClient.GetAsync($"/api/roominstances/{roomInstanceId}/extra-fee");
 
         if (!response.IsSuccessStatusCode)
-            throw new Exception("Failed to retrieve extra fee from MembershipService.");
+            throw new Exception("Failed to retrieve add-on fee from MembershipService.");
 
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonConvert.DeserializeObject<BaseResponse<decimal>>(content);
 
         if (result == null || !result.Success)
-            throw new Exception("Invalid response when getting extra fee.");
+            throw new Exception("Invalid response when getting add-on fee.");
 
         return result.Data;
     }
+
 
     public async Task<ComboPlanDto?> GetComboPlanByIdAsync(Guid id)
     {
