@@ -23,9 +23,11 @@
             public const string UnauthorizedLocationCreation = "Admins can only create users within their assigned location.";
             public const string UnsupportedProfileInfo = "Unsupported profile information type.";
             public const string EmailNotFound = "Email does not exist.";
+            public const string AdminLocationNotAssigned = "Admin has not been assigned Property.";
+            public const string PropertyMismatch = "You can only create accounts in the Property you are responsible for.";
 
 
-         
+
             public const string RoleNotFound = "Role 'User' does not exist.";
             public const string InvalidLocation = "Invalid location. Please select a supported one.";
             public const string AdminAlreadyExists = "Email already exists.";

@@ -525,16 +525,18 @@ namespace AuthService.API.Services
 
         public async Task<AuthResponse> RegisterAdminAsync(RegisterBySuperAdminRequest request)
         {
-            var isValidCity = await _userServiceClient.IsValidCityAsync(request.CityId);
-            if (!isValidCity)
+            // ✅ Kiểm tra Location (Property) có hợp lệ không
+            var isValidProperty = await _userServiceClient.IsValidLocationAsync(request.LocationId);
+            if (!isValidProperty)
             {
                 return new AuthResponse
                 {
                     Success = false,
-                    Message = AuthMessages.InvalidCity
+                    Message = AuthMessages.InvalidLocation
                 };
             }
 
+            // ✅ Kiểm tra trùng email
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
@@ -545,6 +547,7 @@ namespace AuthService.API.Services
                 };
             }
 
+            // ✅ Tạo user
             var user = new UserAuth
             {
                 UserId = Guid.NewGuid(),
@@ -553,12 +556,14 @@ namespace AuthService.API.Services
                 PasswordHash = _passwordHasher.HashPassword(null!, request.Password),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
+                LocationId = request.LocationId, // ✅ Gán PropertyId
                 IsLocked = false,
                 EmailVerified = request.SkipEmailVerification,
                 EmailVerificationToken = request.SkipEmailVerification ? null : Guid.NewGuid().ToString(),
                 EmailVerificationExpiry = request.SkipEmailVerification ? null : DateTime.UtcNow.AddHours(24)
             };
 
+            // ✅ Gán role admin
             var role = await _userRepository.GetRoleByKeyAsync("admin");
             if (role == null)
             {
@@ -573,16 +578,18 @@ namespace AuthService.API.Services
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
+            // ✅ Lấy người tạo
             var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             Guid? createdByAdminId = Guid.TryParse(currentUserId, out var parsed) ? parsed : null;
 
+            // ✅ Gửi thông tin profile sang UserService
             var profile = new UserProfilePayload
             {
                 AccountId = user.UserId,
                 FullName = user.UserName,
                 Email = user.Email,
                 RoleType = "admin",
-                CityId = request.CityId,
+                LocationId = request.LocationId,
                 OnboardingStatus = "AdminSystem",
                 Note = "CreatedBySuperAdmin",
                 CreatedByAdminId = createdByAdminId
@@ -590,6 +597,7 @@ namespace AuthService.API.Services
 
             await _userServiceClient.CreateUserProfileAsync(user.UserId, user.UserName, user.Email, "admin", profile);
 
+            // ✅ Gửi email xác thực nếu cần
             if (!request.SkipEmailVerification && user.EmailVerificationToken != null)
             {
                 await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
@@ -600,10 +608,11 @@ namespace AuthService.API.Services
                 Success = true,
                 Email = user.Email,
                 FullName = user.UserName,
-                Message = request.SkipEmailVerification ? AuthMessages.AdminCreatedAndVerified : AuthMessages.AdminCreatedNeedVerify
+                Message = request.SkipEmailVerification
+                    ? AuthMessages.AdminCreatedAndVerified
+                    : AuthMessages.AdminCreatedNeedVerify
             };
         }
-
 
 
 
@@ -695,34 +704,28 @@ namespace AuthService.API.Services
             var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             var currentUserRole = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;
 
-            // ✅ Nếu người tạo là admin thì kiểm tra phân quyền theo City
             if (currentUserRole == "admin" && currentUserId != null)
             {
                 var adminProfile = await _userServiceClient.GetUserProfileShortDtoByIdAsync(Guid.Parse(currentUserId));
-                if (adminProfile?.CityId == null)
+                if (adminProfile?.LocationId == null)
                 {
                     return new AuthResponse
                     {
                         Success = false,
-                        Message = AuthMessages.AdminCityNotAssigned
+                        Message = AuthMessages.AdminLocationNotAssigned
                     };
                 }
 
-                // Kiểm tra LocationId (Property) có thuộc CityId của admin không
-                var isPropertyInCity = await _userServiceClient.IsPropertyInCityAsync(
-                    request.LocationId,
-                    adminProfile.CityId.Value
-                );
-
-                if (!isPropertyInCity)
+                if (adminProfile.LocationId != request.LocationId)
                 {
                     return new AuthResponse
                     {
                         Success = false,
-                        Message = AuthMessages.PropertyNotInAdminCity
+                        Message = AuthMessages.PropertyMismatch
                     };
                 }
             }
+
 
             // ✅ Kiểm tra LocationId tồn tại
             var isValidLocation = await _userServiceClient.IsValidLocationAsync(request.LocationId);
