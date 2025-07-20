@@ -18,7 +18,7 @@ namespace MembershipService.API.Repositories.Implementations
         {
             return await _context.AccommodationOptions
                 .Include(a => a.RoomType)
-                .Include(a => a.Location)
+                .Include(a => a.Property)
                 .Include(a => a.NextUService)
                 .ToListAsync();
         }
@@ -27,7 +27,7 @@ namespace MembershipService.API.Repositories.Implementations
         {
             return await _context.AccommodationOptions
                 .Include(a => a.RoomType)
-                .Include(a => a.Location)
+                .Include(a => a.Property)
                 .Include(a => a.NextUService)
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
@@ -46,7 +46,7 @@ namespace MembershipService.API.Repositories.Implementations
             if (existing == null) throw new Exception("AccommodationOption not found");
 
             existing.RoomTypeId = option.RoomTypeId;
-            existing.LocationId = option.LocationId;
+            existing.PropertyId = option.PropertyId;
             existing.Capacity = option.Capacity;
             existing.PricePerNight = option.PricePerNight;
             existing.Description = option.Description;

@@ -5,8 +5,8 @@
         public Guid Id { get; set; }
         public int RoomTypeId { get; set; }
         public string RoomTypeName { get; set; }
-        public Guid? LocationId { get; set; }
-        public string? LocationName { get; set; }
+        public Guid? PropertyId { get; set; }
+        public string? PropertyName { get; set; }
         public Guid NextUServiceId { get; set; }
         public string NextUServiceName { get; set; }
 

@@ -7,6 +7,6 @@ namespace MembershipService.API.Dtos.Request
         public string Name { get; set; } = null!;
         public ServiceType ServiceType { get; set; }
         public Guid EcosystemId { get; set; }
-        public Guid? LocationId { get; set; }
+        public Guid? PropertyId { get; set; }
     }
 }

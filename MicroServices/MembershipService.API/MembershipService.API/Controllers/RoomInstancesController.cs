@@ -30,10 +30,10 @@ namespace MembershipService.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("by-location/{locationId}")]
-        public async Task<IActionResult> GetByLocationId(Guid locationId)
+        [HttpGet("by-Property/{PropertyId}")]
+        public async Task<IActionResult> GetByPropertyId(Guid PropertyId)
         {
-            var result = await _service.GetByLocationIdAsync(locationId);
+            var result = await _service.GetByPropertyIdAsync(PropertyId);
             return Ok(result);
         }
 
@@ -54,9 +54,17 @@ namespace MembershipService.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateRoomInstanceRequest request)
         {
-            var result = await _service.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            try
+            {
+                var result = await _service.CreateAsync(request);
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (Exception ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, UpdateRoomInstanceRequest request)

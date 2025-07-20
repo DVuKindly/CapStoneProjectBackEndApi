@@ -44,7 +44,7 @@ namespace MembershipService.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("LocationId")
+                    b.Property<Guid?>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("NextUServiceId")
@@ -64,7 +64,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId");
+                    b.HasIndex("PropertyId");
 
                     b.HasIndex("NextUServiceId");
 
@@ -98,7 +98,7 @@ namespace MembershipService.API.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("LocationId")
+                    b.Property<Guid?>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
@@ -132,7 +132,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("BasicPlanTypeId");
 
-                    b.HasIndex("LocationId");
+                    b.HasIndex("PropertyId");
 
                     b.HasIndex("PlanLevelId");
 
@@ -346,7 +346,7 @@ namespace MembershipService.API.Migrations
                     b.Property<bool>("IsSuggested")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("LocationId")
+                    b.Property<Guid?>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
@@ -370,7 +370,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId");
+                    b.HasIndex("PropertyId");
 
                     b.HasIndex("PackageLevelId");
 
@@ -528,7 +528,7 @@ namespace MembershipService.API.Migrations
                     b.ToTable("EntitlementRules");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.Location", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.Property", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -559,7 +559,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations");
+                    b.ToTable("Propertys");
 
                     b.HasData(
                         new
@@ -755,7 +755,7 @@ namespace MembershipService.API.Migrations
                     b.Property<Guid>("EcosystemId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("LocationId")
+                    b.Property<Guid?>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
@@ -775,7 +775,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("EcosystemId");
 
-                    b.HasIndex("LocationId");
+                    b.HasIndex("PropertyId");
 
                     b.ToTable("NextUServices");
                 });
@@ -940,9 +940,9 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.AccommodationOption", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                    b.HasOne("MembershipService.API.Entities.Property", "Property")
                         .WithMany("AccommodationOptions")
-                        .HasForeignKey("LocationId")
+                        .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
@@ -957,7 +957,7 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Location");
+                    b.Navigation("Property");
 
                     b.Navigation("NextUService");
 
@@ -978,9 +978,9 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                    b.HasOne("MembershipService.API.Entities.Property", "Property")
                         .WithMany("BasicPlans")
-                        .HasForeignKey("LocationId")
+                        .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MembershipService.API.Entities.BasicPlanLevel", "BasicPlanLevel")
@@ -1001,7 +1001,7 @@ namespace MembershipService.API.Migrations
 
                     b.Navigation("BasicPlanType");
 
-                    b.Navigation("Location");
+                    b.Navigation("Property");
 
                     b.Navigation("PlanTargetAudience");
                 });
@@ -1086,9 +1086,9 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                    b.HasOne("MembershipService.API.Entities.Property", "Property")
                         .WithMany("ComboPlans")
-                        .HasForeignKey("LocationId")
+                        .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MembershipService.API.Entities.PackageLevel", "PackageLevel")
@@ -1097,7 +1097,7 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Location");
+                    b.Navigation("Property");
 
                     b.Navigation("PackageLevel");
                 });
@@ -1217,14 +1217,14 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                    b.HasOne("MembershipService.API.Entities.Property", "Property")
                         .WithMany("NextUServices")
-                        .HasForeignKey("LocationId")
+                        .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Ecosystem");
 
-                    b.Navigation("Location");
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.RoomInstance", b =>
@@ -1297,7 +1297,7 @@ namespace MembershipService.API.Migrations
                     b.Navigation("NextUServices");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.Location", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.Property", b =>
                 {
                     b.Navigation("AccommodationOptions");
 

@@ -112,7 +112,7 @@ namespace MembershipService.API.Services.Implementations
         {
             var plans = await _context.ComboPlans
                 .Where(p => ids.Contains(p.Id))
-                .Include(p => p.Location)
+                .Include(p => p.Property)
                 .ToListAsync();
 
             return _mapper.Map<List<ComboPlanResponseDto>>(plans);

@@ -74,6 +74,20 @@ builder.Services.AddAutoMapper(typeof(BookingProfile).Assembly);
 builder.Services.AddScoped<IEntitlementRuleRepository, EntitlementRuleRepository>();
 builder.Services.AddScoped<IEntitlementRuleService, EntitlementRuleService>();
 builder.Services.AddAutoMapper(typeof(EntitlementRuleProfile).Assembly);
+//Các RoomOptions
+builder.Services.AddScoped<IRoomSizeOptionRepository, RoomSizeOptionRepository>();
+builder.Services.AddScoped<IRoomSizeOptionService, RoomSizeOptionService>();
+
+builder.Services.AddScoped<IRoomViewOptionRepository, RoomViewOptionRepository>();
+builder.Services.AddScoped<IRoomViewOptionService, RoomViewOptionService>();
+
+builder.Services.AddScoped<IRoomFloorOptionRepository, RoomFloorOptionRepository>();
+builder.Services.AddScoped<IRoomFloorOptionService, RoomFloorOptionService>();
+
+builder.Services.AddScoped<IBedTypeOptionRepository, BedTypeOptionRepository>();
+builder.Services.AddScoped<IBedTypeOptionService, BedTypeOptionService>();
+
+builder.Services.AddAutoMapper(typeof(RoomOptionsProfile).Assembly);
 
 
 

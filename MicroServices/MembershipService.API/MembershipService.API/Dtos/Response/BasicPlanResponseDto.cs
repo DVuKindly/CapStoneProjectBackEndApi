@@ -21,8 +21,8 @@ namespace MembershipService.API.Dtos.Response
         public int TargetAudienceId { get; set; }
         public string TargetAudienceName { get; set; }
 
-        public Guid? LocationId { get; set; }
-        public string? LocationName { get; set; }
+        public Guid? PropertyId { get; set; }
+        public string? PropertyName { get; set; }
         public List<BasicPlanRoomResponseDto>? Acomodations { get; set; } = new();
         public List<EntitlementResponseDto>? Entitlements { get; set; } = new();
         public List<PlanDurationResponseDto> PlanDurations { get; set; } = new();

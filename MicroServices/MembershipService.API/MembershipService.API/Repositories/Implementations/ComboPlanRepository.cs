@@ -35,7 +35,7 @@ namespace MembershipService.API.Repositories.Implementations
             return await _context.ComboPlans
                 .Include(x => x.ComboPlanBasics)
                 .Include(x => x.ComboPlanDurations)
-                .Include(x => x.Location)
+                .Include(x => x.Property)
                 .Include(x => x.PackageLevel)
                 .ToListAsync();
         }
@@ -45,7 +45,7 @@ namespace MembershipService.API.Repositories.Implementations
             return await _context.ComboPlans
                 .Include(x => x.ComboPlanBasics)
                 .Include(x => x.ComboPlanDurations)
-                .Include(x => x.Location)
+                .Include(x => x.Property)
                 .Include(x => x.PackageLevel)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }

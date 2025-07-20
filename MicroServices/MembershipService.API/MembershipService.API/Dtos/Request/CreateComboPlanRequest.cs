@@ -8,7 +8,7 @@
         public decimal DiscountRate { get; set; }
         public bool IsSuggested { get; set; }
         public bool VerifyBuy { get; set; }
-        public Guid? LocationId { get; set; }
+        public Guid? PropertyId { get; set; }
         public Guid PackageLevelId { get; set; }
 
         public List<Guid> BasicPlanIds { get; set; } = new();

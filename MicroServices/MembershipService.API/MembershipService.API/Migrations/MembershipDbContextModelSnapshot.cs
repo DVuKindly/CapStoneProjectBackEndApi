@@ -41,14 +41,14 @@ namespace MembershipService.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("LocationId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("NextUServiceId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("PricePerNight")
                         .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid?>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("RoomTypeId")
                         .HasColumnType("int");
@@ -61,9 +61,9 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId");
-
                     b.HasIndex("NextUServiceId");
+
+                    b.HasIndex("PropertyId");
 
                     b.HasIndex("RoomTypeId");
 
@@ -95,9 +95,6 @@ namespace MembershipService.API.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("LocationId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -107,6 +104,9 @@ namespace MembershipService.API.Migrations
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("RequireBooking")
                         .HasColumnType("bit");
@@ -129,9 +129,9 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("BasicPlanTypeId");
 
-                    b.HasIndex("LocationId");
-
                     b.HasIndex("PlanLevelId");
+
+                    b.HasIndex("PropertyId");
 
                     b.HasIndex("TargetAudienceId");
 
@@ -264,6 +264,45 @@ namespace MembershipService.API.Migrations
                     b.ToTable("BasicPlanTypes");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.BedTypeOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BedTypeOptions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Single"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Double"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Queen"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "King"
+                        });
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.Booking", b =>
                 {
                     b.Property<Guid>("Id")
@@ -307,6 +346,38 @@ namespace MembershipService.API.Migrations
                     b.ToTable("Bookings");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.City", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Cities");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Thủ đô Việt Nam",
+                            Name = "Hà Nội"
+                        });
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -329,14 +400,14 @@ namespace MembershipService.API.Migrations
                     b.Property<bool>("IsSuggested")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("LocationId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PackageLevelId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("TotalPrice")
@@ -353,9 +424,9 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId");
-
                     b.HasIndex("PackageLevelId");
+
+                    b.HasIndex("PropertyId");
 
                     b.ToTable("ComboPlans");
                 });
@@ -517,54 +588,35 @@ namespace MembershipService.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("CityId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("CreatedAt")
+                    b.Property<Guid?>("CityId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CityId");
+
+                    b.HasIndex("CityId1");
 
                     b.ToTable("Locations");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
-                            Code = "HN",
-                            Description = "Khu vực miền Bắc",
-                            Name = "Hà Nội"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
-                            Code = "DN",
-                            Description = "Khu vực miền Trung",
-                            Name = "Đà Nẵng"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
-                            Code = "HP",
-                            Description = "Hải Phòng",
-                            Name = "Hải Phòng"
+                            Id = new Guid("20000000-0000-0000-0000-000000000001"),
+                            CityId = new Guid("10000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Hoàng Cầu"
                         });
                 });
 
@@ -738,12 +790,12 @@ namespace MembershipService.API.Migrations
                     b.Property<Guid>("EcosystemId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("LocationId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("ServiceType")
                         .HasColumnType("int");
@@ -758,7 +810,7 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("EcosystemId");
 
-                    b.HasIndex("LocationId");
+                    b.HasIndex("PropertyId");
 
                     b.ToTable("NextUServices");
                 });
@@ -844,6 +896,111 @@ namespace MembershipService.API.Migrations
                     b.ToTable("PlanTargetAudiences");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.Property", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LocationId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("LocationId1");
+
+                    b.ToTable("Propertys");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu 1",
+                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Name = "Hoàng Cầu Cơ sở 1"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu 2",
+                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Name = "Hoàng Cầu Cơ sở 2"
+                        },
+                        new
+                        {
+                            Id = new Guid("30000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Description = "Khu vực trụ sở chính Hoàng Cầu 3",
+                            LocationId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Name = "Hoàng Cầu Cơ sở 3"
+                        });
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.RoomFloorOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RoomFloorOptions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Low"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Mid"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "High"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Terrace"
+                        });
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.RoomInstance", b =>
                 {
                     b.Property<Guid>("Id")
@@ -856,6 +1013,12 @@ namespace MembershipService.API.Migrations
                     b.Property<decimal?>("AddOnFee")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<float?>("AreaInSquareMeters")
+                        .HasColumnType("real");
+
+                    b.Property<int?>("BedTypeOptionId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -865,16 +1028,25 @@ namespace MembershipService.API.Migrations
                     b.Property<string>("DescriptionDetails")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Floor")
+                    b.Property<int?>("NumberOfBeds")
                         .HasColumnType("int");
 
                     b.Property<string>("RoomCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("RoomFloorOptionId")
+                        .HasColumnType("int");
+
                     b.Property<string>("RoomName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("RoomSizeOptionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RoomViewOptionId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -889,7 +1061,49 @@ namespace MembershipService.API.Migrations
 
                     b.HasIndex("AccommodationOptionId");
 
+                    b.HasIndex("BedTypeOptionId");
+
+                    b.HasIndex("RoomFloorOptionId");
+
+                    b.HasIndex("RoomSizeOptionId");
+
+                    b.HasIndex("RoomViewOptionId");
+
                     b.ToTable("Rooms");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.RoomSizeOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RoomSizeOptions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Small"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Medium"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Large"
+                        });
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.RoomType", b =>
@@ -924,18 +1138,52 @@ namespace MembershipService.API.Migrations
                     b.ToTable("RoomType");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.RoomViewOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RoomViewOptions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Garden"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Sea"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Balcony"
+                        });
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.AccommodationOption", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
-                        .WithMany("AccommodationOptions")
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
                         .WithMany("AccommodationOptions")
                         .HasForeignKey("NextUServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("MembershipService.API.Entities.Property", "Property")
+                        .WithMany("AccommodationOptions")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MembershipService.API.Entities.RoomType", "RoomType")
                         .WithMany("AccommodationOptions")
@@ -943,9 +1191,9 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Location");
-
                     b.Navigation("NextUService");
+
+                    b.Navigation("Property");
 
                     b.Navigation("RoomType");
                 });
@@ -964,16 +1212,16 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
-                        .WithMany("BasicPlans")
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("MembershipService.API.Entities.BasicPlanLevel", "BasicPlanLevel")
                         .WithMany("BasicPlans")
                         .HasForeignKey("PlanLevelId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("MembershipService.API.Entities.Property", "Property")
+                        .WithMany("BasicPlans")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MembershipService.API.Entities.PlanTargetAudience", "PlanTargetAudience")
                         .WithMany("BasicPlans")
@@ -987,9 +1235,9 @@ namespace MembershipService.API.Migrations
 
                     b.Navigation("BasicPlanType");
 
-                    b.Navigation("Location");
-
                     b.Navigation("PlanTargetAudience");
+
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanCategory", b =>
@@ -1065,20 +1313,20 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
-                        .WithMany("ComboPlans")
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("MembershipService.API.Entities.PackageLevel", "PackageLevel")
                         .WithMany("ComboPlans")
                         .HasForeignKey("PackageLevelId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Location");
+                    b.HasOne("MembershipService.API.Entities.Property", "Property")
+                        .WithMany("ComboPlans")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("PackageLevel");
+
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlanBasic", b =>
@@ -1134,6 +1382,21 @@ namespace MembershipService.API.Migrations
                         .IsRequired();
 
                     b.Navigation("NextUService");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.Location", b =>
+                {
+                    b.HasOne("MembershipService.API.Entities.City", "City")
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MembershipService.API.Entities.City", null)
+                        .WithMany("Locations")
+                        .HasForeignKey("CityId1");
+
+                    b.Navigation("City");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Media", b =>
@@ -1196,12 +1459,26 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                    b.HasOne("MembershipService.API.Entities.Property", "Property")
                         .WithMany("NextUServices")
-                        .HasForeignKey("LocationId")
+                        .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Ecosystem");
+
+                    b.Navigation("Property");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.Property", b =>
+                {
+                    b.HasOne("MembershipService.API.Entities.Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MembershipService.API.Entities.Location", null)
+                        .WithMany("Properties")
+                        .HasForeignKey("LocationId1");
 
                     b.Navigation("Location");
                 });
@@ -1214,7 +1491,35 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MembershipService.API.Entities.BedTypeOption", "BedTypeOption")
+                        .WithMany("Rooms")
+                        .HasForeignKey("BedTypeOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MembershipService.API.Entities.RoomFloorOption", "RoomFloorOption")
+                        .WithMany("Rooms")
+                        .HasForeignKey("RoomFloorOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MembershipService.API.Entities.RoomSizeOption", "RoomSizeOption")
+                        .WithMany("Rooms")
+                        .HasForeignKey("RoomSizeOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MembershipService.API.Entities.RoomViewOption", "RoomViewOption")
+                        .WithMany("Rooms")
+                        .HasForeignKey("RoomViewOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("AccommodationOption");
+
+                    b.Navigation("BedTypeOption");
+
+                    b.Navigation("RoomFloorOption");
+
+                    b.Navigation("RoomSizeOption");
+
+                    b.Navigation("RoomViewOption");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.AccommodationOption", b =>
@@ -1260,6 +1565,16 @@ namespace MembershipService.API.Migrations
                     b.Navigation("BasicPlans");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.BedTypeOption", b =>
+                {
+                    b.Navigation("Rooms");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.City", b =>
+                {
+                    b.Navigation("Locations");
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
                 {
                     b.Navigation("ComboPlanBasics");
@@ -1278,13 +1593,7 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.Location", b =>
                 {
-                    b.Navigation("AccommodationOptions");
-
-                    b.Navigation("BasicPlans");
-
-                    b.Navigation("ComboPlans");
-
-                    b.Navigation("NextUServices");
+                    b.Navigation("Properties");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.NextUService", b =>
@@ -1311,14 +1620,40 @@ namespace MembershipService.API.Migrations
                     b.Navigation("BasicPlans");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.Property", b =>
+                {
+                    b.Navigation("AccommodationOptions");
+
+                    b.Navigation("BasicPlans");
+
+                    b.Navigation("ComboPlans");
+
+                    b.Navigation("NextUServices");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.RoomFloorOption", b =>
+                {
+                    b.Navigation("Rooms");
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.RoomInstance", b =>
                 {
                     b.Navigation("Bookings");
                 });
 
+            modelBuilder.Entity("MembershipService.API.Entities.RoomSizeOption", b =>
+                {
+                    b.Navigation("Rooms");
+                });
+
             modelBuilder.Entity("MembershipService.API.Entities.RoomType", b =>
                 {
                     b.Navigation("AccommodationOptions");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.RoomViewOption", b =>
+                {
+                    b.Navigation("Rooms");
                 });
 #pragma warning restore 612, 618
         }

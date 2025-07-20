@@ -1,4 +1,5 @@
-﻿using MembershipService.API.Entities;
+﻿using System.Reflection.Emit;
+using MembershipService.API.Entities;
 using MembershipService.API.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,10 @@ namespace MembershipService.API.Data
         public DbSet<NextUService> NextUServices { get; set; }
         public DbSet<AccommodationOption> AccommodationOptions { get; set; }
         public DbSet<RoomInstance> Rooms { get; set; }
+        public DbSet<RoomSizeOption> RoomSizeOptions { get; set; }
+        public DbSet<RoomViewOption> RoomViewOptions { get; set; }
+        public DbSet<RoomFloorOption> RoomFloorOptions { get; set; }
+        public DbSet<BedTypeOption> BedTypeOptions { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<EntitlementRule> EntitlementRules { get; set; }
         public DbSet<Media> MediaGallery { get; set; }
@@ -28,7 +33,9 @@ namespace MembershipService.API.Data
         public DbSet<BasicPlanRoom> BasicPlanRooms { get; set; }
         public DbSet<ComboPlan> ComboPlans { get; set; }
         public DbSet<ComboPlanBasic> ComboPlanBasics { get; set; }
+        public DbSet<Property> Propertys { get; set; }
         public DbSet<Location> Locations { get; set; }
+        public DbSet<City> Cities { get; set; }
         public DbSet<PackageLevel> PackageLevels { get; set; }
         public DbSet<Entities.Membership> Memberships { get; set; }
 
@@ -51,32 +58,46 @@ namespace MembershipService.API.Data
                 .HasForeignKey(s => s.EcosystemId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Location - Service
+            //City - Location
+            modelBuilder.Entity<Location>()
+                .HasOne(l => l.City)
+                .WithMany()
+                .HasForeignKey(l => l.CityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //Location - Property
+            modelBuilder.Entity<Property>()
+                 .HasOne(p => p.Location)
+                 .WithMany()
+                 .HasForeignKey(p => p.LocationId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Property - Service
             modelBuilder.Entity<NextUService>()
-                .HasOne(s => s.Location)
+                .HasOne(s => s.Property)
                 .WithMany(e => e.NextUServices)
-                .HasForeignKey(s => s.LocationId)
+                .HasForeignKey(s => s.PropertyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Location - AccommodationOption
+            // Property - AccommodationOption
             modelBuilder.Entity<AccommodationOption>()
-                .HasOne(s => s.Location)
+                .HasOne(s => s.Property)
                 .WithMany(e => e.AccommodationOptions)
-                .HasForeignKey(s => s.LocationId)
+                .HasForeignKey(s => s.PropertyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Location - BasicPlan
+            // Property - BasicPlan
             modelBuilder.Entity<BasicPlan>()
-                .HasOne(s => s.Location)
+                .HasOne(s => s.Property)
                 .WithMany(e => e.BasicPlans)
-                .HasForeignKey(s => s.LocationId)
+                .HasForeignKey(s => s.PropertyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Location - ComboPlan
+            // Property - ComboPlan
             modelBuilder.Entity<ComboPlan>()
-                .HasOne(s => s.Location)
+                .HasOne(s => s.Property)
                 .WithMany(e => e.ComboPlans)
-                .HasForeignKey(s => s.LocationId)
+                .HasForeignKey(s => s.PropertyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // BasicPlanType - BasicPlanCategory
@@ -159,8 +180,8 @@ namespace MembershipService.API.Data
             // AccommodationOption - BasicPlanRoom
             modelBuilder.Entity<BasicPlanRoom>()
                 .HasOne(s => s.AccommodationOption)
-                .WithMany(a => a.BasicPlanRooms) 
-                .HasForeignKey(s => s.AccommodationOptionId) 
+                .WithMany(a => a.BasicPlanRooms)
+                .HasForeignKey(s => s.AccommodationOptionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // BasicPlan - BasicPlanRoom
@@ -247,6 +268,35 @@ namespace MembershipService.API.Data
                 .HasForeignKey(s => s.AccommodationOptionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            //RoomSizeOption - RoomInstance
+            modelBuilder.Entity<RoomInstance>()
+                .HasOne(r => r.RoomSizeOption)
+                .WithMany(s => s.Rooms)
+                .HasForeignKey(r => r.RoomSizeOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //RoomViewOption - RoomInstance 
+            modelBuilder.Entity<RoomInstance>()
+                .HasOne(r => r.RoomViewOption)
+                .WithMany(v => v.Rooms)
+                .HasForeignKey(r => r.RoomViewOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //RoomFloorOption - RoomInstance
+            modelBuilder.Entity<RoomInstance>()
+                .HasOne(r => r.RoomFloorOption)
+                .WithMany(f => f.Rooms)
+                .HasForeignKey(r => r.RoomFloorOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //BedTypeOption-  RoomInstance
+            modelBuilder.Entity<RoomInstance>()
+                .HasOne(r => r.BedTypeOption)
+                .WithMany(b => b.Rooms)
+                .HasForeignKey(r => r.BedTypeOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
             // NextUService - EntitlementRule
             modelBuilder.Entity<EntitlementRule>()
                 .HasOne(s => s.NextUService)
@@ -258,38 +308,80 @@ namespace MembershipService.API.Data
                 .Property(x => x.PricePerNight)
                 .HasColumnType("decimal(18,4)");
 
-            
 
+            var cityHanoi = new City
+            {
+                Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
+                Name = "Hà Nội",
+                Description = "Thủ đô Việt Nam",
+                CreatedAt = new DateTime(2024, 1, 1)
+            };
+
+            var locationHoangCau = new Location
+            {
+                Id = Guid.Parse("20000000-0000-0000-0000-000000000001"),
+                Name = "Hoàng Cầu",
+                CityId = cityHanoi.Id,
+                CreatedAt = new DateTime(2024, 1, 1)
+            };
+
+            modelBuilder.Entity<City>().HasData(cityHanoi);
+            modelBuilder.Entity<Location>().HasData(locationHoangCau);
+
+            modelBuilder.Entity<Property>().HasData(
+                new Property
+                {
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000001"),
+                    Name = "Hoàng Cầu Cơ sở 1",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 1",
+                    LocationId = locationHoangCau.Id,
+                    CreatedAt = new DateTime(2024, 1, 1)
+                },
+                new Property
+                {
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000002"),
+                    Name = "Hoàng Cầu Cơ sở 2",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 2",
+                    LocationId = locationHoangCau.Id,
+                    CreatedAt = new DateTime(2024, 1, 1)
+                },
+                new Property
+                {
+                    Id = Guid.Parse("30000000-0000-0000-0000-000000000003"),
+                    Name = "Hoàng Cầu Cơ sở 3",
+                    Description = "Khu vực trụ sở chính Hoàng Cầu 3",
+                    LocationId = locationHoangCau.Id,
+                    CreatedAt = new DateTime(2024, 1, 1)
+                }
+            );
+
+            modelBuilder.Entity<RoomSizeOption>().HasData(
+                new RoomSizeOption { Id = 1, Name = "Small" },
+                new RoomSizeOption { Id = 2, Name = "Medium" },
+                new RoomSizeOption { Id = 3, Name = "Large" }
+);
+
+            modelBuilder.Entity<RoomViewOption>().HasData(
+                new RoomViewOption { Id = 1, Name = "Garden" },
+                new RoomViewOption { Id = 2, Name = "Sea" },
+                new RoomViewOption { Id = 3, Name = "Balcony" }
+            );
+
+            modelBuilder.Entity<RoomFloorOption>().HasData(
+                new RoomFloorOption { Id = 1, Name = "Low" },
+                new RoomFloorOption { Id = 2, Name = "Mid" },
+                new RoomFloorOption { Id = 3, Name = "High" },
+                new RoomFloorOption { Id = 4, Name = "Terrace" }
+            );
+
+            modelBuilder.Entity<BedTypeOption>().HasData(
+                new BedTypeOption { Id = 1, Name = "Single" },
+                new BedTypeOption { Id = 2, Name = "Double" },
+                new BedTypeOption { Id = 3, Name = "Queen" },
+                new BedTypeOption { Id = 4, Name = "King" }
+            );
 
             base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<Location>().HasData(
-               new Location
-               {
-                   Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
-                   Name = "Hà Nội",
-                   Description = "Khu vực miền Bắc",
-                   Code = "HN"
-               },
-               new Location
-               {
-                   Id = Guid.Parse("10000000-0000-0000-0000-000000000002"),
-                   Name = "Đà Nẵng",
-                   Description = "Khu vực miền Trung",
-                   Code = "DN" 
-               },
-               new Location
-               {
-                   Id = Guid.Parse("10000000-0000-0000-0000-000000000003"),
-                   Name = "Hải Phòng",
-                   Description = "Hải Phòng",
-                   Code = "HP"
-               }
-           );
-
-
         }
-
-
     }
 }

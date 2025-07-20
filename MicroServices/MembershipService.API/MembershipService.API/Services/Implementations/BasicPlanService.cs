@@ -161,7 +161,7 @@ namespace MembershipService.API.Services.Implementations
 
             var plans = await _context.BasicPlans
                 .Where(p => ids.Contains(p.Id))
-                .Include(p => p.Location)
+                .Include(p => p.Property)
                 .Include(p => p.ComboPlanDurations)
                     .ThenInclude(d => d.PackageDuration)
                 .ToListAsync();
@@ -180,8 +180,8 @@ namespace MembershipService.API.Services.Implementations
                     Name = p.Name ?? string.Empty,
                     Description = p.Description ?? string.Empty,
                     Price = p.Price,
-                    LocationId = p.LocationId ?? Guid.Empty,
-                    LocationName = p.Location?.Name ?? "Không xác định",
+                    PropertyId = p.PropertyId ?? Guid.Empty,
+                    PropertyName = p.Property?.Name ?? "Không xác định",
                     //PackageDurationValue = firstDuration?.PackageDuration?.Value ?? 0,
                     //PackageDurationUnit = firstDuration?.PackageDuration?.Unit.ToString() ?? string.Empty,
                     //DurationDescription = firstDuration?.PackageDuration?.Description ?? string.Empty,

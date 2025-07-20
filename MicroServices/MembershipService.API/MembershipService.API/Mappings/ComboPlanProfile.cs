@@ -14,7 +14,7 @@ namespace MembershipService.API.Mappings
 
             CreateMap<ComboPlan, ComboPlanResponseDto>()
                 .ForMember(dest => dest.PackageLevelName, opt => opt.MapFrom(src => src.PackageLevel.Name))
-                .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location.Name))
+                .ForMember(dest => dest.PropertyName, opt => opt.MapFrom(src => src.Property.Name))
                 .ForMember(dest => dest.BasicPlanIds, opt => opt.MapFrom(src => src.ComboPlanBasics.Select(x => x.BasicPlanId)))
                 .ForMember(dest => dest.PackageDurations, opt => opt.MapFrom(src => src.ComboPlanDurations
         .Select(d => new PackageDurationDto
