@@ -15,26 +15,28 @@ public class PropertyController : ControllerBase
     {
         _db = db;
     }
-
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         var locations = await _db.Propertys
-    .Include(p => p.Location)
-    .ThenInclude(l => l.City)
-    .ToListAsync(); // vật hóa ra danh sách trong RAM
+            .Include(p => p.Location)
+            .ThenInclude(l => l.City)
+            .ToListAsync();
 
         var result = locations.Select(p => new
         {
             p.Id,
             p.Name,
             p.Description,
+            LocationId = p.Location != null ? p.Location.Id : Guid.Empty,
             LocationName = p.Location?.Name ?? "UnKnow",
+            CityId = p.Location?.City != null ? p.Location.City.Id : Guid.Empty,
             CityName = p.Location?.City?.Name ?? "UnKnow"
         }).ToList();
 
         return Ok(result);
     }
+
     [HttpGet("{id}/display-name")]
     public async Task<IActionResult> GetDisplayName(Guid id)
     {

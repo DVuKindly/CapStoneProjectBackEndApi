@@ -710,11 +710,9 @@ public class MembershipRequestService : IMembershipRequestService
         decimal extraFee = 0;
 
         var selectedStartDate = dto.SelectedStartDate.HasValue
-      ? DateTime.SpecifyKind(dto.SelectedStartDate.Value, DateTimeKind.Utc).Date
-      : DateTime.UtcNow.Date;
+            ? DateTime.SpecifyKind(dto.SelectedStartDate.Value, DateTimeKind.Utc).Date
+            : DateTime.UtcNow.Date;
 
-
-        // === BASIC PACKAGE ===
         if (packageType == "basic")
         {
             var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
@@ -727,7 +725,6 @@ public class MembershipRequestService : IMembershipRequestService
             locationId = plan.LocationId ?? Guid.Empty;
             name = plan.Name;
 
-            // ✅ Check Booking Logic
             if (dto.RequireBooking)
             {
                 if (dto.RoomInstanceId == null)
@@ -743,8 +740,17 @@ public class MembershipRequestService : IMembershipRequestService
                 if (isBooked)
                     return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
 
-                // ✅ Get Extra Fee from MembershipService
-                extraFee = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
+                // ✅ Tính AddOnFee theo số ngày cố định
+                var nights = duration.Unit.ToLower() switch
+                {
+                    "month" => duration.Value * 30,
+                    "day" => duration.Value,
+                    "week" => duration.Value * 7,
+                    _ => throw new Exception("Unsupported duration unit")
+                };
+
+                var addOnFeePerNight = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
+                extraFee = addOnFeePerNight * nights;
                 price += extraFee;
             }
 
@@ -799,7 +805,6 @@ public class MembershipRequestService : IMembershipRequestService
             });
         }
 
-        // === COMBO PACKAGE ===
         if (packageType == "combo")
         {
             var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
@@ -816,17 +821,27 @@ public class MembershipRequestService : IMembershipRequestService
             {
                 if (dto.RoomInstanceId == null)
                     return BaseResponse.Fail("RoomInstanceId is required.");
+
                 var endDate = CalculateExpireDate(selectedStartDate, duration.Value, duration.Unit);
                 var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate, endDate);
 
                 if (isBooked)
                     return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
 
-                extraFee = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
+                var nights = duration.Unit.ToLower() switch
+                {
+                    "month" => duration.Value * 30,
+                    "day" => duration.Value,
+                    "week" => duration.Value * 7,
+                    _ => throw new Exception("Unsupported duration unit")
+                };
+
+                var addOnFeePerNight = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
+                extraFee = addOnFeePerNight * nights;
                 price += extraFee;
             }
 
-            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate);
+            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate, extraFee);
             request.PackageDurationValue = duration.Value;
             request.PackageDurationUnit = duration.Unit;
             request.Status = "Pending";
@@ -846,6 +861,8 @@ public class MembershipRequestService : IMembershipRequestService
 
         return BaseResponse.Fail("Unexpected error occurred.");
     }
+
+
 
 
 
