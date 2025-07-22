@@ -90,6 +90,45 @@ public class PropertyController : ControllerBase
 
         return exists ? Ok() : NotFound();
     }
+    [HttpGet("/api/user/locations/by-city/{cityId}")]
+    public async Task<IActionResult> GetLocationsByCity(Guid cityId)
+    {
+        var locations = await _db.Locations
+            .Where(l => l.CityId == cityId)
+            .ToListAsync();
+
+        var result = locations.Select(l => new
+        {
+            l.Id,
+            l.Name,
+            l.Description,
+            l.CityId
+        });
+
+        return Ok(result);
+    }
+    [HttpGet("propertyby-location/{locationId}")]
+    public async Task<IActionResult> GetPropertiesByLocation(Guid locationId)
+    {
+        var properties = await _db.Propertys
+            .Where(p => p.LocationId == locationId)
+            .Include(p => p.Location)
+            .ThenInclude(l => l.City)
+            .ToListAsync();
+
+        var result = properties.Select(p => new
+        {
+            p.Id,
+            p.Name,
+            p.Description,
+            LocationId = p.LocationId,
+            LocationName = p.Location?.Name,
+            CityId = p.Location?.CityId,
+            CityName = p.Location?.City?.Name
+        });
+
+        return Ok(result);
+    }
 
 
 }
