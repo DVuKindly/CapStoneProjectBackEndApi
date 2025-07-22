@@ -12,8 +12,8 @@ using UserService.API.Data;
 namespace UserService.API.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250721130521_InitialCreate1234551")]
-    partial class InitialCreate1234551
+    [Migration("20250722100835_InitialCreate1")]
+    partial class InitialCreate1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

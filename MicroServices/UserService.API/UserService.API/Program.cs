@@ -62,7 +62,7 @@ builder.Services.AddHttpClient<IMembershipServiceClient, MembershipServiceClient
     //client.DefaultRequestHeaders.Add("X-Internal-Call", "true");
 
 });
-
+builder.Services.AddScoped<IBasePositionService, BasePositionService>();
 
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<ICoachProfileService, CoachProfileService>();
@@ -78,6 +78,7 @@ builder.Services.AddScoped<IFeedbackQueryService, FeedbackQueryService>();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
+
 
 
 if (app.Environment.IsDevelopment())

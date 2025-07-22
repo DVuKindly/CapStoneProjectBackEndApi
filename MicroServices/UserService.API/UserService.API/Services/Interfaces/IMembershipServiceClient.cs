@@ -1,5 +1,6 @@
 ﻿using UserService.API.DTOs.Requests;
 using UserService.API.DTOs.Responses;
+using UserService.API.DTOs.SyncPosition;
 
 namespace UserService.API.Services.Interfaces
 {
@@ -28,6 +29,12 @@ namespace UserService.API.Services.Interfaces
       DateTime startDate,
       int durationValue,
       string durationUnit);
+        Task SyncCityAsync(SyncCityDto dto);
+        Task SyncLocationAsync(SyncLocationDto dto);
+        Task SyncPropertyAsync(SyncPropertyDto dto);
+        Task DeleteCityAsync(Guid id);
+        Task DeleteLocationAsync(Guid id);
+        Task DeletePropertyAsync(Guid id);
 
 
     }

@@ -3,7 +3,8 @@
                 using System.Text.Json;
                 using UserService.API.DTOs.Requests;
                 using UserService.API.DTOs.Responses;
-                using UserService.API.Services.Interfaces;
+using UserService.API.DTOs.SyncPosition;
+using UserService.API.Services.Interfaces;
 
                 public class MembershipServiceClient : IMembershipServiceClient
                 {
@@ -263,6 +264,35 @@
                         }
                     }
 
+    public async Task SyncCityAsync(SyncCityDto dto)
+    {
+        await _httpClient.PostAsJsonAsync("/api/membership/syncPosition/cities", dto);
+    }
+
+    public async Task SyncLocationAsync(SyncLocationDto dto)
+    {
+        await _httpClient.PostAsJsonAsync("/api/membership/syncPosition/locations", dto);
+    }
+
+    public async Task SyncPropertyAsync(SyncPropertyDto dto)
+    {
+        await _httpClient.PostAsJsonAsync("/api/membership/syncPosition/properties", dto);
+    }
+
+    public async Task DeleteCityAsync(Guid id)
+    {
+        await _httpClient.DeleteAsync($"/api/membership/syncPosition/cities/{id}");
+    }
+
+    public async Task DeleteLocationAsync(Guid id)
+    {
+        await _httpClient.DeleteAsync($"/api/membership/syncPosition/locations/{id}");
+    }
+
+    public async Task DeletePropertyAsync(Guid id)
+    {
+        await _httpClient.DeleteAsync($"/api/membership/syncPosition/properties/{id}");
+    }
 
 
-                }
+}

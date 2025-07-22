@@ -8,11 +8,25 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UserService.API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreate1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "Cities",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Cities", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Interests",
                 columns: table => new
@@ -38,20 +52,6 @@ namespace UserService.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Propertys",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Propertys", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Skills",
                 columns: table => new
                 {
@@ -61,6 +61,60 @@ namespace UserService.API.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Skills", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Locations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    CityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CityId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Locations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Locations_Cities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "Cities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Locations_Cities_CityId1",
+                        column: x => x.CityId1,
+                        principalTable: "Cities",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Propertys",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    LocationId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Propertys", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Propertys_Locations_LocationId",
+                        column: x => x.LocationId,
+                        principalTable: "Locations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Propertys_Locations_LocationId1",
+                        column: x => x.LocationId1,
+                        principalTable: "Locations",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -133,6 +187,7 @@ namespace UserService.API.Migrations
                     VerifiedByAdmin = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     OnboardingStatus = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Note = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedByAdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -140,6 +195,11 @@ namespace UserService.API.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_Cities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "Cities",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_UserProfiles_Propertys_LocationId",
                         column: x => x.LocationId,
@@ -248,6 +308,7 @@ namespace UserService.API.Migrations
                     PackageId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RequestedPackageName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    AddOnsFee = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Interests = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     PersonalityTraits = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
@@ -440,6 +501,7 @@ namespace UserService.API.Migrations
                     PackageType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PackageName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AddOnsFee = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     PurchasedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ExpireAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -528,6 +590,11 @@ namespace UserService.API.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "Cities",
+                columns: new[] { "Id", "CreatedAt", "Description", "Name" },
+                values: new object[] { new Guid("10000000-0000-0000-0000-000000000001"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Thủ đô Việt Nam", "Hà Nội" });
 
             migrationBuilder.InsertData(
                 table: "Interests",
@@ -625,16 +692,6 @@ namespace UserService.API.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Propertys",
-                columns: new[] { "Id", "CreatedAt", "Description", "Name" },
-                values: new object[,]
-                {
-                    { new Guid("10000000-0000-0000-0000-000000000001"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực trụ sở chính Hoàng Cầu ", "Hoàng Cầu Cơ sở 1" },
-                    { new Guid("10000000-0000-0000-0000-000000000002"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực trụ sở chính Hoàng Cầu", "Hoàng Cầu Cơ sở 2" },
-                    { new Guid("10000000-0000-0000-0000-000000000003"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực trụ sở chính Hoàng Cầu", "Hoàng Cầu Cơ sở 3" }
-                });
-
-            migrationBuilder.InsertData(
                 table: "Skills",
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
@@ -665,6 +722,21 @@ namespace UserService.API.Migrations
                     { new Guid("40000000-0000-0000-0000-000000000024"), "Creative writing" }
                 });
 
+            migrationBuilder.InsertData(
+                table: "Locations",
+                columns: new[] { "Id", "CityId", "CityId1", "CreatedAt", "Description", "Name" },
+                values: new object[] { new Guid("20000000-0000-0000-0000-000000000001"), new Guid("10000000-0000-0000-0000-000000000001"), null, new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, "Hoàng Cầu" });
+
+            migrationBuilder.InsertData(
+                table: "Propertys",
+                columns: new[] { "Id", "CreatedAt", "Description", "LocationId", "LocationId1", "Name" },
+                values: new object[,]
+                {
+                    { new Guid("30000000-0000-0000-0000-000000000001"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực trụ sở chính Hoàng Cầu 1", new Guid("20000000-0000-0000-0000-000000000001"), null, "Hoàng Cầu Cơ sở 1" },
+                    { new Guid("30000000-0000-0000-0000-000000000002"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực trụ sở chính Hoàng Cầu 2", new Guid("20000000-0000-0000-0000-000000000001"), null, "Hoàng Cầu Cơ sở 2" },
+                    { new Guid("30000000-0000-0000-0000-000000000003"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Khu vực trụ sở chính Hoàng Cầu 3", new Guid("20000000-0000-0000-0000-000000000001"), null, "Hoàng Cầu Cơ sở 3" }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_CoachProfiles_AccountId",
                 table: "CoachProfiles",
@@ -690,6 +762,16 @@ namespace UserService.API.Migrations
                 table: "LocationMappings",
                 columns: new[] { "PropertyId", "MembershipLocationId" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Locations_CityId",
+                table: "Locations",
+                column: "CityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Locations_CityId1",
+                table: "Locations",
+                column: "CityId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ManagerProfiles_AccountId",
@@ -737,6 +819,16 @@ namespace UserService.API.Migrations
                 column: "LocationId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Propertys_LocationId",
+                table: "Propertys",
+                column: "LocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Propertys_LocationId1",
+                table: "Propertys",
+                column: "LocationId1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_StaffProfiles_AccountId",
                 table: "StaffProfiles",
                 column: "AccountId");
@@ -771,6 +863,11 @@ namespace UserService.API.Migrations
                 table: "UserProfiles",
                 column: "AccountId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_CityId",
+                table: "UserProfiles",
+                column: "CityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_LocationId",
@@ -842,6 +939,12 @@ namespace UserService.API.Migrations
 
             migrationBuilder.DropTable(
                 name: "Propertys");
+
+            migrationBuilder.DropTable(
+                name: "Locations");
+
+            migrationBuilder.DropTable(
+                name: "Cities");
         }
     }
 }
