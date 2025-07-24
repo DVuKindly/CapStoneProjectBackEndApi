@@ -1,4 +1,5 @@
 ﻿using MembershipService.API.Data;
+using MembershipService.API.Dtos.Response;
 using MembershipService.API.Entities;
 using MembershipService.API.Enums;
 using MembershipService.API.Repositories.Interfaces;
@@ -54,6 +55,37 @@ namespace MembershipService.API.Repositories.Implementations
         {
             return await GetRoomWithNavigation().ToListAsync();
         }
+
+        public async Task<List<RoomInstance>> GetAllWithMediaAsync()
+        {
+            var rooms = await GetRoomWithNavigation().ToListAsync();
+            var roomIds = rooms.Select(r => r.Id).ToList();
+
+            var mediaList = await _context.MediaGallery
+                .Where(m => m.ActorType == ActorType.Room && roomIds.Contains(m.ActorId))
+                .ToListAsync();
+
+            var mediaDict = mediaList
+                .GroupBy(m => m.ActorId)
+                .ToDictionary(g => g.Key, g => g.Select(m => new MediaResponseDto
+                {
+                    Id = m.Id,
+                    Url = m.Url,
+                    Type = m.Type,
+                    Description = m.Description,
+                    ActorId = m.ActorId,
+                    ActorType = m.ActorType
+                }).ToList());
+
+            // Gán media vào RoomInstance
+            foreach (var room in rooms)
+            {
+                room.Medias = mediaDict.TryGetValue(room.Id, out var media) ? media : new List<MediaResponseDto>();
+            }
+
+            return rooms;
+        }
+
 
         //  Get theo Id
         public async Task<RoomInstance?> GetByIdAsync(Guid id)

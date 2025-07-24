@@ -53,9 +53,28 @@ namespace MembershipService.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBasicPlanRequest request)
         {
-            var result = await _service.UpdateAsync(id, request);
-            return Ok(result);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var result = await _service.UpdateAsync(id, request);
+                return Ok(new
+                {
+                    message = "Gói BasicPlan đã được cập nhật thành công.",
+                    data = result
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return UnprocessableEntity(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Đã xảy ra lỗi không xác định. " + ex.Message });
+            }
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(Guid id)

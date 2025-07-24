@@ -16,10 +16,10 @@ namespace MembershipService.API.Entities
         public BasicPlanType BasicPlanType { get; set; }
 
         public int BasicPlanCategoryId { get; set; }
-        public BasicPlanCategory BasicPlanCategory { get; set; }
+        public PlanCategory BasicPlanCategory { get; set; }
 
         public int PlanLevelId { get; set; }
-        public BasicPlanLevel BasicPlanLevel { get; set; }
+        public PlanLevel BasicPlanLevel { get; set; }
 
         public int TargetAudienceId { get; set; }
         public PlanTargetAudience PlanTargetAudience { get; set; }

@@ -10,7 +10,7 @@ namespace MembershipService.API.Entities
         public string? Description { get; set; }
 
         public ICollection<BasicPlan> BasicPlans { get; set; }
-        public ICollection<BasicPlanCategory> BasicPlanCategories { get; set; }
-        public ICollection<BasicPlanLevel> BasicPlanLevels { get; set; }
+        public ICollection<PlanCategory> BasicPlanCategories { get; set; }
+        public ICollection<PlanLevel> BasicPlanLevels { get; set; }
     }
 }

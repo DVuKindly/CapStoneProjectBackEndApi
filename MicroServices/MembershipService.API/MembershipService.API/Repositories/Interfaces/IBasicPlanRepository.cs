@@ -7,6 +7,8 @@ namespace MembershipService.API.Repositories.Interfaces
     {
         Task<BasicPlan> AddAsync(BasicPlan entity);
         Task<BasicPlan> UpdateAsync(BasicPlan entity);
+        Task<bool> ExistsByCodeAsync(string code);
+
         Task<BasicPlan?> GetByIdAsync(Guid id);
         Task<List<BasicPlanResponseDto>> GetAllAsync();
         Task<bool> DeleteAsync(Guid id);

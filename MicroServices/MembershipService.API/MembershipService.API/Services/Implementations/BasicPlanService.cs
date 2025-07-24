@@ -35,6 +35,11 @@ namespace MembershipService.API.Services.Implementations
 
         public async Task<BasicPlanResponseDto> CreateAsync(CreateBasicPlanRequest request)
         {
+            // Check duplicate Code
+            var isCodeExists = await _basicPlanRepo.ExistsByCodeAsync(request.Code);
+            if (isCodeExists)
+                throw new ArgumentException($"Mã gói '{request.Code}' đã tồn tại.");
+
             // Lấy BasicPlanType để phân loại theo Code
             var planType = await _basicPlanTypeRepo.GetByIdAsync(request.BasicPlanTypeId);
             if (planType == null)
@@ -44,18 +49,16 @@ namespace MembershipService.API.Services.Implementations
 
             // Tạo BasicPlan entity
             var basicPlan = _mapper.Map<BasicPlan>(request);
-            basicPlan.Code = Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
 
             var createdPlan = await _basicPlanRepo.AddAsync(basicPlan);
             if (createdPlan == null || createdPlan.Id == Guid.Empty)
                 throw new InvalidOperationException("Failed to create BasicPlan.");
 
-            // Xử lý loại Accommodation
+            // Loại lưu trú
             if (isAccommodation)
             {
                 if (request.Accomodations == null || !request.Accomodations.Any())
                     throw new InvalidOperationException("Accommodation plan must include at least one room.");
-
                 foreach (var roomOption in request.Accomodations)
                 {
                     var newRoom = new BasicPlanRoom
@@ -72,7 +75,7 @@ namespace MembershipService.API.Services.Implementations
                 if (request.Entitlements != null && request.Entitlements.Any())
                     throw new InvalidOperationException("Accommodation plan cannot include entitlements.");
             }
-            else // Loại dịch vụ hằng ngày
+            else // Dịch vụ hằng ngày
             {
                 if (request.Entitlements == null || !request.Entitlements.Any())
                     throw new InvalidOperationException("Entitlement-based plan must include at least one entitlement.");
@@ -95,7 +98,7 @@ namespace MembershipService.API.Services.Implementations
                     throw new InvalidOperationException("Entitlement-based plan cannot include room options.");
             }
 
-            // Xử lý Duration (áp dụng chung)
+            // Durations
             if (request.PackageDurations != null && request.PackageDurations.Any())
             {
                 var durations = request.PackageDurations
@@ -113,21 +116,20 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<BasicPlanResponseDto>(createdPlan);
         }
 
+
         public async Task<BasicPlanResponseDto> UpdateAsync(Guid id, UpdateBasicPlanRequest request)
         {
             var existingPlan = await _basicPlanRepo.GetByIdAsync(id);
-            if (existingPlan == null) throw new Exception("BasicPlan not found");
+            if (existingPlan == null)
+                throw new Exception("BasicPlan not found");
 
-            existingPlan.Name = request.Name;
-            existingPlan.Description = request.Description;
-            existingPlan.VerifyBuy = request.VerifyBuy;
-            existingPlan.BasicPlanCategoryId = request.BasicPlanCategoryId;
-            existingPlan.PlanLevelId = request.PlanLevelId;
-            existingPlan.TargetAudienceId = request.TargetAudienceId;
+            // Chỉ cập nhật các trường được cho phép thông qua mapping
+            _mapper.Map(request, existingPlan);
 
             var updated = await _basicPlanRepo.UpdateAsync(existingPlan);
             return _mapper.Map<BasicPlanResponseDto>(updated);
         }
+
 
         public async Task<BasicPlanResponseDto> GetByIdAsync(Guid id)
         {
@@ -138,16 +140,16 @@ namespace MembershipService.API.Services.Implementations
             return _mapper.Map<BasicPlanResponseDto>(basicPlan);
         }
 
+        public async Task<List<BasicPlanResponseDto>> GetByTypeIdAsync(Guid typeId)
+        {
+            return await _basicPlanRepo.GetByTypeIdAsync(typeId);
+        }
+
         public async Task<List<BasicPlanResponseDto>> GetAllAsync()
         {
             var plans = await _basicPlanRepo.GetAllAsync();
             return _mapper.Map<List<BasicPlanResponseDto>>(plans);
         }
-        public async Task<List<BasicPlanResponseDto>> GetByTypeIdAsync(Guid typeId)
-        {
-            return await _basicPlanRepo.GetByTypeIdAsync(typeId);
-        }
-        
 
         public async Task<bool> DeleteAsync(Guid id)
         {

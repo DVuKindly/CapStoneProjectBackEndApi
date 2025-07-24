@@ -6,6 +6,8 @@ namespace MembershipService.API.Repositories.Interfaces
     {
         Task<List<RoomInstance>> GetByAccommodationOptionIdAsync(Guid optionId);
         Task<List<RoomInstance>> GetAllAsync();
+        //image
+        Task<List<RoomInstance>> GetAllWithMediaAsync();
         Task<List<RoomInstance>> GetByPropertyIdAsync(Guid PropertyId);
         Task<RoomInstance?> GetByIdAsync(Guid id);
         Task<RoomInstance> CreateAsync(RoomInstance entity);

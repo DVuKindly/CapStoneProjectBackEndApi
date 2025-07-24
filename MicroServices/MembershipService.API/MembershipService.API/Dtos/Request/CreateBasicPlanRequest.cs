@@ -10,13 +10,13 @@ namespace MembershipService.API.Dtos.Request
         [Required]
         public string Name { get; set; } = null!;
 
-        public string? Description { get; set; } // ✅ Bổ sung mô tả
+        public string? Description { get; set; }
 
         [Range(0, double.MaxValue, ErrorMessage = "Price must be non-negative.")]
         public decimal Price { get; set; }
 
-        public bool VerifyBuy { get; set; } = false; // ✅ Mặc định false
-        public bool RequireBooking { get; set; } = false; // ✅ Mặc định false
+        public bool VerifyBuy { get; set; } = false;
+        public bool RequireBooking { get; set; } = false;
 
         [Required]
         public Guid BasicPlanTypeId { get; set; }

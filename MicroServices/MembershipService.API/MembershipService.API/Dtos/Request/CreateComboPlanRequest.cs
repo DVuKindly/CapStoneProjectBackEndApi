@@ -1,4 +1,6 @@
-﻿namespace MembershipService.API.Dtos.Request
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MembershipService.API.Dtos.Request
 {
     public class CreateComboPlanRequest
     {
@@ -9,7 +11,14 @@
         public bool IsSuggested { get; set; }
         public bool VerifyBuy { get; set; }
         public Guid? PropertyId { get; set; }
-        public Guid PackageLevelId { get; set; }
+        [Required]
+        public int BasicPlanCategoryId { get; set; }
+
+        [Required]
+        public int PlanLevelId { get; set; }
+
+        [Required]
+        public int TargetAudienceId { get; set; }
 
         public List<Guid> BasicPlanIds { get; set; } = new();
         public List<PackageDurationDto> PackageDurations { get; set; } = new();

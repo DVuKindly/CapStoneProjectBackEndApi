@@ -1,4 +1,6 @@
-﻿using MembershipService.API.Entities.Common;
+﻿using MembershipService.API.Dtos.Response;
+using System.ComponentModel.DataAnnotations.Schema;
+using MembershipService.API.Entities.Common;
 using MembershipService.API.Enums;
 
 namespace MembershipService.API.Entities
@@ -40,6 +42,9 @@ namespace MembershipService.API.Entities
         public decimal? AddOnFee { get; set; }
 
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+        [NotMapped]
+        public List<MediaResponseDto> Medias { get; set; } = new();
+
     }
 
 }

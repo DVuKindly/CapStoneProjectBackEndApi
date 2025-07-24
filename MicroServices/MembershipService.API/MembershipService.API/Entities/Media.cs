@@ -1,19 +1,19 @@
 ﻿using MembershipService.API.Entities.Common;
+using MembershipService.API.Enums;
 
 namespace MembershipService.API.Entities
 {
     public class Media : AuditableEntity
     {
         public Guid Id { get; set; }
-        public string Url { get; set; }           // Link ảnh/video
-        public string Type { get; set; }          // "image", "video"
+
+        public string Url { get; set; } = null!;
+        public string Type { get; set; } = "image"; // "image", "video", etc.
         public string? Description { get; set; }
 
-        public Guid? NextUServiceId { get; set; }
-        public NextUService? NextUService { get; set; }
-
-        public Guid AccommodationOptionId { get; set; }
-        public AccommodationOption AccommodationOption { get; set; }
+        // Generic reference
+        public Guid ActorId { get; set; }
+        public ActorType ActorType { get; set; }
 
     }
 

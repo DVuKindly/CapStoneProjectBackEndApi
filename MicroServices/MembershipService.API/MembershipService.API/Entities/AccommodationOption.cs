@@ -20,7 +20,6 @@ namespace MembershipService.API.Entities
 
         public ICollection<RoomInstance> Rooms { get; set; } = new List<RoomInstance>();
         public ICollection<BasicPlanRoom> BasicPlanRooms { get; set; } = new List<BasicPlanRoom>();
-        public ICollection<Media> MediaGallery { get; set; }
 
 
     }

@@ -25,6 +25,7 @@
         public string LocationName { get; set; }
         public Guid? CityId { get; set; }
         public string CityName { get; set; }
+        public List<MediaResponseDto> Medias { get; set; } = new(); // ✅ Thêm dòng này
     }
 
 }

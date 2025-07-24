@@ -178,7 +178,7 @@ namespace MembershipService.API.Services.Implementations
                 StartDate = request.StartDate,
                 EndDate = endDate,
                 Status = BookingStatus.Hold,
-                ExpireAt = expireAt,
+                ExpiredAt = expireAt,
                 Note = "Hold booking created before payment"
             };
 
@@ -199,9 +199,9 @@ namespace MembershipService.API.Services.Implementations
                 return false;
 
             booking.Status = BookingStatus.Confirmed;
-            booking.ExpireAt = null;
+            booking.ExpiredAt = null;
 
-            await  _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             return true;
         }
 
@@ -209,7 +209,7 @@ namespace MembershipService.API.Services.Implementations
         {
             var now = DateTime.UtcNow;
             var expired = await _context.Bookings
-                .Where(b => b.Status == BookingStatus.Hold && b.ExpireAt != null && b.ExpireAt < now)
+                .Where(b => b.Status == BookingStatus.Hold && b.ExpiredAt != null && b.ExpiredAt < now)
                 .ToListAsync();
 
             foreach (var booking in expired)

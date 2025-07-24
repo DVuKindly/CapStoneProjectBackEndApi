@@ -15,8 +15,14 @@ namespace MembershipService.API.Entities
         public Guid? PropertyId { get; set; }
         public Property? Property { get; set; } = null!;
 
-        public Guid PackageLevelId { get; set; }
-        public PackageLevel PackageLevel { get; set; }
+        public int BasicPlanCategoryId { get; set; }
+        public PlanCategory PlanCategory { get; set; }
+
+        public int PlanLevelId { get; set; }
+        public PlanLevel PlanLevel { get; set; }
+
+        public int TargetAudienceId { get; set; }
+        public PlanTargetAudience PlanTargetAudience { get; set; }
 
 
         public ICollection<ComboPlanBasic> ComboPlanBasics { get; set; }

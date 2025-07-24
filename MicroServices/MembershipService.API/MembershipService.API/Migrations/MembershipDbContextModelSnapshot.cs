@@ -138,54 +138,6 @@ namespace MembershipService.API.Migrations
                     b.ToTable("BasicPlans");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanCategory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<Guid>("BasicPlanTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BasicPlanTypeId");
-
-                    b.ToTable("BasicPlanCategories");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            BasicPlanTypeId = new Guid("60000000-0000-0000-0000-000000000001"),
-                            Description = "Áp dụng cho các gói từ 1 tháng trở lên",
-                            Name = "Dài hạn"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            BasicPlanTypeId = new Guid("60000000-0000-0000-0000-000000000001"),
-                            Description = "Dành cho nhu cầu ngắn ngày hoặc linh hoạt",
-                            Name = "Ngắn hạn"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            BasicPlanTypeId = new Guid("60000000-0000-0000-0000-000000000001"),
-                            Description = "Dành riêng cho các gói hoạt động theo sự kiện cụ thể",
-                            Name = "Theo sự kiện"
-                        });
-                });
-
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanEntitlement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -208,48 +160,6 @@ namespace MembershipService.API.Migrations
                     b.HasIndex("EntitlementRuleId");
 
                     b.ToTable("BasicPlanEntitlements");
-                });
-
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanLevel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<Guid>("BasicPlanTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BasicPlanTypeId");
-
-                    b.ToTable("BasicPlanLevels");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            BasicPlanTypeId = new Guid("60000000-0000-0000-0000-000000000001"),
-                            Name = "Cơ bản"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            BasicPlanTypeId = new Guid("60000000-0000-0000-0000-000000000001"),
-                            Name = "Tiêu chuẩn"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            BasicPlanTypeId = new Guid("60000000-0000-0000-0000-000000000001"),
-                            Name = "Cao cấp"
-                        });
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanRoom", b =>
@@ -310,10 +220,10 @@ namespace MembershipService.API.Migrations
                         new
                         {
                             Id = new Guid("60000000-0000-0000-0000-000000000001"),
-                            Code = "LIVING",
+                            Code = "ACCOMMODATION",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Các gói dịch vụ liên quan đến chỗ ở",
-                            Name = "Living"
+                            Name = "Accommodation"
                         },
                         new
                         {
@@ -448,6 +358,9 @@ namespace MembershipService.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("BasicPlanCategoryId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -468,11 +381,14 @@ namespace MembershipService.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("PackageLevelId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("PlanLevelId")
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("PropertyId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TargetAudienceId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
@@ -488,9 +404,13 @@ namespace MembershipService.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PackageLevelId");
+                    b.HasIndex("BasicPlanCategoryId");
+
+                    b.HasIndex("PlanLevelId");
 
                     b.HasIndex("PropertyId");
+
+                    b.HasIndex("TargetAudienceId");
 
                     b.ToTable("ComboPlans");
                 });
@@ -690,8 +610,11 @@ namespace MembershipService.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AccommodationOptionId")
+                    b.Property<Guid>("ActorId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ActorType")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -701,9 +624,6 @@ namespace MembershipService.API.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("NextUServiceId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -720,10 +640,6 @@ namespace MembershipService.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AccommodationOptionId");
-
-                    b.HasIndex("NextUServiceId");
 
                     b.ToTable("MediaGallery");
                 });
@@ -939,17 +855,16 @@ namespace MembershipService.API.Migrations
                         });
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.PackageLevel", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.PlanCategory", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid?>("BasicPlanTypeId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -958,15 +873,70 @@ namespace MembershipService.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.HasKey("Id");
 
-                    b.Property<string>("UpdatedBy")
+                    b.HasIndex("BasicPlanTypeId");
+
+                    b.ToTable("PlanCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "Áp dụng cho các gói từ 1 tháng trở lên",
+                            Name = "Dài hạn"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "Dành cho nhu cầu ngắn ngày hoặc linh hoạt",
+                            Name = "Ngắn hạn"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "Dành riêng cho các gói hoạt động theo sự kiện cụ thể",
+                            Name = "Theo sự kiện"
+                        });
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.PlanLevel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid?>("BasicPlanTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("PackageLevels");
+                    b.HasIndex("BasicPlanTypeId");
+
+                    b.ToTable("PlanLevels");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Cơ bản"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Tiêu chuẩn"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Cao cấp"
+                        });
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.PlanTargetAudience", b =>
@@ -1307,7 +1277,7 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlan", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.BasicPlanCategory", "BasicPlanCategory")
+                    b.HasOne("MembershipService.API.Entities.PlanCategory", "BasicPlanCategory")
                         .WithMany("BasicPlans")
                         .HasForeignKey("BasicPlanCategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1319,7 +1289,7 @@ namespace MembershipService.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MembershipService.API.Entities.BasicPlanLevel", "BasicPlanLevel")
+                    b.HasOne("MembershipService.API.Entities.PlanLevel", "BasicPlanLevel")
                         .WithMany("BasicPlans")
                         .HasForeignKey("PlanLevelId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1347,17 +1317,6 @@ namespace MembershipService.API.Migrations
                     b.Navigation("Property");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanCategory", b =>
-                {
-                    b.HasOne("MembershipService.API.Entities.BasicPlanType", "BasicPlanType")
-                        .WithMany("BasicPlanCategories")
-                        .HasForeignKey("BasicPlanTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BasicPlanType");
-                });
-
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanEntitlement", b =>
                 {
                     b.HasOne("MembershipService.API.Entities.BasicPlan", "BasicPlan")
@@ -1375,17 +1334,6 @@ namespace MembershipService.API.Migrations
                     b.Navigation("BasicPlan");
 
                     b.Navigation("EntitlementRule");
-                });
-
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanLevel", b =>
-                {
-                    b.HasOne("MembershipService.API.Entities.BasicPlanType", "BasicPlanType")
-                        .WithMany("BasicPlanLevels")
-                        .HasForeignKey("BasicPlanTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BasicPlanType");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanRoom", b =>
@@ -1420,9 +1368,15 @@ namespace MembershipService.API.Migrations
 
             modelBuilder.Entity("MembershipService.API.Entities.ComboPlan", b =>
                 {
-                    b.HasOne("MembershipService.API.Entities.PackageLevel", "PackageLevel")
+                    b.HasOne("MembershipService.API.Entities.PlanCategory", "PlanCategory")
                         .WithMany("ComboPlans")
-                        .HasForeignKey("PackageLevelId")
+                        .HasForeignKey("BasicPlanCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MembershipService.API.Entities.PlanLevel", "PlanLevel")
+                        .WithMany("ComboPlans")
+                        .HasForeignKey("PlanLevelId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1431,7 +1385,17 @@ namespace MembershipService.API.Migrations
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("PackageLevel");
+                    b.HasOne("MembershipService.API.Entities.PlanTargetAudience", "PlanTargetAudience")
+                        .WithMany("ComboPlans")
+                        .HasForeignKey("TargetAudienceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PlanCategory");
+
+                    b.Navigation("PlanLevel");
+
+                    b.Navigation("PlanTargetAudience");
 
                     b.Navigation("Property");
                 });
@@ -1506,24 +1470,6 @@ namespace MembershipService.API.Migrations
                     b.Navigation("City");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.Media", b =>
-                {
-                    b.HasOne("MembershipService.API.Entities.AccommodationOption", "AccommodationOption")
-                        .WithMany("MediaGallery")
-                        .HasForeignKey("AccommodationOptionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MembershipService.API.Entities.NextUService", "NextUService")
-                        .WithMany("MediaGallery")
-                        .HasForeignKey("NextUServiceId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("AccommodationOption");
-
-                    b.Navigation("NextUService");
-                });
-
             modelBuilder.Entity("MembershipService.API.Entities.Membership", b =>
                 {
                     b.HasOne("MembershipService.API.Entities.BasicPlan", "BasicPlan")
@@ -1574,6 +1520,20 @@ namespace MembershipService.API.Migrations
                     b.Navigation("Ecosystem");
 
                     b.Navigation("Property");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.PlanCategory", b =>
+                {
+                    b.HasOne("MembershipService.API.Entities.BasicPlanType", null)
+                        .WithMany("BasicPlanCategories")
+                        .HasForeignKey("BasicPlanTypeId");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.PlanLevel", b =>
+                {
+                    b.HasOne("MembershipService.API.Entities.BasicPlanType", null)
+                        .WithMany("BasicPlanLevels")
+                        .HasForeignKey("BasicPlanTypeId");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Property", b =>
@@ -1633,8 +1593,6 @@ namespace MembershipService.API.Migrations
                 {
                     b.Navigation("BasicPlanRooms");
 
-                    b.Navigation("MediaGallery");
-
                     b.Navigation("Rooms");
                 });
 
@@ -1651,16 +1609,6 @@ namespace MembershipService.API.Migrations
                     b.Navigation("MembershipHistories");
 
                     b.Navigation("Memberships");
-                });
-
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanCategory", b =>
-                {
-                    b.Navigation("BasicPlans");
-                });
-
-            modelBuilder.Entity("MembershipService.API.Entities.BasicPlanLevel", b =>
-                {
-                    b.Navigation("BasicPlans");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.BasicPlanType", b =>
@@ -1708,8 +1656,6 @@ namespace MembershipService.API.Migrations
                     b.Navigation("AccommodationOptions");
 
                     b.Navigation("EntitlementRules");
-
-                    b.Navigation("MediaGallery");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.PackageDuration", b =>
@@ -1717,14 +1663,25 @@ namespace MembershipService.API.Migrations
                     b.Navigation("ComboPlanDurations");
                 });
 
-            modelBuilder.Entity("MembershipService.API.Entities.PackageLevel", b =>
+            modelBuilder.Entity("MembershipService.API.Entities.PlanCategory", b =>
                 {
+                    b.Navigation("BasicPlans");
+
+                    b.Navigation("ComboPlans");
+                });
+
+            modelBuilder.Entity("MembershipService.API.Entities.PlanLevel", b =>
+                {
+                    b.Navigation("BasicPlans");
+
                     b.Navigation("ComboPlans");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.PlanTargetAudience", b =>
                 {
                     b.Navigation("BasicPlans");
+
+                    b.Navigation("ComboPlans");
                 });
 
             modelBuilder.Entity("MembershipService.API.Entities.Property", b =>

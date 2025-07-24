@@ -16,12 +16,7 @@ namespace MembershipService.API.Repositories.Implementations
             _context = context;
         }
 
-        public async Task<BasicPlan> AddAsync(BasicPlan entity)
-        {
-            _context.BasicPlans.Add(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }
+
 
         public async Task<List<BasicPlanResponseDto>> GetByTypeIdAsync(Guid typeId)
         {
@@ -65,7 +60,7 @@ namespace MembershipService.API.Repositories.Implementations
                             AccomodationDescription = r.AccommodationOption.Description,
                             RoomType = r.AccommodationOption.RoomType.Name
                         }).ToList()
-: new List<BasicPlanRoomResponseDto>(),
+                        : new List<BasicPlanRoomResponseDto>(),
 
                     Entitlements = bp.BasicPlanType.Code != "Accommodation"
                         ? bp.BasicPlanEntitlements.Select(e => new EntitlementResponseDto
@@ -131,7 +126,6 @@ namespace MembershipService.API.Repositories.Implementations
                             NextUSerName = e.EntitlementRule.NextUService.Name
                         }).ToList()
                         : new List<EntitlementResponseDto>(),
-
                     PlanSource = "basic"
                 })
                 .ToListAsync();
@@ -157,12 +151,24 @@ namespace MembershipService.API.Repositories.Implementations
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<BasicPlan> AddAsync(BasicPlan entity)
+        {
+            _context.BasicPlans.Add(entity);
+            await _context.SaveChangesAsync();
+            return entity;
+        }
+        public async Task<bool> ExistsByCodeAsync(string code)
+        {
+            return await _context.BasicPlans.AnyAsync(p => p.Code == code);
+        }
+
         public async Task<BasicPlan> UpdateAsync(BasicPlan entity)
         {
             _context.BasicPlans.Update(entity);
             await _context.SaveChangesAsync();
             return entity;
         }
+
 
         public async Task<bool> DeleteAsync(Guid id)
         {

@@ -33,20 +33,24 @@ namespace MembershipService.API.Repositories.Implementations
         public async Task<List<ComboPlan>> GetAllAsync()
         {
             return await _context.ComboPlans
+                .Include(x => x.PlanCategory)
+                .Include(x => x.PlanLevel)
+                .Include(x => x.PlanTargetAudience)
                 .Include(x => x.ComboPlanBasics)
                 .Include(x => x.ComboPlanDurations)
                 .Include(x => x.Property)
-                .Include(x => x.PackageLevel)
                 .ToListAsync();
         }
 
         public async Task<ComboPlan> GetByIdAsync(Guid id)
         {
             return await _context.ComboPlans
+                .Include(x => x.PlanCategory)
+                .Include(x => x.PlanLevel)
+                .Include(x => x.PlanTargetAudience)
                 .Include(x => x.ComboPlanBasics)
                 .Include(x => x.ComboPlanDurations)
                 .Include(x => x.Property)
-                .Include(x => x.PackageLevel)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 

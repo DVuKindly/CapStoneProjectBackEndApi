@@ -36,6 +36,34 @@ namespace MembershipService.API.Controllers
             return Ok(isBooked);
         }
 
+        [HttpPost("hold")]
+        public async Task<IActionResult> CreateHold([FromBody] CreateHoldBookingRequest request)
+        {
+            var success = await _bookingService.CreateHoldBookingAsync(request);
+            return success ? Ok("Booking hold created.") : BadRequest("Hold booking failed.");
+        }
+
+        [HttpPost("confirm")]
+        public async Task<IActionResult> ConfirmBooking([FromBody] ConfirmBookingRequest request)
+        {
+            var success = await _bookingService.ConfirmBookingAsync(request);
+            return success ? Ok("Booking confirmed.") : BadRequest("Confirmation failed.");
+        }
+
+        [HttpPost("auto-cancel-expired")]
+        public async Task<IActionResult> AutoCancelExpired()
+        {
+            var cancelled = await _bookingService.AutoCancelExpiredBookingsAsync();
+            return Ok($"{cancelled} bookings auto-cancelled.");
+        }
+        [HttpPost("cancel-hold")]
+        public async Task<IActionResult> CancelHold([FromBody] CancelHoldBookingRequest request)
+        {
+            var success = await _bookingService.CancelHoldBookingAsync(request);
+            return success ? Ok("Hold booking cancelled.") : BadRequest("Cancellation failed.");
+        }
+
+
 
     }
 }

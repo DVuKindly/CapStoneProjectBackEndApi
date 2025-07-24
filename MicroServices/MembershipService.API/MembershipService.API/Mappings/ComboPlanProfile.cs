@@ -13,15 +13,19 @@ namespace MembershipService.API.Mappings
             CreateMap<UpdateComboPlanRequest, ComboPlan>();
 
             CreateMap<ComboPlan, ComboPlanResponseDto>()
-                .ForMember(dest => dest.PackageLevelName, opt => opt.MapFrom(src => src.PackageLevel.Name))
                 .ForMember(dest => dest.PropertyName, opt => opt.MapFrom(src => src.Property.Name))
                 .ForMember(dest => dest.BasicPlanIds, opt => opt.MapFrom(src => src.ComboPlanBasics.Select(x => x.BasicPlanId)))
                 .ForMember(dest => dest.PackageDurations, opt => opt.MapFrom(src => src.ComboPlanDurations
-        .Select(d => new PackageDurationDto
-        {
-            DurationId = d.PackageDurationId,
-            DiscountRate = d.DiscountDurationRate
-        })));
+                    .Select(d => new PackageDurationDto
+                    {
+                        DurationId = d.PackageDurationId,
+                        DiscountRate = d.DiscountDurationRate
+                    })))
+                // ✅ new
+                .ForMember(dest => dest.BasicPlanCategoryName, opt => opt.MapFrom(src => src.PlanCategory.Name))
+                .ForMember(dest => dest.PlanLevelName, opt => opt.MapFrom(src => src.PlanLevel.Name))
+                .ForMember(dest => dest.TargetAudienceName, opt => opt.MapFrom(src => src.PlanTargetAudience.Name));
+
         }
     }
 }

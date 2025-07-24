@@ -14,7 +14,6 @@ namespace MembershipService.API.Entities
         public Guid? PropertyId { get; set; }
         public Property? Property { get; set; } = null!;
 
-        public ICollection<Media> MediaGallery { get; set; }
         public ICollection<AccommodationOption> AccommodationOptions { get; set; }
         public ICollection<EntitlementRule> EntitlementRules { get; set; }
 
