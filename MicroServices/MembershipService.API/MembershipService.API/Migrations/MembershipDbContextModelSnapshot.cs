@@ -379,6 +379,9 @@ namespace MembershipService.API.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("ExpireAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("MemberId")
                         .HasColumnType("uniqueidentifier");
 

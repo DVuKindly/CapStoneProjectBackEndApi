@@ -16,7 +16,7 @@ namespace MembershipService.API.Entities
         public DateTime EndDate { get; set; }
 
         public BookingStatus Status { get; set; } = BookingStatus.Pending;
-
+    
         public string? Note { get; set; }
     }
 }

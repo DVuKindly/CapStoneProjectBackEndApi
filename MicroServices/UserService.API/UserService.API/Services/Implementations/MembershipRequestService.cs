@@ -664,7 +664,7 @@ public class MembershipRequestService : IMembershipRequestService
     public async Task<BaseResponse> SubmitRequestAsync(Guid accountId, MembershipRequestDto dto)
     {
         if (dto.PackageId == Guid.Empty)
-            return BaseResponse.Fail("Missing package ID.");
+            return BaseResponse.Fail("Package ID is required.");
 
         var packageType = dto.PackageType?.ToLower();
         if (packageType != "basic" && packageType != "combo")
@@ -680,125 +680,133 @@ public class MembershipRequestService : IMembershipRequestService
             return BaseResponse.Fail("User profile not found.");
 
         if (!IsUserProfileCompleted(user))
-            return BaseResponse.Fail("Please complete your profile before submitting a request.");
+            return BaseResponse.Fail("Your profile is incomplete. Please complete all required information.");
 
-        var existingRequest = await _db.PendingMembershipRequests
-            .Where(r => r.AccountId == accountId && r.PackageId == dto.PackageId &&
-                        (r.Status == "Pending" || r.Status == "PendingPayment" || r.Status == "Completed"))
-            .OrderByDescending(r => r.CreatedAt)
-            .FirstOrDefaultAsync();
-
-        if (existingRequest != null)
-        {
-            if (existingRequest.Status == "Completed" || existingRequest.Status == "Pending")
-                return BaseResponse.Fail("You have already submitted or purchased this package.");
-
-            if (existingRequest.Status == "PendingPayment")
-            {
-                var elapsed = DateTime.UtcNow - existingRequest.CreatedAt;
-                if (elapsed.TotalMinutes < 15)
-                    return BaseResponse.Fail("You have already created a request for this package and not completed payment. Please wait 15 minutes or complete the payment.");
-
-                _db.PendingMembershipRequests.Remove(existingRequest);
-                await _db.SaveChangesAsync();
-            }
-        }
+        var selectedStartDate = dto.SelectedStartDate?.Date.Add(DateTime.UtcNow.TimeOfDay) ?? DateTime.UtcNow;
 
         Guid locationId;
         string name;
         decimal price;
-        decimal extraFee = 0;
-
-        var selectedStartDate = dto.SelectedStartDate.HasValue
-            ? DateTime.SpecifyKind(dto.SelectedStartDate.Value, DateTimeKind.Utc).Date
-            : DateTime.UtcNow.Date;
+        decimal addOnFee = 0;
+        int durationValue;
+        string durationUnit;
 
         if (packageType == "basic")
         {
             var plan = await _membershipServiceClient.GetBasicPlanByIdAsync(dto.PackageId);
             var duration = await _membershipServiceClient.GetPlanDurationAsync(dto.PackageId, "basic");
             if (plan == null || duration == null || string.IsNullOrWhiteSpace(duration.Unit))
-                return BaseResponse.Fail("Unable to get plan or duration info from MembershipService.");
+                return BaseResponse.Fail("Failed to retrieve plan or duration details.");
 
             var priceInfo = await _membershipServiceClient.GetPlanPriceAsync(dto.PackageId, "basic");
-            price = Convert.ToDecimal(priceInfo);
+            price = priceInfo;
             locationId = plan.LocationId ?? Guid.Empty;
             name = plan.Name;
+            durationValue = duration.Value;
+            durationUnit = duration.Unit;
 
             if (dto.RequireBooking)
             {
                 if (dto.RoomInstanceId == null)
-                    return BaseResponse.Fail("RoomInstanceId is required.");
+                    return BaseResponse.Fail("RoomInstanceId is required for booking packages.");
 
-                var roomValid = await _membershipServiceClient.IsRoomBelongToPlanAsync(dto.PackageId, dto.RoomInstanceId.Value);
-                if (!roomValid)
-                    return BaseResponse.Fail("Selected room does not belong to this package.");
+                var hasDuplicate = await _db.PendingMembershipRequests.AnyAsync(r =>
+                    r.AccountId == accountId &&
+                    r.PackageId == dto.PackageId &&
+                    r.RoomInstanceId == dto.RoomInstanceId &&
+                    r.Status != "Cancelled");
 
-                var endDate = CalculateExpireDate(selectedStartDate, duration.Value, duration.Unit);
+                if (hasDuplicate)
+                    return BaseResponse.Fail("You have already submitted a request for this room with the same package.");
+
+                var isValidRoom = await _membershipServiceClient.IsRoomBelongToPlanAsync(dto.PackageId, dto.RoomInstanceId.Value);
+                if (!isValidRoom)
+                    return BaseResponse.Fail("The selected room does not belong to this package.");
+
+                var endDate = CalculateExpireDate(selectedStartDate, durationValue, durationUnit);
                 var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate, endDate);
-
                 if (isBooked)
-                    return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
+                    return BaseResponse.Fail("This room is already booked during the selected period.");
 
-                // ✅ Tính AddOnFee theo số ngày cố định
-                var nights = duration.Unit.ToLower() switch
+                var nights = durationUnit.ToLower() switch
                 {
-                    "month" => duration.Value * 30,
-                    "day" => duration.Value,
-                    "week" => duration.Value * 7,
+                    "day" => durationValue,
+                    "week" => durationValue * 7,
+                    "month" => durationValue * 30,
                     _ => throw new Exception("Unsupported duration unit")
                 };
 
-                var addOnFeePerNight = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
-                extraFee = addOnFeePerNight * nights;
-                price += extraFee;
+                var addOnPerNight = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
+                addOnFee = addOnPerNight * nights;
+                price += addOnFee;
+            }
+            else
+            {
+                dto.RoomInstanceId = null;
             }
 
-            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate, extraFee);
-            request.PackageDurationValue = duration.Value;
-            request.PackageDurationUnit = duration.Unit;
+            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "basic", selectedStartDate, addOnFee);
+            request.PackageDurationValue = durationValue;
+            request.PackageDurationUnit = durationUnit;
             request.RequireBooking = dto.RequireBooking;
-            request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
-            request.AddOnsFee = dto.RequireBooking ? extraFee : null;
+            request.RoomInstanceId = dto.RoomInstanceId;
+            request.AddOnsFee = addOnFee;
 
             _db.PendingMembershipRequests.Add(request);
             await _db.SaveChangesAsync();
 
+            if (dto.RequireBooking == true && dto.RoomInstanceId.HasValue)
+            {
+                var holdRequest = new HoldBookingRequestDto
+                {
+                    MemberId = accountId,
+                    RoomInstanceId = dto.RoomInstanceId.Value,
+                    StartDate = selectedStartDate,
+                    DurationValue = durationValue,
+                    DurationUnit = durationUnit,
+                    PackageType = "basic"
+                };
+
+                var created = await _membershipServiceClient.CreateHoldBookingAsync(holdRequest);
+                if (!created)
+                    return BaseResponse.Fail("Failed to create booking. Please try again later.");
+            }
+
             if (plan.VerifyBuy)
             {
                 if (string.IsNullOrWhiteSpace(dto.RedirectUrl))
-                    return BaseResponse.Fail("RedirectUrl is required after payment.");
+                    return BaseResponse.Fail("Redirect URL is required for payment flow.");
 
                 request.Status = "PendingPayment";
                 await _db.SaveChangesAsync();
 
-                var paymentDto = new CreatePaymentRequestDto
+                var paymentRequest = new CreatePaymentRequestDto
                 {
                     RequestId = request.Id,
                     AccountId = accountId,
                     PackageId = request.PackageId,
-                    Amount = request.Amount,
                     PackageType = "basic",
-                    PaymentMethod = "VNPAY",
-                    RedirectUrl = dto.RedirectUrl
+                    Amount = request.Amount,
+                    RedirectUrl = dto.RedirectUrl,
+                    PaymentMethod = "VNPAY"
                 };
 
-                var paymentResponse = await _paymentServiceClient.CreatePaymentRequestAsync(paymentDto);
-                if (!paymentResponse.Success)
-                    return BaseResponse.Fail("Payment creation failed: " + paymentResponse.Message);
+                var paymentResult = await _paymentServiceClient.CreatePaymentRequestAsync(paymentRequest);
+                if (!paymentResult.Success)
+                    return BaseResponse.Fail("Failed to initiate payment: " + paymentResult.Message);
 
-                return BaseResponse.Ok("Request created and proceeding to payment.", new
+                return BaseResponse.Ok("Request created. Redirecting to payment.", new
                 {
                     IsDirectPurchase = true,
                     RequestId = request.Id,
-                    PaymentUrl = paymentResponse.Data
+                    PaymentUrl = paymentResult.Data
                 });
             }
 
             request.Status = "Pending";
             await _db.SaveChangesAsync();
 
-            return BaseResponse.Ok("Your request has been submitted. Please wait for approval.", new
+            return BaseResponse.Ok("Request submitted successfully. Awaiting approval.", new
             {
                 IsDirectPurchase = false,
                 RequestId = request.Id
@@ -810,57 +818,91 @@ public class MembershipRequestService : IMembershipRequestService
             var combo = await _membershipServiceClient.GetComboPlanByIdAsync(dto.PackageId);
             var duration = await _membershipServiceClient.GetPlanDurationAsync(dto.PackageId, "combo");
             if (combo == null || duration == null || string.IsNullOrWhiteSpace(duration.Unit))
-                return BaseResponse.Fail("Unable to get combo plan or duration info.");
+                return BaseResponse.Fail("Failed to retrieve combo plan or duration details.");
 
             var priceInfo = await _membershipServiceClient.GetPlanPriceAsync(dto.PackageId, "combo");
             price = priceInfo;
             locationId = combo.LocationId ?? Guid.Empty;
             name = combo.Name;
+            durationValue = duration.Value;
+            durationUnit = duration.Unit;
 
             if (dto.RequireBooking)
             {
                 if (dto.RoomInstanceId == null)
-                    return BaseResponse.Fail("RoomInstanceId is required.");
+                    return BaseResponse.Fail("RoomInstanceId is required for booking packages.");
 
-                var endDate = CalculateExpireDate(selectedStartDate, duration.Value, duration.Unit);
+                var hasDuplicate = await _db.PendingMembershipRequests.AnyAsync(r =>
+                    r.AccountId == accountId &&
+                    r.PackageId == dto.PackageId &&
+                    r.RoomInstanceId == dto.RoomInstanceId &&
+                    r.Status != "Cancelled");
+
+                if (hasDuplicate)
+                    return BaseResponse.Fail("You have already submitted a request for this room with the same package.");
+
+                var endDate = CalculateExpireDate(selectedStartDate, durationValue, durationUnit);
                 var isBooked = await _membershipServiceClient.IsRoomBookedAsync(dto.RoomInstanceId.Value, selectedStartDate, endDate);
-
                 if (isBooked)
-                    return BaseResponse.Fail("Room is already booked for the selected date. Please choose another.");
+                    return BaseResponse.Fail("This room is already booked during the selected period.");
 
-                var nights = duration.Unit.ToLower() switch
+                var nights = durationUnit.ToLower() switch
                 {
-                    "month" => duration.Value * 30,
-                    "day" => duration.Value,
-                    "week" => duration.Value * 7,
+                    "day" => durationValue,
+                    "week" => durationValue * 7,
+                    "month" => durationValue * 30,
                     _ => throw new Exception("Unsupported duration unit")
                 };
 
-                var addOnFeePerNight = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
-                extraFee = addOnFeePerNight * nights;
-                price += extraFee;
+                var addOnPerNight = await _membershipServiceClient.GetAddOnFee(dto.RoomInstanceId.Value);
+                addOnFee = addOnPerNight * nights;
+                price += addOnFee;
+            }
+            else
+            {
+                dto.RoomInstanceId = null;
             }
 
-            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate, extraFee);
-            request.PackageDurationValue = duration.Value;
-            request.PackageDurationUnit = duration.Unit;
-            request.Status = "Pending";
+            var request = BuildRequest(accountId, dto.PackageId, name, price, locationId, user, dto.MessageToStaff, "combo", selectedStartDate, addOnFee);
+            request.PackageDurationValue = durationValue;
+            request.PackageDurationUnit = durationUnit;
             request.RequireBooking = dto.RequireBooking;
-            request.RoomInstanceId = dto.RequireBooking ? dto.RoomInstanceId : null;
-            request.AddOnsFee = dto.RequireBooking ? extraFee : null;
+            request.RoomInstanceId = dto.RoomInstanceId;
+            request.AddOnsFee = addOnFee;
+            request.Status = "Pending";
 
             _db.PendingMembershipRequests.Add(request);
             await _db.SaveChangesAsync();
 
-            return BaseResponse.Ok("Combo plan request submitted successfully.", new
+            if (dto.RequireBooking == true && dto.RoomInstanceId.HasValue)
+            {
+                var holdRequest = new HoldBookingRequestDto
+                {
+                    MemberId = accountId,
+                    RoomInstanceId = dto.RoomInstanceId.Value,
+                    StartDate = selectedStartDate,
+                    DurationValue = durationValue,
+                    DurationUnit = durationUnit,
+                    PackageType = "combo"
+                };
+
+                var created = await _membershipServiceClient.CreateHoldBookingAsync(holdRequest);
+                if (!created)
+                    return BaseResponse.Fail("Failed to create booking. Please try again later.");
+            }
+
+            return BaseResponse.Ok("Combo package request submitted successfully.", new
             {
                 IsDirectPurchase = false,
                 RequestId = request.Id
             });
         }
 
-        return BaseResponse.Fail("Unexpected error occurred.");
+        return BaseResponse.Fail("Unsupported package type.");
     }
+
+
+
 
 
 
@@ -932,7 +974,7 @@ public class MembershipRequestService : IMembershipRequestService
 
         var paidTime = dto.PaidTime ?? DateTime.UtcNow;
 
-        // ✅ Update request payment status
+        // ✅ Update payment-related fields
         request.PaymentStatus = "Paid";
         request.PaymentMethod = dto.PaymentMethod ?? "Unknown";
         request.PaymentTransactionId = dto.PaymentTransactionId;
@@ -940,7 +982,7 @@ public class MembershipRequestService : IMembershipRequestService
         request.PaymentNote = dto.PaymentNote;
         request.Status = "Completed";
 
-        // ✅ Update user onboarding status
+        // ✅ Update onboarding & role
         if (request.UserProfile != null)
         {
             request.UserProfile.OnboardingStatus = "ApprovedMember";
@@ -953,21 +995,19 @@ public class MembershipRequestService : IMembershipRequestService
                 {
                     var promoted = await _authServiceClient.PromoteUserToMemberAsync(request.AccountId);
                     if (!promoted)
-                    {
-                        Console.WriteLine(" Payment confirmed, but promotion to 'member' failed.");
-                    }
+                        Console.WriteLine("⚠️ Promotion failed after payment.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($" Promotion error: {ex.Message}");
+                    Console.WriteLine($"❌ Promotion error: {ex.Message}");
                 }
             }
         }
 
-        // ✅ Calculate expiration date based on request.StartDate
+        // ✅ Calculate ExpireAt
+        DateTime? expireAt = null;
         int? durationValue = request.PackageDurationValue;
         string? durationUnit = request.PackageDurationUnit;
-        DateTime? expireAt = null;
 
         if (durationValue.HasValue && !string.IsNullOrWhiteSpace(durationUnit))
         {
@@ -996,7 +1036,7 @@ public class MembershipRequestService : IMembershipRequestService
 
             PackageDurationValue = durationValue,
             PackageDurationUnit = durationUnit,
-            StartDate = request.StartDate.Value, // ✅ Set from request
+            StartDate = request.StartDate.Value,
             ExpireAt = expireAt,
             RoomInstanceId = request.RequireBooking == true ? request.RoomInstanceId : null
         };
@@ -1004,36 +1044,27 @@ public class MembershipRequestService : IMembershipRequestService
         _db.Memberships.Add(membership);
         await _db.SaveChangesAsync();
 
-        // ✅ Create booking if needed
-        bool bookingCreated = false;
+        // ✅ Confirm booking if Hold exists
+        bool bookingConfirmed = false;
 
         if (request.RequireBooking == true && request.RoomInstanceId.HasValue)
         {
             try
             {
-                if (durationValue.HasValue && !string.IsNullOrWhiteSpace(durationUnit))
+                var confirmResult = await _membershipServiceClient.ConfirmBookingAsync(new ConfirmBookingRequestDto
                 {
-                    bookingCreated = await _membershipServiceClient.CreateBookingAsync(
-                        accountId: request.AccountId,
-                        roomInstanceId: request.RoomInstanceId.Value,
-                        startDate: request.StartDate.Value,
-                        durationValue: durationValue.Value,
-                        durationUnit: durationUnit
-                    );
-                }
-                else
-                {
-                    Console.WriteLine(" Not enough data to calculate booking end date.");
-                }
+                    MemberId = request.AccountId,
+                    RoomInstanceId = request.RoomInstanceId.Value,
+                    StartDate = request.StartDate.Value
+                });
 
-                if (!bookingCreated)
-                {
-                    Console.WriteLine(" Booking creation failed after payment.");
-                }
+                bookingConfirmed = confirmResult;
+                if (!confirmResult)
+                    Console.WriteLine("⚠️ Booking confirmation failed.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($" Booking error: {ex.Message}");
+                Console.WriteLine($"❌ ConfirmBooking error: {ex.Message}");
             }
         }
 
@@ -1044,9 +1075,10 @@ public class MembershipRequestService : IMembershipRequestService
             PackageType = membership.PackageType,
             Upgraded = membership.UsedForRoleUpgrade,
             ExpireAt = membership.ExpireAt,
-            BookingCreated = bookingCreated
+            BookingConfirmed = bookingConfirmed
         });
     }
+
 
 
 
@@ -1082,25 +1114,54 @@ public class MembershipRequestService : IMembershipRequestService
 
     public async Task<BaseResponse> CancelRequestAsync(Guid accountId, Guid requestId)
     {
-       
         var request = await _db.PendingMembershipRequests
             .FirstOrDefaultAsync(r => r.Id == requestId && r.AccountId == accountId);
 
         if (request == null)
-            return BaseResponse.Fail("Yêu cầu không tồn tại hoặc không thuộc quyền của bạn.");
+            return BaseResponse.Fail("Request does not exist or does not belong to you.");
 
-      
         if (request.Status != PendingRequestStatus.Pending &&
             request.Status != PendingRequestStatus.PendingPayment)
         {
-            return BaseResponse.Fail("Chỉ có thể hủy yêu cầu khi đang chờ xử lý hoặc chờ thanh toán.");
+            return BaseResponse.Fail("You can only cancel a request that is pending or awaiting payment.");
         }
 
+        // ✅ Xử lý hủy booking nếu là gói yêu cầu booking và là gói Living (Basic)
+        if (request.RequireBooking &&
+            request.PackageType.Equals("basic", StringComparison.OrdinalIgnoreCase) &&
+            request.PackageId.HasValue &&
+            request.RoomInstanceId.HasValue &&
+            request.StartDate.HasValue)
+        {
+            var duration = await _membershipServiceClient.GetPlanDurationAsync(
+                request.PackageId.Value,
+                request.PackageType
+            );
+
+            if (duration == null)
+                return BaseResponse.Fail("Failed to retrieve duration info for booking cancellation.");
+
+            var cancelSuccess = await _membershipServiceClient.CancelHoldBookingAsync(
+                memberId: accountId,
+                roomInstanceId: request.RoomInstanceId.Value,
+                startDate: request.StartDate.Value
+            );
+
+            if (!cancelSuccess)
+                return BaseResponse.Fail("Failed to cancel the hold booking. Please try again later.");
+        }
+
+        // 🔥 Nếu không đủ thông tin để hủy booking → chỉ xoá request
         _db.PendingMembershipRequests.Remove(request);
         await _db.SaveChangesAsync();
 
-        return BaseResponse.Ok("Hủy yêu cầu thành công.");
+        return BaseResponse.Ok("Request cancelled successfully.");
     }
+
+
+
+
+
 
 
 

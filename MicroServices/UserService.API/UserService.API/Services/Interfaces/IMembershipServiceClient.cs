@@ -35,7 +35,10 @@ namespace UserService.API.Services.Interfaces
         Task DeleteCityAsync(Guid id);
         Task DeleteLocationAsync(Guid id);
         Task DeletePropertyAsync(Guid id);
+        Task<bool> CreateHoldBookingAsync(HoldBookingRequestDto dto);
+        Task<bool> ConfirmBookingAsync(ConfirmBookingRequestDto dto);
 
+        Task<bool> CancelHoldBookingAsync(Guid memberId, Guid roomInstanceId, DateTime startDate);
 
     }
 }

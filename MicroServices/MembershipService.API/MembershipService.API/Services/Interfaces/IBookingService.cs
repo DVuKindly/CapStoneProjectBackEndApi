@@ -9,6 +9,5 @@ namespace MembershipService.API.Services.Interfaces
         Task<List<BookingResponseDto>> GetRoomBookingsAsync(Guid roomInstanceId, DateTime? from, DateTime? to);
         Task<bool> ValidateBookingAsync(Guid roomInstanceId, DateTime startDate, DateTime endDate);
 
-
     }
 }

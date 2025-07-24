@@ -37,6 +37,5 @@ namespace MembershipService.API.Controllers
         }
 
 
-
     }
 }

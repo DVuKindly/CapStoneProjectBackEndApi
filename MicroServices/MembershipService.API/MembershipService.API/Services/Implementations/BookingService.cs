@@ -159,5 +159,95 @@ namespace MembershipService.API.Services.Implementations
 
 
 
+
+        public async Task<bool> CreateHoldBookingAsync(CreateHoldBookingRequest request)
+        {
+            var endDate = CalculateEndDate(request.StartDate, request.DurationValue, request.DurationUnit);
+            var expireAt = request.PackageType.ToLower() switch
+            {
+                "basic" => DateTime.UtcNow.AddMinutes(15),
+                "combo" => DateTime.UtcNow.AddDays(3),
+                _ => DateTime.UtcNow.AddMinutes(10)
+            };
+
+            var booking = new Booking
+            {
+                Id = Guid.NewGuid(),
+                MemberId = request.MemberId,
+                RoomInstanceId = request.RoomInstanceId,
+                StartDate = request.StartDate,
+                EndDate = endDate,
+                Status = BookingStatus.Hold,
+                ExpireAt = expireAt,
+                Note = "Hold booking created before payment"
+            };
+
+            _context.Bookings.Add(booking);
+            var saved = await _context.SaveChangesAsync();
+            return saved > 0;
+        }
+
+        public async Task<bool> ConfirmBookingAsync(ConfirmBookingRequest request)
+        {
+            var booking = await _context.Bookings.FirstOrDefaultAsync(b =>
+                b.MemberId == request.MemberId &&
+                b.RoomInstanceId == request.RoomInstanceId &&
+                b.StartDate.Date == request.StartDate.Date &&
+                b.Status == BookingStatus.Hold);
+
+            if (booking == null)
+                return false;
+
+            booking.Status = BookingStatus.Confirmed;
+            booking.ExpireAt = null;
+
+            await  _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<int> AutoCancelExpiredBookingsAsync()
+        {
+            var now = DateTime.UtcNow;
+            var expired = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Hold && b.ExpireAt != null && b.ExpireAt < now)
+                .ToListAsync();
+
+            foreach (var booking in expired)
+            {
+                booking.Status = BookingStatus.Cancelled;
+            }
+
+            var updated = await _context.SaveChangesAsync();
+            return updated;
+        }
+
+        private DateTime CalculateEndDate(DateTime start, int value, string unit)
+        {
+            return unit.ToLower() switch
+            {
+                "day" => start.AddDays(value),
+                "week" => start.AddDays(value * 7),
+                "month" => start.AddMonths(value),
+                "year" => start.AddYears(value),
+                _ => start
+            };
+        }
+
+        public async Task<bool> CancelHoldBookingAsync(CancelHoldBookingRequest request)
+        {
+            var booking = await _context.Bookings.FirstOrDefaultAsync(b =>
+                b.MemberId == request.MemberId &&
+                b.RoomInstanceId == request.RoomInstanceId &&
+                b.StartDate == request.StartDate &&
+                b.Status == BookingStatus.Hold);
+
+            if (booking == null) return false;
+
+            _context.Bookings.Remove(booking);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+
     }
 }
