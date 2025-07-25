@@ -8,13 +8,21 @@
     {
         private readonly BlobContainerClient _container;
 
-        public BlobService(IConfiguration config)
+        // Constructor mặc định không có tham số
+        public BlobService()
         {
-            var connectionString = config["AzureBlobStorage:ConnectionString"];
-            var containerName = config["AzureBlobStorage:ContainerName"];
+            // Lấy connection string và container name từ biến môi trường (được nạp từ .env)
+            var connectionString = Environment.GetEnvironmentVariable("AZURE_BLOB_STORAGE_CONNECTION_STRING");
+            var containerName = Environment.GetEnvironmentVariable("AZURE_BLOB_STORAGE_CONTAINER_NAME");
 
+            if (string.IsNullOrEmpty(connectionString) || string.IsNullOrEmpty(containerName))
+            {
+                throw new InvalidOperationException("Azure Blob Storage configuration is missing from environment variables.");
+            }
+
+            // Khởi tạo BlobContainerClient
             _container = new BlobContainerClient(connectionString, containerName);
-            _container.CreateIfNotExists(PublicAccessType.Blob); // 👈 Cho phép đọc ảnh qua URL
+            _container.CreateIfNotExists(PublicAccessType.Blob); // Cho phép đọc ảnh qua URL
         }
 
         public async Task<string> UploadAsync(IFormFile file)
@@ -36,6 +44,5 @@
 
             return blobClient.Uri.AbsoluteUri;
         }
-
     }
 }
